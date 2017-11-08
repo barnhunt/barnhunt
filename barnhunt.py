@@ -204,7 +204,7 @@ class InkscapeOperations(object):
 @click.argument('svgfile', type=click.File('r'))
 @click.option('-o', '--output-directory', type=click.Path(file_okay=False))
 @click.option('-v', '--verbose', count=True)
-def barnhunt(svgfile, output_directory, verbose):
+def main(svgfile, output_directory, verbose):
     """ Export PDFs from inkscape SVG coursemaps.
 
     """
@@ -226,4 +226,4 @@ def barnhunt(svgfile, output_directory, verbose):
 
 
 if __name__ == '__main__':
-    barnhunt()
+    main()
