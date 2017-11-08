@@ -1,8 +1,13 @@
 import logging
+import os
 import re
+from subprocess import check_call
+from tempfile import NamedTemporaryFile
 
 import click
 from lxml import etree
+import pexpect
+import shellescape
 
 
 log = logging.getLogger('')
@@ -11,14 +16,55 @@ SVG = "{http://www.w3.org/2000/svg}"
 INKSCAPE = "{http://www.inkscape.org/namespaces/inkscape}"
 
 
+def _find_layers(elem):
+    layers = []
+    for g in elem.findall(SVG + 'g'):
+        if g.get(INKSCAPE + 'groupmode') == 'layer':
+            layers.append(Layer(g))
+    return layers
+
+
 class Layer(object):
-    def __init__(self, id, label, sublayers):
-        self.id = id
-        self.label = label
-        self.sublayers = sublayers
+    def __init__(self, elem):
+        self.elem = elem
+        self.sublayers = _find_layers(elem)
+
+    @property
+    def id(self):
+        return self.elem.get('id')
+
+    @property
+    def label(self):
+        return self.elem.get(INKSCAPE + 'label')
+
+    def _set_display(self, visibility):
+        elem = self.elem
+        style = elem.get('style') or ''
+        bits = [bit for bit in style.split(';')
+                if not bit.strip().startswith('display:')]
+        bits.append('display:%s' % visibility)
+        elem.set('style', ';'.join(bits))
+
+    def walk(self):
+        """ Depth first traversal of self and sublayers.
+        """
+        layers = [self]
+        while layers:
+            layer = layers.pop(0)
+            layers[:0] = layer.sublayers
+            yield layer
+
+    def show(self, recursive=False):
+        layers = self.walk() if recursive else [self]
+        for layer in layers:
+            layer._set_display('inline')
+
+    def hide(self):
+        self._set_display('none')
 
     def __repr__(self):
-        return "Layer(%r, %r, %r)" % (self.id, self.label, self.sublayers)
+        return "<Layer %s %r [%d sublayers]>" % (
+            self.id, self.label, len(self.sublayers))
 
     def __str__(self):
         return self.id
@@ -27,43 +73,17 @@ class Layer(object):
         return self.id
 
 
-def _parse(svgfile):
-
-    def parse_layers(parent):
-        layers = []
-        for g in parent.findall(SVG + 'g'):
-            if g.get(INKSCAPE + 'groupmode') == 'layer':
-                id = g.get('id')
-                label = g.get(INKSCAPE + 'label')
-                sublayers = parse_layers(g)
-                print id, label, sublayers
-                layers.append(Layer(id, label, sublayers))
-        return layers
-
-    tree = etree.parse(svgfile)
-    return parse_layers(tree.getroot())
-
-
-class Map(object):
-    def __init__(self, title, layers):
-        self.title = title
-        self.layers = layers
-
-    def __iter__(self):
-        layers = self.layers
-        while layers:
-            layer = layers.pop()
-            layers.extend(layer.sublayers)
-            yield layer.id
-
-
-
 class Drawing(object):
-    def __init__(self, layers):
+    def __init__(self, svgfile):
         RING = re.compile(r'\bring\b', re.I)
         COURSE = re.compile(
-            r'\b(instinct|novice|open|senior|master|crazy ?8|c8)\b',
+            r'\b(instinct|novice|open|senior|master|crazy ?8s?|c8)\b',
             re.I)
+
+        tree = etree.parse(svgfile)
+        root = tree.getroot()
+
+        layers = _find_layers(root)
 
         rings = [layer for layer in layers if RING.search(layer.label)]
         if len(rings) != 1:
@@ -71,36 +91,139 @@ class Drawing(object):
                 raise RuntimeError("Multiple ring layers found")
             else:
                 raise RuntimeError("No ring layers found")
+        ring = rings[0]
+
+        for layer in layers:
+            layer.hide()
+        ring.show(recursive=True)
 
         courses = [layer for layer in layers if COURSE.search(layer.label)]
 
-        self.layers = layers
-        self.ring = rings[0]
+        self.tree = tree
+        self.root = root
+        self.ring = ring
         self.courses = courses
 
     def iter_maps(self):
+
         for course in self.courses:
-            # FIXME: make more robust
-            coursemap = course.sublayers[0]
-            overlays = course.sublayers[-1]
-            if overlays.label != 'Overlays':
-                log.warn("No overlays found in course %s(%s)",
-                         course.label, course.id)
-                continue
-            for overlay in overlays.sublayers:
-                title = '%s-%s' % (course.label, overlay.label)
-                yield Map(title, [overlay, coursemap, self.ring])
+            log.warn("Course %r", course.label)
+            # Hide other courses
+            for layer in self.courses:
+                layer.hide()
+            # Show this course and all sublayers (for now)
+            course.show(recursive=True)
+
+            # Find "Overlays" layer
+            for overlays in course.sublayers:
+                if overlays.label == 'Overlays':
+                    break
+            else:
+                overlays = None
+                log.info("No overlays found in course %r", course.label)
+
+            if overlays:
+                for overlay in overlays.sublayers:
+                    # Hide other overlays
+                    for layer in overlays.sublayers:
+                        layer.hide()
+                    overlay.show()
+                    labels = (course.label, overlay.label)
+                    yield labels, self.tree
+            else:
+                labels = (course.label,)
+                yield labels, self.tree
 
     __iter__ = iter_maps
 
 
+class Inkscape(object):
+    """ Run inkscape with specific arguments.
+    """
+    def __init__(self, executable='inkscape'):
+        self.executable = executable
+
+    def __call__(self, args):
+        cmd = [self.executable] + args
+        check_call(cmd)
+
+    def close(self):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
+
+class ShellModeInkscape(Inkscape):
+    """Run inkscape with specific arguments.
+
+    This uses inkscape's --shell mode so that (for efficiency)
+    multiple commands may be run with a single invocation of inkscape.
+
+    """
+    def __init__(self, executable='inkscape'):
+        child = pexpect.spawn(executable, ['--shell'])
+        child.expect('>')
+        self.executable = executable
+        self.child = child
+
+    def __call__(self, args):
+        child = self.child
+        child.sendline(' '.join(shellescape.quote(arg) for arg in args))
+        child.expect('>')
+
+    def close(self):
+        child = self.child
+        if child is not None:
+            child.sendline('quit')
+            child.expect(pexpect.EOF)
+            self.child = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+
+class InkscapeOperations(object):
+    def __init__(self, inkscape):
+        self.inkscape = inkscape
+
+    def tree_to_pdf(self, tree, filename):
+        with NamedTemporaryFile(suffix='.svg') as svg:
+            tree.write(svg, xml_declaration=True)
+            svg.flush()
+            self.inkscape([svg.name, '--export-pdf=%s' % filename])
+
+
 @click.command()
 @click.argument('svgfile', type=click.File('r'))
-def layers(svgfile):
-    layers = _parse(svgfile)
-    for map in Drawing(layers):
-        print map.title, list(map)
+@click.option('-o', '--output-directory', type=click.Path(file_okay=False))
+@click.option('-v', '--verbose', count=True)
+def barnhunt(svgfile, output_directory, verbose):
+    """ Export PDFs from inkscape SVG coursemaps.
+
+    """
+    log_level = logging.WARNING
+    if verbose:
+        log_level = logging.DEBUG if verbose > 1 else logging.WARNING
+    logging.basicConfig(level=log_level)
+
+    with ShellModeInkscape() as inkscape:
+        ops = InkscapeOperations(inkscape)
+        for labels, tree in Drawing(svgfile):
+            filename = os.path.join(output_directory, *labels) + '.pdf'
+            dirpath = os.path.dirname(filename)
+            if dirpath and not os.path.isdir(dirpath):
+                log.debug("creating directory %r", dirpath)
+                os.makedirs(dirpath)
+            log.info("writing %r", filename)
+            ops.tree_to_pdf(tree, filename)
 
 
 if __name__ == '__main__':
-    layers()
+    barnhunt()
