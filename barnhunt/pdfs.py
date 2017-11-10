@@ -21,7 +21,7 @@ def _find_layers(elem):
     layers = []
     for g in elem.findall(SVG + 'g'):
         if g.get(INKSCAPE + 'groupmode') == 'layer':
-            layers.append(Layer(g))
+            layers.insert(0, Layer(g))
     return layers
 
 
