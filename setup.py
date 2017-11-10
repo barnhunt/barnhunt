@@ -28,9 +28,7 @@ setup(name='barnhunt',
       #url='https://github.com/dairiki/barnhunt',
       license='BSD',
 
-      py_modules=[
-          'barnhunt',
-          ],
+      packages=['barnhunt'],
 
       install_requires=[
           'click',
