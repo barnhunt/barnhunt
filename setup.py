@@ -1,7 +1,7 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 import os
 
-version = '0.1a1'
+version = '0.1a2'
 
 here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
@@ -25,7 +25,7 @@ setup(name='barnhunt',
       keywords='barn hunt inkscape course maps',
       author='Jeff Dairiki',
       author_email='dairiki@dairiki.org',
-      #url='https://github.com/dairiki/barnhunt',
+      # url='https://github.com/dairiki/barnhunt',
       license='BSD',
 
       packages=['barnhunt'],
@@ -44,5 +44,5 @@ setup(name='barnhunt',
               ],
           },
 
-      #test_suite='xsendfile_middleware.test',
+      # test_suite='xsendfile_middleware.test',
       )
