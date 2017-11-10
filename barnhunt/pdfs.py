@@ -208,10 +208,17 @@ def pdfs(svgfile, output_directory):
     """ Export PDFs from inkscape SVG coursemaps.
 
     """
+    def friendly(path_comp):
+        """ Replace shell-unfriendly characters with underscore.
+        """
+        return re.sub(r"[\000-\040/\\\177\s]", '_', path_comp,
+                      flags=re.UNICODE)
+
     with ShellModeInkscape() as inkscape:
         ops = InkscapeOperations(inkscape)
         for labels, tree in Drawing(svgfile):
-            filename = os.path.join(output_directory, *labels) + '.pdf'
+            path = [friendly(label) for label in labels]
+            filename = os.path.join(output_directory, *path) + '.pdf'
             dirpath = os.path.dirname(filename)
             if dirpath and not os.path.isdir(dirpath):
                 log.debug("creating directory %r", dirpath)
