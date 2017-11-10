@@ -166,15 +166,18 @@ class ShellModeInkscape(Inkscape):
 
     """
     def __init__(self, executable='inkscape'):
-        child = pexpect.spawn(executable, ['--shell'])
-        child.expect('>')
+        child = pexpect.spawn(executable, ['--shell'], maxread=64*1024)
+        # XXX To show input/output on stdout (for debugging)
+        # import sys
+        # child.logfile = sys.stdout
+        child.expect('\n>')
         self.executable = executable
         self.child = child
 
     def __call__(self, args):
         child = self.child
         child.sendline(' '.join(shellescape.quote(arg) for arg in args))
-        child.expect('>')
+        child.expect('\n>')
 
     def close(self):
         child = self.child
