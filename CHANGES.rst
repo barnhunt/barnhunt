@@ -2,6 +2,15 @@
 Changes
 *******
 
+Release 0.1a3.post1 (2017-11-10)
+================================
+
+PDFS
+----
+
+* Reverse order that layers are considered.  (Layers are listed from
+  bottom to top in the SVG file.)
+
 Release 0.1a3 (2017-11-10)
 ==========================
 
