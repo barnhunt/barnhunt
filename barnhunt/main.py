@@ -13,5 +13,7 @@ def main(verbose):
     """
     log_level = logging.WARNING
     if verbose:
-        log_level = logging.DEBUG if verbose > 1 else logging.WARNING
-    logging.basicConfig(level=log_level)
+        log_level = logging.DEBUG if verbose > 1 else logging.INFO
+    logging.basicConfig(
+        level=log_level,
+        format="(%(levelname)1.1s) %(message)s")

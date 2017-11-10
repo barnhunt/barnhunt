@@ -1,11 +1,8 @@
-import logging
 from random import randint
 
 import click
 
 from .main import main
-
-log = logging.getLogger('')
 
 POSITIVE_INT = click.IntRange(1, None)
 

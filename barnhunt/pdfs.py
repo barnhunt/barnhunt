@@ -108,7 +108,7 @@ class Drawing(object):
     def iter_maps(self):
 
         for course in self.courses:
-            log.warn("Course %r", course.label)
+            log.info("Processing course %r", course.label)
             # Hide other courses
             for layer in self.courses:
                 layer.hide()
@@ -121,7 +121,7 @@ class Drawing(object):
                     break
             else:
                 overlays = None
-                log.info("No overlays found in course %r", course.label)
+                log.debug("No overlays found in course %r", course.label)
 
             if overlays:
                 for overlay in overlays.sublayers:
