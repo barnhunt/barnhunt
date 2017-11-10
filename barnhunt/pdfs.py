@@ -108,7 +108,7 @@ class Drawing(object):
     def iter_maps(self):
 
         for course in self.courses:
-            log.info("Processing course %r", course.label)
+            log.debug("Processing course %r", course.label)
             # Hide other courses
             for layer in self.courses:
                 layer.hide()
