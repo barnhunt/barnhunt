@@ -2,6 +2,17 @@
 Changes
 *******
 
+Release 0.1a4 (2017-11-10)
+==========================
+
+PDFS
+----
+
+* Log unexpected output from inkscape.
+
+* Add --no-shell-mode-inkscape option to control whether shell-mode inkscape
+  optimization is used.
+
 Release 0.1a3.post1 (2017-11-10)
 ================================
 
