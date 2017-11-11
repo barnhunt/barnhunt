@@ -207,17 +207,23 @@ class InkscapeOperations(object):
 @main.command()
 @click.argument('svgfile', type=click.File('r'))
 @click.option('-o', '--output-directory', type=click.Path(file_okay=False))
-def pdfs(svgfile, output_directory):
+@click.option(
+    '--shell-mode-inkscape/--no-shell-mode-inkscape', default=True,
+    help="Run inkscape in shell-mode for efficiency.  Default is true.")
+def pdfs(svgfile, output_directory, shell_mode_inkscape):
     """ Export PDFs from inkscape SVG coursemaps.
 
     """
+    inkscape_class = (ShellModeInkscape if shell_mode_inkscape
+                      else Inkscape)
+
     def friendly(path_comp):
         """ Replace shell-unfriendly characters with underscore.
         """
         return re.sub(r"[\000-\040/\\\177\s]", '_', path_comp,
                       flags=re.UNICODE)
 
-    with ShellModeInkscape() as inkscape:
+    with inkscape_class() as inkscape:
         ops = InkscapeOperations(inkscape)
         for labels, tree in Drawing(svgfile):
             path = [friendly(label) for label in labels]
