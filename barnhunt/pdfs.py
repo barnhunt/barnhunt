@@ -1,8 +1,9 @@
+from contextlib import contextmanager
 import logging
 import os
 import re
-from subprocess import check_call
-from tempfile import NamedTemporaryFile
+from subprocess import check_call, STDOUT
+from tempfile import NamedTemporaryFile, TemporaryFile
 
 import click
 from lxml import etree
@@ -146,7 +147,8 @@ class Inkscape(object):
 
     def __call__(self, args):
         cmd = [self.executable] + args
-        check_call(cmd)
+        with logging_output(cmd) as logfile:
+            check_call(cmd, stdout=logfile, stderr=STDOUT)
 
     def close(self):
         pass
@@ -158,6 +160,23 @@ class Inkscape(object):
         pass
 
 
+@contextmanager
+def logging_output(cmd):
+    """Yield a file handle to be used for logging subcommand output.
+
+    If output is generated, generates a log message with the output.
+    """
+    with TemporaryFile() as logfile:
+        try:
+            yield logfile
+        finally:
+            logfile.flush()
+            if logfile.tell() > 0:
+                logfile.seek(0)
+                log.warn("Unexpected output from %r:\n%s",
+                         cmd, logfile.read())
+
+
 class ShellModeInkscape(Inkscape):
     """Run inkscape with specific arguments.
 
@@ -166,24 +185,32 @@ class ShellModeInkscape(Inkscape):
 
     """
     def __init__(self, executable='inkscape'):
-        child = pexpect.spawn(executable, ['--shell'], maxread=64*1024)
-        # XXX To show input/output on stdout (for debugging)
-        # import sys
-        # child.logfile = sys.stdout
-        child.expect('\n>')
+        child = pexpect.spawn(executable, ['--shell'])
         self.executable = executable
         self.child = child
+        self._wait_for_prompt()
+
+    def _wait_for_prompt(self, prompt='\n>', expect_lines=1):
+        """Wait for prompt."""
+        self.child.expect_exact(prompt, searchwindowsize=len(prompt))
+        self._log_output(expect_lines)
+
+    def _log_output(self, expect_lines=0):
+        before = self.child.before
+        if before and before.count('\n') + 1 != expect_lines:
+            log.warn("Unexpected output from shell-mode inkscape:\n%s",
+                     before)
 
     def __call__(self, args):
-        child = self.child
-        child.sendline(' '.join(shellescape.quote(arg) for arg in args))
-        child.expect('\n>')
+        self.child.sendline(' '.join(shellescape.quote(arg) for arg in args))
+        self._wait_for_prompt()
 
     def close(self):
         child = self.child
         if child is not None:
             child.sendline('quit')
             child.expect(pexpect.EOF)
+            self._log_output()
             self.child = None
 
     def __enter__(self):
