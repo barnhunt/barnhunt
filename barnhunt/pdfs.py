@@ -199,7 +199,7 @@ class ShellModeInkscape(Inkscape):
         before = self.child.before
         if before and before.count('\n') + 1 != expect_lines:
             log.warn("Unexpected output from shell-mode inkscape:\n%s",
-                     before)
+                     before.replace('\r\n', '\n'))
 
     def __call__(self, args):
         self.child.sendline(' '.join(shellescape.quote(arg) for arg in args))
@@ -209,6 +209,7 @@ class ShellModeInkscape(Inkscape):
         child = self.child
         if child is not None:
             child.sendline('quit')
+            child.expect('quit\r?\n')
             child.expect(pexpect.EOF)
             self._log_output()
             self.child = None
