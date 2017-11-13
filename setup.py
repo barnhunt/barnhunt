@@ -1,11 +1,32 @@
-from setuptools import setup
 import os
+from setuptools import setup
+import sys
 
 version = '0.1a4'
 
 here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
+
+install_requires = [
+    'click',
+    'jinja2',
+    'lxml',
+    'pexpect',
+    'shellescape',
+    'six',
+    ]
+
+tests_require = [
+    'pytest',
+    'pytest-catchlog',
+    ]
+
+setup_requires = []
+
+needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
+if needs_pytest:
+    setup_requires.append('pytest-runner')
 
 setup(name='barnhunt',
       version=version,
@@ -29,20 +50,17 @@ setup(name='barnhunt',
       license='BSD',
 
       packages=['barnhunt'],
-
-      install_requires=[
-          'click',
-          'lxml',
-          'pexpect',
-          'shellescape',
-          ],
       zip_safe=True,
 
+      setup_requires=setup_requires,
+      tests_require=tests_require,
+      install_requires=install_requires,
+      extras_require={
+          'test': tests_require,
+          },
       entry_points={
           'console_scripts': [
               'barnhunt = barnhunt:main',
               ],
           },
-
-      # test_suite='xsendfile_middleware.test',
       )

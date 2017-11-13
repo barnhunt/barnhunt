@@ -1,3 +1,4 @@
 *.pyc
 *~
 /barnhunt.egg-info/
+/.coverage
