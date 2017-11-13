@@ -1,5 +1,13 @@
+from lxml import etree
+import pytest
+
 from barnhunt.css import InlineCSS
-from barnhunt.coursemaps import Layer
+from barnhunt.coursemaps import (
+    Layer,
+    is_hidden,
+    prune_hidden,
+    slow_is_hidden,
+    )
 
 
 def test_find_layers(svg1):
@@ -50,3 +58,40 @@ class TestLayer(object):
     def test_repr(self, svg1):
         layer = Layer(svg1.sublayer)
         assert repr(layer) == '<Layer sublayer>'
+
+
+@pytest.mark.parametrize("style", [
+    "display:none",
+    "foo: bar; display : none ; baz:boo",
+    ])
+@pytest.mark.parametrize("is_hidden", [
+    is_hidden,
+    slow_is_hidden,
+    ])
+def test_is_hidden(style, is_hidden):
+    attrib = {'style': style} if style is not None else {}
+    elem = etree.Element('s', attrib=attrib)
+    assert is_hidden(elem)
+
+
+@pytest.mark.parametrize("style", [
+    None,
+    "",
+    "display:inline",
+    "foo: bar; baz:boo",
+    "foo: bar; display : inline ; baz:boo",
+    ])
+@pytest.mark.parametrize("is_hidden", [
+    is_hidden,
+    slow_is_hidden,
+    ])
+def test_is_not_hidden(style, is_hidden):
+    attrib = {'style': style} if style is not None else {}
+    elem = etree.Element('s', attrib=attrib)
+    assert not is_hidden(elem)
+
+
+def test_prune_hidden():
+    tree = etree.ElementTree()
+    tree._setroot(etree.fromstring('<a><b style="display:none;"/></a>'))
+    assert etree.tostring(prune_hidden(tree)) == b'<a/>'

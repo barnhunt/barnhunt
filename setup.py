@@ -15,6 +15,8 @@ install_requires = [
     'pexpect',
     'shellescape',
     'six',
+    'tinycss2',
+    'webencodings',
     ]
 
 tests_require = [

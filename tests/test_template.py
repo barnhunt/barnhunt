@@ -57,8 +57,8 @@ class TestLayer(object):
 
 class TestTemplateExpander(object):
     def test_expand(self, svg1):
-        TemplateExpander().expand(svg1.root)
-        assert svg1.leaf.text == 'Layer: Level 2'
+        rv = TemplateExpander().expand(svg1.tree)
+        assert rv.find('.//*[@id="leaf"]').text == 'Layer: Level 2'
 
     def test_expand_elem(self):
         elem = etree.Element('foo')
@@ -86,7 +86,7 @@ class TestTemplateExpander(object):
         elem = etree.Element('foo')
         elem.text = '{{ "ab" | join("&") }}'
         expand_elem(elem)
-        assert '>a&amp;b</' in etree.tostring(elem)
+        assert b'>a&amp;b</' in etree.tostring(elem)
 
     def test_get_context(self, svg1):
         context = TemplateExpander()._get_context(svg1.leaf)

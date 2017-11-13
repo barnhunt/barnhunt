@@ -2,6 +2,7 @@ import logging
 import re
 
 from .css import InlineCSS
+from .etree_util import clone_etree
 
 log = logging.getLogger()
 
@@ -64,6 +65,12 @@ class CourseMaps(object):
             r'\b(instinct|novice|open|senior|master|crazy ?8s?|c8)\b',
             re.I)
 
+        # XXX: make a working copy of the tree.
+        # We modify it in place, then clone it (pruning hidden nodes)
+        # to generate the returned trees.
+        # This is a bit hokey ---
+        # It would be nice not to have to modify the input tree.
+        tree = clone_etree(tree)
         root = tree.getroot()
 
         layers = _find_layers(root)
@@ -112,9 +119,33 @@ class CourseMaps(object):
                         layer.hide()
                     overlay.show()
                     labels = (course.label, overlay.label)
-                    yield labels, self.tree
+                    yield labels, prune_hidden(self.tree)
             else:
                 labels = (course.label,)
-                yield labels, self.tree
+                yield labels, prune_hidden(self.tree)
 
     __iter__ = iter_maps
+
+
+def slow_is_hidden(elem):
+    # This is correct but very slow.
+    style = elem.get('style')
+    if style:
+        display = InlineCSS(style).get('display')
+        return display and display.strip() == 'none'
+    else:
+        return False
+
+
+HIDDEN_re = re.compile(
+    r'(?: \A | ; ) \s* display \s* : \s* none \s* (?: \Z | ; )',
+    re.X)
+
+
+def is_hidden(elem):
+    style = elem.get('style')
+    return style and HIDDEN_re.search(style)
+
+
+def prune_hidden(tree):
+    return clone_etree(tree, is_hidden)

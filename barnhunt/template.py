@@ -2,13 +2,15 @@ import jinja2
 import logging
 
 from . import rats
+from .etree_util import clone_etree
 
 log = logging.getLogger()
 
 # FIXME: abstract
 SVG = "{http://www.w3.org/2000/svg}"
 INKSCAPE = "{http://www.inkscape.org/namespaces/inkscape}"
-BH = "{http://www.dairiki.org/schema/barnhunt}"
+BH_NS = "http://www.dairiki.org/schema/barnhunt"
+BH = "{%s}" % BH_NS
 
 
 def _is_layer(elem):
@@ -71,6 +73,7 @@ class TemplateExpander(object):
         self.hash_seed = hash_seed
 
     def expand(self, tree):
+        tree = clone_etree(tree, update_nsmap={'bh': BH_NS})
         for elem in tree.iter(SVG + 'tspan'):
             self._expand_elem(elem)
         return tree

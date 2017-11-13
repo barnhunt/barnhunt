@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from lxml import etree
 
 import pytest
@@ -26,11 +28,15 @@ TEST_SVG = b"""<?xml version="1.0" encoding="ascii" standalone="no"?>
 
 
 class XML(object):
-    def __init__(self, tree):
-        self.root = tree
+    def __init__(self, raw_bytes):
+        self.tree = etree.parse(BytesIO(raw_bytes))
+
+    @property
+    def root(self):
+        return self.tree.getroot()
 
     def __getattr__(self, attr):
-        elem = self.root.find('.//*[@id="%s"]' % attr)
+        elem = self.tree.find('.//*[@id="%s"]' % attr)
         if elem is None:
             raise AttributeError(attr)
         return elem
@@ -38,4 +44,4 @@ class XML(object):
 
 @pytest.fixture
 def svg1():
-    return XML(etree.fromstring(TEST_SVG))
+    return XML(TEST_SVG)
