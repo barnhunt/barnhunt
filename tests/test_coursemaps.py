@@ -1,3 +1,4 @@
+from barnhunt.css import InlineCSS
 from barnhunt.coursemaps import Layer
 
 
@@ -7,6 +8,11 @@ def test_find_layers(svg1):
     assert len(layers) == 2
     assert layers[0].id == 'layer2'
     assert layers[1].id == 'layer'
+
+
+def get_display(elem):
+    css = InlineCSS(elem.get('style'))
+    return css.get('display')
 
 
 class TestLayer(object):
@@ -26,25 +32,19 @@ class TestLayer(object):
     def test_show(self, svg1):
         layer = Layer(svg1.layer)
         layer.show()
-        assert svg1.layer.get('style') == 'display:inline'
+        assert get_display(svg1.layer) == 'inline'
         assert svg1.sublayer.get('style') is None
 
-    def test_show_merges_style(self, svg1):
-        svg1.layer.set('style', 'display:none;text-align:center')
-        layer = Layer(svg1.layer)
-        layer.show()
-        assert svg1.layer.get('style') == 'text-align:center;display:inline'
-
-    def test_show_reursive(self, svg1):
+    def test_show_recursive(self, svg1):
         layer = Layer(svg1.layer)
         layer.show(recursive=True)
-        assert svg1.layer.get('style') == 'display:inline'
-        assert svg1.sublayer.get('style') == 'display:inline'
+        assert get_display(svg1.layer) == 'inline'
+        assert get_display(svg1.sublayer) == 'inline'
 
     def test_hide(self, svg1):
         layer = Layer(svg1.layer)
         layer.hide()
-        assert svg1.layer.get('style') == 'display:none'
+        assert get_display(svg1.layer) == 'none'
         assert svg1.sublayer.get('style') is None
 
     def test_repr(self, svg1):

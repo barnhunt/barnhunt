@@ -1,6 +1,8 @@
 import logging
 import re
 
+from .css import InlineCSS
+
 log = logging.getLogger()
 
 SVG = "{http://www.w3.org/2000/svg}"
@@ -30,11 +32,9 @@ class Layer(object):
 
     def _set_display(self, visibility):
         elem = self.elem
-        style = elem.get('style') or ''
-        bits = [bit for bit in style.split(';')
-                if bit.strip() and not bit.strip().startswith('display:')]
-        bits.append('display:%s' % visibility)
-        elem.set('style', ';'.join(bits))
+        style = InlineCSS(elem.get('style'))
+        style['display'] = visibility
+        elem.set('style', style.serialize())
 
     def walk(self):
         """ Depth first traversal of self and sublayers.
