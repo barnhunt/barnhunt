@@ -2,6 +2,13 @@
 Changes
 *******
 
+Next Release
+============
+
+* Expand text in SVG file.
+* Add tests.
+* Major code refactor.
+
 Release 0.1a4 (2017-11-10)
 ==========================
 
