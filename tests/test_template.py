@@ -81,6 +81,13 @@ class TestTemplateExpander(object):
         else:
             pytest.fail("Rat numbers are always the same")
 
+    def test_escapage(self):
+        expand_elem = TemplateExpander()._expand_elem
+        elem = etree.Element('foo')
+        elem.text = '{{ "ab" | join("&") }}'
+        expand_elem(elem)
+        assert '>a&amp;b</' in etree.tostring(elem)
+
     def test_get_context(self, svg1):
         context = TemplateExpander()._get_context(svg1.leaf)
         assert context['layer'].id == 'sublayer'

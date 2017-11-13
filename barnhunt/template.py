@@ -64,7 +64,7 @@ class TemplateExpander(object):
         }
 
     def __init__(self, hash_seed=None):
-        env = jinja2.Environment(autoescape=True,
+        env = jinja2.Environment(autoescape=False,
                                  undefined=jinja2.DebugUndefined)
         env.globals.update(self.GLOBALS)
         self.env = env
