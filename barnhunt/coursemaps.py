@@ -23,16 +23,20 @@ INKSCAPE_LABEL = '{%(inkscape)s}label' % NSMAP
 LAYER_XP = '{%(svg)s}g[@{%(inkscape)s}groupmode="layer"]' % NSMAP
 
 
-def sublayers(elem):
-    return list(reversed(elem.findall('./' + LAYER_XP)))
-
-
 def walk_layers(elem):
-    nodes = sublayers(elem)
+    """ Iterate of all layers under elem.
+
+    The layers are returned depth-first order, however at each level the
+    layers are interated over in reverse order.  (In the SVG tree, layers
+    are listed from bottom to top in the stacking order.  We list them
+    from top to bottom.)
+
+    """
+    nodes = elem.findall('./' + LAYER_XP)
     while nodes:
-        elem = nodes.pop(0)
+        elem = nodes.pop()
         yield elem
-        nodes[:0] = sublayers(elem)
+        nodes.extend(elem.iterfind('./' + LAYER_XP))
 
 
 def is_layer(elem):

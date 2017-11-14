@@ -11,7 +11,6 @@ from barnhunt.coursemaps import (  # noqa: F401
     lineage,
     parent_layer,
     show_layer,
-    sublayers,
     walk_layers,
     CourseMaps,
     FilenameTemplateCompiler,
@@ -69,12 +68,6 @@ def test_lineage(coursemap1):
         coursemap1.t1master,
         coursemap1.root,
         ]
-
-
-def test_sublayers(coursemap1):
-    layers = sublayers(coursemap1.root)
-    ids = [layer.get('id') for layer in layers]
-    assert ids == ['t1novice', 't1master', 'ring', 'cruft']
 
 
 def test_walk_layers(coursemap1):
