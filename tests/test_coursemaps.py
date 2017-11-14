@@ -1,15 +1,8 @@
 from lxml import etree
 import pytest
 
-from barnhunt.coursemaps import (  # noqa: F401
-    is_course,
-    is_cruft,
-    is_layer,
-    is_overlay,
-    lineage,
-    parent_layer,
-    show_layer,
-    walk_layers,
+from barnhunt import coursemaps
+from barnhunt.coursemaps import (
     CourseMaps,
     FilenameTemplateCompiler,
     )
@@ -35,63 +28,17 @@ def get_by_id(tree, id):
     ('is_cruft', [
         'cruft',
         ]),
-    ('is_layer', [
-        't1novice',
-        't1master',
-        'overlays',
-        'blind1',
-        'build',
-        'ring',
-        'cruft',
-        ]),
     ('is_overlay', [
         'blind1',
         'build',
         ]),
     ])
 def test_predicate(predicate_name, coursemap1, expected_ids):
-    predicate = globals()[predicate_name]
+    predicate = getattr(coursemaps, predicate_name)
     tree = coursemap1.tree
     matches = set(elem for elem in tree.iter() if predicate(elem))
     expected = set(get_by_id(tree, id) for id in expected_ids)
     assert matches == expected
-
-
-def test_lineage(coursemap1):
-    assert list(lineage(coursemap1.overlays)) == [
-        coursemap1.overlays,
-        coursemap1.t1master,
-        coursemap1.root,
-        ]
-
-
-def test_walk_layers(coursemap1):
-    layers = list(walk_layers(coursemap1.root))
-    ids = [layer.get('id') for layer in layers]
-    assert ids == [
-        't1novice',
-        't1master', 'overlays', 'build', 'blind1',
-        'ring',
-        'cruft',
-        ]
-
-
-def test_parent_layer(coursemap1):
-    assert parent_layer(coursemap1.t1master) is None
-    assert parent_layer(coursemap1.overlays) is coursemap1.t1master
-    assert parent_layer(coursemap1.ring_leaf) is coursemap1.ring
-
-
-@pytest.mark.parametrize('style, expected', [
-    (None, None),
-    ('display: none ;', 'display:inline;'),
-    ('display: block;', 'display: block;'),
-    ])
-def test_show_layer(style, expected):
-    attrib = {'style': style} if style is not None else {}
-    elem = etree.Element('g', attrib=attrib)
-    assert show_layer(elem) is elem
-    assert elem.get('style') == expected
 
 
 def test_friendly():
@@ -128,6 +75,11 @@ class TestCourseMaps(object):
         assert list(coursemaps(tree)) == [
             ('The_Course', tree),
             ]
+
+    def test_layers_unhidden(self, coursemaps, coursemap1):
+        context, tree = next(coursemaps(coursemap1.tree))
+        ring = tree.find('.//*[@id="ring"]')
+        assert 'none' not in ring.get('style')
 
     def test_CourseMaps(self, coursemaps, coursemap1):
         maps = list(coursemaps.iter_maps(coursemap1.tree))

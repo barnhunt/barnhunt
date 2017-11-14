@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from barnhunt.css import InlineCSS
+from barnhunt.inkscape.css import InlineCSS
 
 
 class TestInlineCSS(object):

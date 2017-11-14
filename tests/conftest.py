@@ -39,6 +39,7 @@ COURSEMAP1 = b"""<?xml version="1.0" encoding="ascii" standalone="no"?>
      inkscape:label="Cruft">
   </g>
   <g id="ring"
+     style="display:none"
      inkscape:groupmode="layer"
      inkscape:label="Ring">
     <text>
