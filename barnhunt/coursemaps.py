@@ -41,10 +41,6 @@ def is_layer(elem):
     return elem.tag == SVG_G and elem.get(INKSCAPE_GROUPMODE) == 'layer'
 
 
-def is_root(elem):
-    return elem.getparent() is None
-
-
 def lineage(elem):
     while elem is not None:
         yield elem

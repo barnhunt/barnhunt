@@ -6,7 +6,6 @@ from barnhunt.coursemaps import (  # noqa: F401
     is_cruft,
     is_layer,
     is_overlay,
-    is_root,
     lineage,
     parent_layer,
     show_layer,
@@ -48,9 +47,6 @@ def get_by_id(tree, id):
     ('is_overlay', [
         'blind1',
         'build',
-        ]),
-    ('is_root', [
-        'root',
         ]),
     ])
 def test_predicate(predicate_name, coursemap1, expected_ids):
