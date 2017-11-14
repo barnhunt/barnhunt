@@ -5,6 +5,7 @@ from random import randint
 import click
 from lxml import etree
 
+from .coursemaps import CourseMaps
 from .rats import random_rats
 from .template import TemplateExpander
 from .inkscape import Inkscape
@@ -21,7 +22,7 @@ def main(verbose):
 
     """
     log_level = logging.WARNING
-    if verbose:
+    if verbose:                 # pragma: NO COVER
         log_level = logging.DEBUG if verbose > 1 else logging.INFO
     logging.basicConfig(
         level=log_level,
@@ -54,7 +55,11 @@ def pdfs(svgfile, output_directory, hash_seed, shell_mode_inkscape):
     tree = TemplateExpander(hash_seed=hash_seed).expand(tree)
 
     with Inkscape(shell_mode=shell_mode_inkscape) as inkscape:
-        inkscape.export_coursemaps(tree, output_directory)
+        coursemaps = CourseMaps()
+        for basename, tree in coursemaps(tree):
+            filename = os.path.join(output_directory, basename) + '.pdf'
+            log.info("writing %r", filename)
+            inkscape.export_pdf(tree, filename)
 
 
 @main.command('rats')
@@ -105,4 +110,4 @@ def coords(dimensions, number_of_rows):
 
 
 if __name__ == '__main__':
-    main()
+    main()                      # pragma: NO COVER

@@ -62,13 +62,6 @@ class TestShellModeInkscape(object):
         assert inkscape.child is None
 
 
-def test_friendly():
-    from barnhunt.inkscape import _friendly
-
-    assert _friendly('a b') == 'a_b'
-    assert _friendly('a/b') == 'a_b'
-
-
 class TestInkscape(object):
     @pytest.fixture
     def runner(self):
@@ -95,22 +88,11 @@ class TestInkscape(object):
         assert args[1] == '--export-pdf=%s' % output_path
         assert tmpdir.join('foo').isdir()
 
-    def test_export_coursemaps(self, inkscape, runner, tree, monkeypatch):
-        coursemaps = [((u'a b', u'c'), tree)]
-        monkeypatch.setattr('barnhunt.inkscape.CourseMaps',
-                            lambda tree: coursemaps)
-        inkscape.export_coursemaps(tree, 'out')
-        assert len(runner.commands) == 1
-        args = runner.commands[0]
-        assert args[1] == '--export-pdf=out/a_b/c.pdf'
-
     def test_contextmanager(self, inkscape, runner):
         with inkscape as rv:
             assert rv is inkscape
             assert not runner.closed
         assert runner.closed
-
-
 
 
 class DummyInkscapeRunner(object):

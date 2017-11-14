@@ -22,6 +22,48 @@ TEST_SVG = b"""<?xml version="1.0" encoding="ascii" standalone="no"?>
   <g id="layer2"
      inkscape:groupmode="layer"
      inkscape:label="Level 1, Second Layer">
+    <g id="sublayer2"
+       inkscape:groupmode="layer"
+       inkscape:label="Level 2, Second Layer">
+    </g>
+  </g>
+</svg>
+"""
+
+COURSEMAP1 = b"""<?xml version="1.0" encoding="ascii" standalone="no"?>
+<svg id="root"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+  <g id="cruft"
+     inkscape:groupmode="layer"
+     inkscape:label="Cruft">
+  </g>
+  <g id="ring"
+     inkscape:groupmode="layer"
+     inkscape:label="Ring">
+    <text>
+      <tspan id="ring_leaf">Ring</tspan>
+    </text>
+  </g>
+  <g id="t1master"
+     inkscape:groupmode="layer"
+     inkscape:label="T1 Master">
+    <g id="overlays"
+       inkscape:groupmode="layer"
+       inkscape:label="Overlays">
+      <g id="blind1"
+         inkscape:groupmode="layer"
+         inkscape:label="Blind 1">
+      </g>
+      <g id="build"
+         inkscape:groupmode="layer"
+         inkscape:label="Build Notes">
+      </g>
+    </g>
+  </g>
+  <g id="t1novice"
+     inkscape:groupmode="layer"
+     inkscape:label="T1 Novice">
   </g>
 </svg>
 """
@@ -45,3 +87,8 @@ class XML(object):
 @pytest.fixture
 def svg1():
     return XML(TEST_SVG)
+
+
+@pytest.fixture
+def coursemap1():
+    return XML(COURSEMAP1)

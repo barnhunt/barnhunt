@@ -2,14 +2,11 @@ from contextlib import contextmanager
 import locale
 import logging
 import os
-import re
 from subprocess import check_call, STDOUT
 from tempfile import NamedTemporaryFile, TemporaryFile
 
 import pexpect
 import shellescape
-
-from .coursemaps import CourseMaps
 
 log = logging.getLogger()
 
@@ -108,25 +105,8 @@ class Inkscape(object):
             svg.flush()
             self.run_inkscape([svg.name, '--export-pdf=%s' % filename])
 
-    def export_coursemaps(self, tree, output_directory='.'):
-        """Export coursemaps in drawing as PDFs.
-
-        """
-        for labels, tree in CourseMaps(tree):
-            path = [_friendly(label) for label in labels]
-            filename = os.path.join(output_directory, *path) + '.pdf'
-            log.info("writing %r", filename)
-            self.export_pdf(tree, filename)
-
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.run_inkscape.close()
-
-
-def _friendly(path_comp):
-    """ Replace shell-unfriendly characters with underscore.
-    """
-    return re.sub(r"[\000-\040/\\\177\s]", '_', path_comp,
-                  flags=re.UNICODE)
