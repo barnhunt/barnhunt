@@ -116,8 +116,12 @@ class CourseMaps(object):
 
     def iter_maps(self, tree):
         root = tree.getroot()
-        cruft = set(filter(self.is_cruft, walk_layers(root)))
-        courses = list(filter(self.is_course, walk_layers(root)))
+        layers = list(walk_layers(root))
+        assert set(layers) == set(root.iterfind('.//' + LAYER_XP)), (
+            "Walk_layers did not find all layer elements. "
+            "My understanding of the inkscape SVG format may be flawed.")
+        cruft = set(filter(self.is_cruft, layers))
+        courses = list(filter(self.is_course, layers))
 
         def _info(layer):
             return {
