@@ -1,13 +1,11 @@
-import copy
 from itertools import islice
 import logging
-import os
 import re
 
 import jinja2
-from lxml import etree
 
 from .css import InlineCSS
+from .inkscape import svg
 
 log = logging.getLogger()
 
@@ -113,9 +111,8 @@ class CourseMaps(object):
 
     def __call__(self, tree):
         for info, hidden_layers in self.iter_maps(tree):
-            is_hidden = hidden_layers.__contains__
             basename = self.basename_tmpl.render(info)
-            yield basename, adjust_layer_visibility(tree, is_hidden)
+            yield basename, svg.copy_etree(tree, omit_elements=hidden_layers)
 
     def iter_maps(self, tree):
         root = tree.getroot()
@@ -158,35 +155,6 @@ def show_layer(elem):
         style['display'] = 'inline'
         elem.set('style', style.serialize())
     return elem
-
-
-def adjust_layer_visibility(tree, is_hidden):
-    """Adjust visibility of Inkscape layers.
-
-    Returns a modified copy of the element tree given by ``tree``.
-    All layers for which ``is_hidden(layer)`` returns true are omitted
-    from the output tree.  All other layers have their ``style`` attribute
-    adjusted so that they are visible.
-
-    """
-
-    def adjust_layers(elem, **kwargs):
-        adjusted = etree.Element(elem.tag, attrib=elem.attrib, **kwargs)
-        adjusted.text = elem.text
-        adjusted.tail = elem.tail
-        for child in elem:
-            if not is_layer(child):
-                assert len(child.findall('.//' + LAYER_XP)) == 0
-                adjusted.append(copy.deepcopy(child))
-            elif not is_hidden(child):
-                adjusted.append(show_layer(adjust_layers(child)))
-        return adjusted
-
-    adjusted = copy.copy(tree)
-    root = tree.getroot()
-    assert adjusted.getroot() is root
-    adjusted._setroot(adjust_layers(root, nsmap=root.nsmap))
-    return adjusted
 
 
 def _friendly(path_comp):

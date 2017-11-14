@@ -2,7 +2,7 @@ import jinja2
 import logging
 
 from . import rats
-from .etree_util import clone_etree
+from .inkscape import svg
 
 log = logging.getLogger()
 
@@ -73,7 +73,7 @@ class TemplateExpander(object):
         self.hash_seed = hash_seed
 
     def expand(self, tree):
-        tree = clone_etree(tree, update_nsmap={'bh': BH_NS})
+        tree = svg.copy_etree(tree, update_nsmap={'bh': BH_NS})
         for elem in tree.iter(SVG + 'tspan'):
             self._expand_elem(elem)
         return tree

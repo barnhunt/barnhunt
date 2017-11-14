@@ -1,5 +1,5 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 import sys
 
 version = '0.1a5'
@@ -51,7 +51,7 @@ setup(name='barnhunt',
       # url='https://github.com/dairiki/barnhunt',
       license='BSD',
 
-      packages=['barnhunt'],
+      packages=find_packages(exclude=('tests', 'tests.*')),
       zip_safe=True,
 
       setup_requires=setup_requires,

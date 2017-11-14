@@ -2,7 +2,6 @@ from lxml import etree
 import pytest
 
 from barnhunt.coursemaps import (  # noqa: F401
-    adjust_layer_visibility,
     is_course,
     is_cruft,
     is_layer,
@@ -123,12 +122,12 @@ class TestCourseMaps(object):
             yield info, hidden_layers
         monkeypatch.setattr(coursemaps, 'iter_maps', _iter_maps)
 
-        def _adjust_layer_visiblity(tree_, is_hidden):
+        def _copy_etree(tree_, omit_elements):
             assert tree_ is tree
-            assert is_hidden == hidden_layers.__contains__
+            assert omit_elements == hidden_layers
             return tree_
-        monkeypatch.setattr('barnhunt.coursemaps.adjust_layer_visibility',
-                            _adjust_layer_visiblity)
+        monkeypatch.setattr('barnhunt.inkscape.svg.copy_etree',
+                            _copy_etree)
 
         assert list(coursemaps(tree)) == [
             ('The_Course', tree),
@@ -159,20 +158,6 @@ class TestCourseMaps(object):
                 set([coursemap1.cruft, coursemap1.t1novice, coursemap1.build])
                 ),
             ]
-
-
-def test_adjust_layer_visibility(coursemap1):
-    tree = coursemap1.tree
-
-    def is_hidden(elem):
-        return elem in set([coursemap1.cruft, coursemap1.t1master])
-    clone = adjust_layer_visibility(tree, is_hidden)
-    assert set(elem.get('id') for elem in clone.xpath('//*[@id]')) == set([
-        'root',
-        'ring',
-        'ring_leaf',
-        't1novice',
-        ])
 
 
 def test_FilenameTemplateCompiler():

@@ -1,3 +1,5 @@
+# FIXME: Move this module into .inkscape.runner
+
 from contextlib import contextmanager
 import locale
 import logging
