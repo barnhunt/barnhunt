@@ -11,24 +11,6 @@ INKSCAPE = "{http://www.inkscape.org/namespaces/inkscape}"
 BH = "{http://www.dairiki.org/schema/barnhunt}"
 
 
-def test_is_layer(svg1):
-    from barnhunt.template import _is_layer
-
-    assert not _is_layer(svg1.root)
-    assert not _is_layer(svg1.leaf)
-    assert _is_layer(svg1.layer)
-    assert _is_layer(svg1.sublayer)
-
-
-def test_find_containing_layer(svg1):
-    from barnhunt.template import _find_containing_layer
-
-    assert _find_containing_layer(svg1.root) is None
-    assert _find_containing_layer(svg1.layer) is None
-    assert _find_containing_layer(svg1.sublayer) is svg1.layer
-    assert _find_containing_layer(svg1.leaf) is svg1.sublayer
-
-
 class TestLayer(object):
     def test_id(self, svg1):
         assert Layer(svg1.layer).id == 'layer'

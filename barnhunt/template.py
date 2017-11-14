@@ -6,31 +6,13 @@ from .inkscape import svg
 
 log = logging.getLogger()
 
-# FIXME: abstract
-SVG = "{http://www.w3.org/2000/svg}"
-INKSCAPE = "{http://www.inkscape.org/namespaces/inkscape}"
 BH_NS = "http://www.dairiki.org/schema/barnhunt"
 BH = "{%s}" % BH_NS
 
 
-def _is_layer(elem):
-    return (
-        elem.tag == SVG + 'g'
-        and elem.get(INKSCAPE + 'groupmode') == 'layer')
-
-
-def _find_containing_layer(elem):
-    ancestor = elem.getparent()
-    while ancestor is not None:
-        if _is_layer(ancestor):
-            return ancestor
-        ancestor = ancestor.getparent()
-    return None
-
-
 class Layer(object):
     def __init__(self, elem, hash_seed=None):
-        assert _is_layer(elem)
+        assert svg.is_layer(elem)
         self._elem = elem
         self._hash_seed = hash_seed
 
@@ -40,11 +22,11 @@ class Layer(object):
 
     @property
     def label(self):
-        return self._elem.get(INKSCAPE + 'label')
+        return svg.layer_label(self._elem)
 
     @property
     def parent(self):
-        parent_elem = _find_containing_layer(self._elem)
+        parent_elem = svg.parent_layer(self._elem)
         if parent_elem is None:
             return None
         return self.__class__(parent_elem, self._hash_seed)
@@ -74,7 +56,7 @@ class TemplateExpander(object):
 
     def expand(self, tree):
         tree = svg.copy_etree(tree, update_nsmap={'bh': BH_NS})
-        for elem in tree.iter(SVG + 'tspan'):
+        for elem in tree.iter(svg.SVG_TSPAN_TAG):
             self._expand_elem(elem)
         return tree
 
@@ -90,7 +72,7 @@ class TemplateExpander(object):
             elem.text = tmpl.render(self._get_context(elem))
 
     def _get_context(self, elem):
-        layer = _find_containing_layer(elem)
+        layer = svg.parent_layer(elem)
         if layer is not None:
             layer = Layer(layer, self.hash_seed)
         return {
