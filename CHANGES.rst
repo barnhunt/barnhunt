@@ -2,8 +2,8 @@
 Changes
 *******
 
-Next Release
-============
+Release 0.1a5 (2017-11-13)
+==========================
 
 * Expand text in SVG file.
 * Add tests.
