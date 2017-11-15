@@ -1,8 +1,28 @@
+import os
 import re
 
 from click.testing import CliRunner
+import pytest
 
 from barnhunt import main
+
+
+@pytest.mark.parametrize('processes', [None, '1'])
+def test_pdfs(tmpdir, processes):
+    here = os.path.dirname(__file__)
+    drawing_svg = os.path.join(here, 'drawing.svg')
+    cmd = ['pdfs', '-o', str(tmpdir), drawing_svg]
+    if processes is not None:
+        cmd[1:1] = ['-p', processes]
+    runner = CliRunner()
+    result = runner.invoke(main, cmd)
+    assert result.exit_code == 0
+    outputs = set(f.relto(tmpdir) for f in tmpdir.visit())
+    assert outputs == {
+        'Novice_1.pdf',
+        'Master_1',
+        'Master_1/Blind_1.pdf',
+        }
 
 
 def test_rats():
