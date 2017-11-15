@@ -3,14 +3,16 @@
 """
 from collections import MutableMapping
 import logging
-from webencodings import ascii_lower
 
+from six import python_2_unicode_compatible
 from tinycss2 import (
     ast,
     parse_component_value_list,
     parse_declaration_list,
     serialize,
     )
+from webencodings import ascii_lower
+
 
 log = logging.getLogger()
 
@@ -35,6 +37,7 @@ def _parse_inline_css(input):
     return parsed
 
 
+@python_2_unicode_compatible
 class InlineCSS(MutableMapping):
     def __init__(self, input=None):
         self._parsed = _parse_inline_css(input) if input else []

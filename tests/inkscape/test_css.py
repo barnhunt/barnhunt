@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 import logging
 
 import pytest
+import six
 
 from barnhunt.inkscape.css import InlineCSS
 
@@ -58,3 +60,9 @@ class TestInlineCSS(object):
         assert len(warnings) == 1
         assert '@ rules' in warnings[0].getMessage()
         assert css.serialize() == style
+
+    def test_str(self):
+        css = InlineCSS(u'x: fü')
+        assert six.text_type(css) == u'x: fü;'
+        if six.PY2:
+            assert str(css) == u'x: fü;'.encode('utf8')
