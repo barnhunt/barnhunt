@@ -1,14 +1,19 @@
 import os
+from pkg_resources import require
 from setuptools import setup, find_packages
 import sys
 
 version = '0.1a5'
+
+# Environment markers aren't sufficiently support with earlier setuptools
+require('setuptools >= 20.8.1')
 
 here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
 install_requires = [
+    'chainmap ; python_version<"3.3"',
     'click',
     'jinja2',
     'lxml',
@@ -24,7 +29,8 @@ tests_require = [
     'pytest-catchlog',
     ]
 
-setup_requires = []
+setup_requires = [
+    ]
 
 needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
 if needs_pytest:

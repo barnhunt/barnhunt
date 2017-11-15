@@ -1,13 +1,16 @@
 import logging
 import os
 from random import randint
+try:
+    from collections import ChainMap
+except ImportError:
+    from chainmap import ChainMap
 
 import click
 from lxml import etree
 
-from .coursemaps import CourseMaps
-from .rats import random_rats
-from .template import TemplateExpander
+from .coursemaps import CourseMaps, render_templates
+from .templating import FileAdapter, render_template
 from .inkscape import Inkscape
 
 log = logging.getLogger('')
@@ -33,30 +36,32 @@ def main(verbose):
 @click.argument('svgfile', type=click.File('r'))
 @click.option('-o', '--output-directory', type=click.Path(file_okay=False))
 @click.option(
-    '--hash-seed', type=int,
-    help="Seed used for hashing SVG layer ids in order to seed "
-    "the RNG used to generate the random rat counts.  If not set, "
-    "a seed will be computed from the input file name.")
-@click.option(
     '--shell-mode-inkscape/--no-shell-mode-inkscape', default=True,
     help="Run inkscape in shell-mode for efficiency.  Default is true.")
-def pdfs(svgfile, output_directory, hash_seed, shell_mode_inkscape):
+def pdfs(svgfile, output_directory, shell_mode_inkscape):
     """ Export PDFs from inkscape SVG coursemaps.
 
     """
-    if hash_seed is None:
-        if svgfile.name:
-            hash_seed = hash(os.path.realpath(svgfile.name))
-    log.debug("hash_seed = %r", hash_seed)
+    # FIXME: make configurable
+    basename_tmpl = (
+        '{{ course.label|safepath }}'
+        '{% if overlay %}/{{ overlay.label|safepath }}{% endif %}'
+        )
 
     tree = etree.parse(svgfile)
 
     # Expand jinja templates in text within SVG file
-    tree = TemplateExpander(hash_seed=hash_seed).expand(tree)
+    template_vars = {
+        'random_seed': 0,       # FIXME: support this and add command-line arg
+        'svgfile': FileAdapter(svgfile),
+        }
+    render_templates(tree, template_vars)
 
     with Inkscape(shell_mode=shell_mode_inkscape) as inkscape:
         coursemaps = CourseMaps()
-        for basename, tree in coursemaps(tree):
+        for context, tree in coursemaps(tree):
+            basename = render_template(basename_tmpl,
+                                       ChainMap(context, template_vars))
             filename = os.path.join(output_directory, basename) + '.pdf'
             log.info("writing %r", filename)
             inkscape.export_pdf(tree, filename)
@@ -75,7 +80,7 @@ def rats_(number_of_rows):
     Prints rows of five random numbers in the range [1, 5].
     """
     for row in range(number_of_rows):
-        print(" ".join(map(str, random_rats())))
+        print("%d %d %d %d %d" % tuple(randint(1, 5) for n in range(5)))
 
 
 @main.command()

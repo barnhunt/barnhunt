@@ -1,11 +1,16 @@
+from io import BytesIO
+
 from lxml import etree
 import pytest
 
 from barnhunt import coursemaps
 from barnhunt.coursemaps import (
+    render_templates,
+    _get_local_context,
     CourseMaps,
-    FilenameTemplateCompiler,
     )
+from barnhunt.inkscape import svg
+from barnhunt.templating import LayerAdapter
 
 
 def get_by_id(tree, id):
@@ -18,6 +23,36 @@ def get_by_id(tree, id):
     if root.get('id') == id:
         return root
     return root.find('.//*[@id="%s"]' % id)
+
+
+def test_render_templates():
+    xml = '<tspan xmlns="%(svg)s">{{ somevar }}</tspan>' % svg.NSMAP
+    tree = etree.parse(BytesIO(xml.encode('utf-8')))
+    result = render_templates(tree, {'somevar': 'foo'})
+    assert result.getroot().text == 'foo'
+    assert tree.getroot().text == '{{ somevar }}'
+
+
+def test_render_templates_failure(caplog):
+    xml = '<tspan xmlns="%(svg)s">{{ foo() }}</tspan>' % svg.NSMAP
+    tree = etree.parse(BytesIO(xml.encode('utf-8')))
+    result = render_templates(tree, {})
+    assert result.getroot().text == '{{ foo() }}'
+    assert "'foo' is undefined" in caplog.text
+
+
+def test_get_local_context():
+    xml = '''<g xmlns="%(svg)s"
+                xmlns:inkscape="%(inkscape)s"
+                inkscape:groupmode="layer"
+                inkscape:label="The Layer">
+               <tspan>{{ layer.label }}</tspan>
+             </g>''' % svg.NSMAP
+    tree = etree.parse(BytesIO(xml.encode('utf-8')))
+    tspan = tree.getroot()[0]
+    context = _get_local_context(tspan, dict(foo='bar'))
+    assert context['foo'] == 'bar'
+    assert context['layer'].label == 'The Layer'
 
 
 @pytest.mark.parametrize('predicate_name, expected_ids', [
@@ -41,13 +76,6 @@ def test_predicate(predicate_name, coursemap1, expected_ids):
     assert matches == expected
 
 
-def test_friendly():
-    from barnhunt.coursemaps import _friendly
-
-    assert _friendly('a b') == 'a_b'
-    assert _friendly('a/b') == 'a_b'
-
-
 class TestCourseMaps(object):
     @pytest.fixture
     def coursemaps(self):
@@ -55,14 +83,14 @@ class TestCourseMaps(object):
 
     def test_call(self, coursemaps, coursemap1, monkeypatch):
         tree = coursemap1.tree
-        info = {
-            'course': {'label': 'The Course'},
+        context = {
+            'course': LayerAdapter(coursemap1.t1novice),
             'overlay': None,
             }
         hidden_layers = set()
 
         def _iter_maps(tree_):
-            yield info, hidden_layers
+            yield context, hidden_layers
         monkeypatch.setattr(coursemaps, 'iter_maps', _iter_maps)
 
         def _copy_etree(tree_, omit_elements):
@@ -73,7 +101,7 @@ class TestCourseMaps(object):
                             _copy_etree)
 
         assert list(coursemaps(tree)) == [
-            ('The_Course', tree),
+            (context, tree),
             ]
 
     def test_layers_unhidden(self, coursemaps, coursemap1):
@@ -81,33 +109,28 @@ class TestCourseMaps(object):
         ring = tree.find('.//*[@id="ring"]')
         assert 'none' not in ring.get('style')
 
-    def test_CourseMaps(self, coursemaps, coursemap1):
+    def test_iter_maps(self, coursemaps, coursemap1):
         maps = list(coursemaps.iter_maps(coursemap1.tree))
         assert maps == [
             (
                 {
-                    'course': {'id': 't1novice', 'label': 'T1 Novice'},
+                    'course': LayerAdapter(coursemap1.t1novice),
                     'overlay': None,
                     },
                 set([coursemap1.cruft, coursemap1.t1master])
                 ),
             (
                 {
-                    'course': {'id': 't1master', 'label': 'T1 Master'},
-                    'overlay': {'id': 'build', 'label': 'Build Notes'},
+                    'course': LayerAdapter(coursemap1.t1master),
+                    'overlay': LayerAdapter(coursemap1.build),
                     },
                 set([coursemap1.cruft, coursemap1.t1novice, coursemap1.blind1])
                 ),
             (
                 {
-                    'course': {'id': 't1master', 'label': 'T1 Master'},
-                    'overlay': {'id': 'blind1', 'label': 'Blind 1'},
+                    'course': LayerAdapter(coursemap1.t1master),
+                    'overlay': LayerAdapter(coursemap1.blind1),
                     },
                 set([coursemap1.cruft, coursemap1.t1novice, coursemap1.build])
                 ),
             ]
-
-
-def test_FilenameTemplateCompiler():
-    compile = FilenameTemplateCompiler().compile
-    assert compile('{{ foo|friendly }}').render(foo='x y') == 'x_y'

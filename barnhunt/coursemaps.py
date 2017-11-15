@@ -4,8 +4,30 @@ import re
 import jinja2
 
 from .inkscape import svg
+from .templating import LayerAdapter, is_string_literal, render_template
 
 log = logging.getLogger()
+
+
+def render_templates(tree, context):
+    tree = svg.copy_etree(tree)
+    for elem in tree.iter(svg.SVG_TSPAN_TAG):
+        if elem.text and not is_string_literal(elem.text):
+            local_context = _get_local_context(elem, context)
+            try:
+                elem.text = render_template(elem.text, local_context)
+            except jinja2.TemplateError as ex:
+                log.error("Error expanding template in SVG file: %s" % ex)
+    return tree
+
+
+def _get_local_context(elem, parent_context):
+    context = parent_context.copy()
+    layer = svg.parent_layer(elem)
+    if layer is not None:
+        layer = LayerAdapter(layer)
+    context['layer'] = layer
+    return context
 
 
 # Regexp which matches the labels of the top-level "Course" layers
@@ -48,19 +70,14 @@ class CourseMaps(object):
     is_cruft = staticmethod(is_cruft)
     is_overlay = staticmethod(is_overlay)
 
-    def __init__(self):
-        self.basename_tmpl = _compile_template(
-            '{{ course.label|friendly }}'
-            '{% if overlay %}/{{ overlay.label|friendly }}{% endif %}'
-            )
-
     def __call__(self, tree):
-        for info, hidden_layers in self.iter_maps(tree):
-            basename = self.basename_tmpl.render(info)
+        for context, hidden_layers in self.iter_maps(tree):
+            # Copy tree, omitting hidden layers
             pruned = svg.copy_etree(tree, omit_elements=hidden_layers)
+            # Ensure all remaining layers are marked for display
             for layer in svg.walk_layers(pruned.getroot()):
                 svg.ensure_visible(layer)
-            yield basename, pruned
+            yield context, pruned
 
     def iter_maps(self, tree):
         root = tree.getroot()
@@ -71,55 +88,24 @@ class CourseMaps(object):
         cruft = set(filter(self.is_cruft, layers))
         courses = list(filter(self.is_course, layers))
 
-        def _info(layer):
-            return {
-                'label': svg.layer_label(layer),
-                'id': layer.get('id'),
-                }
-
         for course in courses:
             other_courses = set(courses).difference([course])
             overlays = list(filter(self.is_overlay, svg.walk_layers(course)))
             if overlays:
                 for overlay in overlays:
                     other_overlays = set(overlays).difference([overlay])
-                    info = {
-                        'course': _info(course),
-                        'overlay': _info(overlay),
+                    context = {
+                        'course': LayerAdapter(course),
+                        'overlay': LayerAdapter(overlay),
                         }
                     hidden = cruft | other_courses | other_overlays
                     assert hidden.isdisjoint(svg.lineage(overlay))
-                    yield info, hidden
+                    yield context, hidden
             else:
-                info = {
-                    'course': _info(course),
+                context = {
+                    'course': LayerAdapter(course),
                     'overlay': None,
                     }
                 hidden = cruft | other_courses
                 assert hidden.isdisjoint(svg.lineage(course))
-                yield info, hidden
-
-
-def _friendly(path_comp):
-    """ Replace shell-unfriendly characters with underscore.
-    """
-    return re.sub(r"[\000-\040/\\\177\s]", '_', path_comp,
-                  flags=re.UNICODE)
-
-
-class FilenameTemplateCompiler(object):
-    FILTERS = {
-        'friendly': _friendly,
-        }
-
-    def __init__(self):
-        env = jinja2.Environment(autoescape=False,
-                                 undefined=jinja2.StrictUndefined)
-        env.filters.update(self.FILTERS)
-        self.env = env
-
-    def compile(self, tmpl_string):
-        return self.env.from_string(tmpl_string)
-
-
-_compile_template = FilenameTemplateCompiler().compile
+                yield context, hidden
