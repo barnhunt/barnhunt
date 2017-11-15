@@ -2,8 +2,8 @@
 Changes
 *******
 
-Next Release
-============
+Release 0.1a6 (2017-11-15)
+==========================
 
 * Templating: ``LabelAdapter`` now stringifies to the layer label, and
   ``FileAdapter`` now stringifies to the file name.
