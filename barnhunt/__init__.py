@@ -11,7 +11,7 @@ from lxml import etree
 
 from .coursemaps import CourseMaps, render_templates
 from .templating import FileAdapter, render_template
-from .inkscape import Inkscape
+from .inkscape.runner import Inkscape
 
 log = logging.getLogger('')
 

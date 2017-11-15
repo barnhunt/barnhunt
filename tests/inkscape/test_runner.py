@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from barnhunt.inkscape import (
+from barnhunt.inkscape.runner import (
     Inkscape,
     RunInkscape,
     ShellModeInkscape,
