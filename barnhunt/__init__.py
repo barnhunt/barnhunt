@@ -1,15 +1,14 @@
+import itertools
 import logging
 import os
 from random import randint
-try:
-    from collections import ChainMap
-except ImportError:
-    from chainmap import ChainMap
 
 import click
 from lxml import etree
 
+from .compat import ChainMap
 from .coursemaps import CourseMaps, render_templates
+from .parallel import ParallelUnorderedStarmap
 from .templating import FileAdapter, render_template
 from .inkscape.runner import Inkscape
 
@@ -29,16 +28,17 @@ def main(verbose):
         log_level = logging.DEBUG if verbose > 1 else logging.INFO
     logging.basicConfig(
         level=log_level,
-        format="(%(levelname)1.1s) %(message)s")
+        format="(%(levelname)1.1s) [%(threadName)s] %(message)s")
 
 
 @main.command()
 @click.argument('svgfile', type=click.File('r'))
 @click.option('-o', '--output-directory', type=click.Path(file_okay=False))
+@click.option('--processes', '-p', type=POSITIVE_INT, default=None)
 @click.option(
     '--shell-mode-inkscape/--no-shell-mode-inkscape', default=True,
     help="Run inkscape in shell-mode for efficiency.  Default is true.")
-def pdfs(svgfile, output_directory, shell_mode_inkscape):
+def pdfs(svgfile, output_directory, shell_mode_inkscape, processes=None):
     """ Export PDFs from inkscape SVG coursemaps.
 
     """
@@ -57,14 +57,24 @@ def pdfs(svgfile, output_directory, shell_mode_inkscape):
         }
     render_templates(tree, template_vars)
 
-    with Inkscape(shell_mode=shell_mode_inkscape) as inkscape:
-        coursemaps = CourseMaps()
-        for context, tree in coursemaps(tree):
-            basename = render_template(basename_tmpl,
-                                       ChainMap(context, template_vars))
-            filename = os.path.join(output_directory, basename) + '.pdf'
-            log.info("writing %r", filename)
-            inkscape.export_pdf(tree, filename)
+    def pdf_filename(context):
+        basename = render_template(basename_tmpl,
+                                   ChainMap(context, template_vars))
+        return os.path.join(output_directory, basename) + '.pdf'
+
+    inkscape = Inkscape(shell_mode=shell_mode_inkscape)
+
+    coursemaps = CourseMaps()
+    pdfs = ((tree_, pdf_filename(context))
+            for context, tree_ in coursemaps(tree))
+
+    if processes == 1:
+        starmap = itertools.starmap
+    else:
+        starmap = ParallelUnorderedStarmap(processes)
+
+    for fn in starmap(inkscape.export_pdf, pdfs):
+        log.info("Wrote %r" % fn)
 
 
 @main.command('rats')
