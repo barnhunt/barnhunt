@@ -2,6 +2,7 @@ import os
 import re
 
 from click.testing import CliRunner
+from PyPDF2 import PdfFileReader
 import pytest
 
 from barnhunt import main
@@ -23,6 +24,10 @@ def test_pdfs(tmpdir, processes):
         'Master_1',
         'Master_1/Blind_1.pdf',
         }
+
+    # Check that template was expanded
+    pdf = PdfFileReader(open(str(tmpdir.join('Novice_1.pdf')), 'rb'))
+    assert 'Novice 1' in pdf.pages[0].extractText()
 
 
 def test_rats():

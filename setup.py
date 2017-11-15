@@ -27,6 +27,7 @@ install_requires = [
 tests_require = [
     'pytest',
     'pytest-catchlog',
+    'PyPDF2',
     ]
 
 setup_requires = [

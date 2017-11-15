@@ -55,7 +55,7 @@ def pdfs(svgfile, output_directory, shell_mode_inkscape, processes=None):
         'random_seed': 0,       # FIXME: support this and add command-line arg
         'svgfile': FileAdapter(svgfile),
         }
-    render_templates(tree, template_vars)
+    tree = render_templates(tree, template_vars)
 
     def pdf_filename(context):
         basename = render_template(basename_tmpl,

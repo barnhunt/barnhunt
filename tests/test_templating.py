@@ -61,6 +61,9 @@ class TestLayerAdapter(object):
     def test_repr(self, sublayer):
         assert repr(sublayer) == '<LayerAdapter id=sublevel>'
 
+    def test_str(self, sublayer):
+        assert str(sublayer) == 'Sublayer'
+
 
 @pytest.mark.parametrize("s, h", [
     # FIXME: fragile
@@ -93,6 +96,9 @@ class TestFileAdapter(object):
 
     def test_repr(self, srcfile):
         assert repr(srcfile) == '<FileAdapter %r>' % __file__
+
+    def test_str(self, srcfile):
+        assert str(srcfile) == __file__
 
 
 class Test_random_rats(object):

@@ -5,11 +5,14 @@ import os
 import random
 import re
 
+from six import python_2_unicode_compatible
+
 from .inkscape import svg
 
 log = logging.getLogger()
 
 
+@python_2_unicode_compatible
 class LayerAdapter(object):
     """Adapt an Inkscape SVG layer element for ease of use in templates
     """
@@ -45,6 +48,9 @@ class LayerAdapter(object):
     def __repr__(self):
         return "<%s id=%s>" % (self.__class__.__name__, self.id)
 
+    def __str__(self):
+        return self.label
+
 
 def _hash_string(s):
     """A deterministic string hashing function.
@@ -55,6 +61,7 @@ def _hash_string(s):
     return hash(int(hashlib.sha1(bytes_).hexdigest(), 16))
 
 
+@python_2_unicode_compatible
 class FileAdapter(object):
     """Adapt a file object for ease of use in templates
     """
@@ -80,6 +87,9 @@ class FileAdapter(object):
 
     def __repr__(self):
         return "<%s %r>" % (self.__class__.__name__, self.name)
+
+    def __str__(self):
+        return self.name
 
 
 global_rng = random.Random()

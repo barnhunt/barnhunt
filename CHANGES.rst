@@ -2,6 +2,14 @@
 Changes
 *******
 
+Next Release
+============
+
+* Templating: ``LabelAdapter`` now stringifies to the layer label, and
+  ``FileAdapter`` now stringifies to the file name.
+* More refactoring, more tests
+* Run several inkscapes in parallel.  This results in a major speedup.
+
 Release 0.1a5 (2017-11-13)
 ==========================
 
