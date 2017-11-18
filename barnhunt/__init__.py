@@ -1,10 +1,11 @@
 import itertools
 import logging
 import os
-from random import randint
+import random
 
 import click
 from lxml import etree
+from six.moves import range as xrange
 
 from .compat import ChainMap
 from .coursemaps import CourseMaps, render_templates
@@ -90,14 +91,23 @@ def rats_(number_of_rows):
     Prints rows of five random numbers in the range [1, 5].
     """
     for row in range(number_of_rows):
-        print("%d %d %d %d %d" % tuple(randint(1, 5) for n in range(5)))
+        rats = tuple(random.randint(1, 5) for n in range(5))
+        print("%d %d %d %d %d" % rats)
 
 
 @main.command()
 @click.option(
     '-n', '--number-of-rows', type=POSITIVE_INT,
     metavar="<n>",
-    help="Number of coordinates to generate.  (Default: 10).",
+    help="Number of coordinates to generate.  (Default: 50).",
+    default=50
+    )
+@click.option(
+    '-g', '--group-size', type=POSITIVE_INT,
+    metavar="<n>",
+    help="Group output in chunks of this size. "
+    "Blank lines will be printed between groups. "
+    "(Default: 10).",
     default=10
     )
 @click.argument(
@@ -106,11 +116,11 @@ def rats_(number_of_rows):
     envvar="BARNHUNT_DIMENSIONS",
     default=(25, 30)
     )
-def coords(dimensions, number_of_rows):
+def coords(dimensions, number_of_rows, group_size):
     """Generate random coordinates.
 
     Generates random coordinates.  The coordinates will range between (0, 0)
-    and the (<x-max>, <y-max>).
+    and the (<x-max>, <y-max>).  Duplicates will be eliminated.
 
     The course dimensions may also be specified via
     BARNHUNT_DIMENSIONS environment variable.  E.g.
@@ -120,9 +130,18 @@ def coords(dimensions, number_of_rows):
     """
     x_max, y_max = dimensions
 
-    for _ in range(number_of_rows):
-        print("%3d,%3d" % (randint(0, x_max), randint(0, y_max)))
+    dim_x = dimensions[0] + 1
+    dim_y = dimensions[1] + 1
+    n_pts = dim_x * dim_y
 
+    def coord(pt):
+        y, x = divmod(pt, dim_x)
+        return x, y
 
-if __name__ == '__main__':
-    main()                      # pragma: NO COVER
+    number_of_rows = min(number_of_rows, n_pts)
+    pts = random.sample(xrange(n_pts), number_of_rows)
+
+    for n, (x, y) in enumerate(map(coord, pts)):
+        if n and n % group_size == 0:
+            print
+        print("%3d,%3d" % (x, y))

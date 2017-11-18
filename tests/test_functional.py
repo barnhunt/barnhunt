@@ -44,8 +44,9 @@ def test_coords():
     result = runner.invoke(main, ['coords'])
     assert result.exit_code == 0
     lines = result.output.rstrip().split('\n')
-    pairs = [list(map(int, line.split(','))) for line in lines]
-    assert len(pairs) == 10
+    pairs = [list(map(int, line.split(',')))
+             for line in lines if line]
+    assert len(pairs) == 50
     for x, y in pairs:
         assert 0 <= x <= 25
         assert 0 <= y <= 30

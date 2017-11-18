@@ -2,6 +2,13 @@
 Changes
 *******
 
+Next Release
+============
+
+* Change ``barnhunt coords`` so that it omits duplicate coordinates in its output.
+  Also inrease the default for ``--number-of-rows`` to 50 and
+  add the ``--group-size`` paramter to separate output into groups.
+
 Release 0.1a6 (2017-11-15)
 ==========================
 
