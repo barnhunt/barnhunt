@@ -8,6 +8,9 @@ Next Release
 * Ignore *ring* layers when identifying *course* layers.  (Now a layer
   labelled “C8 Ring” will not be treated as a course layer.)
 
+* ``pdfs``: default ``--output-directory`` to ``.`` (avoiding exception when no
+  explicit output directory is specified.)
+
 Release 0.1a7 (2017-11-18)
 ==========================
 

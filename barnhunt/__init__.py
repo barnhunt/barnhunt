@@ -34,7 +34,8 @@ def main(verbose):
 
 @main.command()
 @click.argument('svgfile', type=click.File('r'))
-@click.option('-o', '--output-directory', type=click.Path(file_okay=False))
+@click.option('-o', '--output-directory', type=click.Path(file_okay=False),
+              default='.')
 @click.option('--processes', '-p', type=POSITIVE_INT, default=None)
 @click.option(
     '--shell-mode-inkscape/--no-shell-mode-inkscape', default=True,
