@@ -25,8 +25,7 @@ install_requires = [
     ]
 
 tests_require = [
-    'pytest',
-    'pytest-catchlog',
+    'pytest >= 3.3',            # > 3.3 for integrated pytest-catchlog support
     'PyPDF2',
     ]
 
