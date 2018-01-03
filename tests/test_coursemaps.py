@@ -56,6 +56,9 @@ def test_get_local_context():
 
 
 @pytest.mark.parametrize('predicate_name, expected_ids', [
+    ('is_ring', [
+        'ring',
+        ]),
     ('is_course', [
         't1novice',
         't1master',
