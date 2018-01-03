@@ -2,8 +2,8 @@
 Changes
 *******
 
-Next Release
-============
+Release 0.1a9 (2017-01-03)
+==========================
 
 * When exporting PDFs, run ``inkscape`` with ``--export-area-page``.
 
