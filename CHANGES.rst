@@ -2,6 +2,16 @@
 Changes
 *******
 
+Next Release
+============
+
+Packaging
+---------
+
+* Fix MANIFEST.in. Tests were not being included in sdist.
+
+* Add ``url`` to package metadata.
+
 Release 0.1a8 (2018-01-03)
 ==========================
 

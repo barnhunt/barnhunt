@@ -55,7 +55,7 @@ setup(name='barnhunt',
       keywords='barn hunt inkscape course maps',
       author='Jeff Dairiki',
       author_email='dairiki@dairiki.org',
-      # url='https://github.com/dairiki/barnhunt',
+      url='https://gitlab.com/dairiki/barnhunt',
       license='BSD',
 
       packages=find_packages(exclude=('tests', 'tests.*')),
