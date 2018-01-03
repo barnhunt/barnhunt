@@ -2,8 +2,8 @@
 Changes
 *******
 
-Next Release
-============
+Release 0.1a8 (2018-01-03)
+==========================
 
 * Ignore *ring* layers when identifying *course* layers.  (Now a layer
   labelled “C8 Ring” will not be treated as a course layer.)
