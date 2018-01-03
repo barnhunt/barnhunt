@@ -30,6 +30,19 @@ def _get_local_context(elem, parent_context):
     return context
 
 
+# Regexp which matches the label of the top-level "Ring" layer
+# This layer is always displayed.
+RING_re = re.compile(r'\bring\b', re.I)
+
+
+def is_ring(layer):
+    if not svg.is_layer(layer):
+        return False
+    parent = svg.parent_layer(layer)
+    label = svg.layer_label(layer)
+    return (parent is None and RING_re.search(label))
+
+
 # Regexp which matches the labels of the top-level "Course" layers
 # This layer are displayed, one per coursemap.
 COURSE_re = re.compile(
@@ -41,12 +54,8 @@ def is_course(layer):
     if not svg.is_layer(layer):
         return False
     parent = svg.parent_layer(layer)
-    return parent is None and COURSE_re.search(svg.layer_label(layer))
-
-
-# Regexp which matches the label of the top-level "Ring" layer
-# This layer is always displayed.
-RING_re = re.compile(r'\bring\b', re.I)
+    label = svg.layer_label(layer)
+    return parent is None and COURSE_re.search(label) and not is_ring(layer)
 
 
 def is_cruft(layer):
