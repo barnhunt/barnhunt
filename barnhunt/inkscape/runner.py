@@ -132,7 +132,9 @@ class Inkscape(object):
         with NamedTemporaryFile(suffix='.svg') as svg:
             tree.write(svg, xml_declaration=True)
             svg.flush()
-            self.run_inkscape([svg.name, '--export-pdf=%s' % filename])
+            self.run_inkscape([svg.name,
+                               '--export-area-page',
+                               '--export-pdf=%s' % filename])
         return filename
 
     def close(self):

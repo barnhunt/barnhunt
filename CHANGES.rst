@@ -5,6 +5,8 @@ Changes
 Next Release
 ============
 
+* When exporting PDFs, run ``inkscape`` with ``--export-area-page``.
+
 Packaging
 ---------
 
