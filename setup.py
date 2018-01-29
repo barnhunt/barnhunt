@@ -13,6 +13,7 @@ README = open(os.path.join(here, 'README.rst')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
 install_requires = [
+    'aenum ; python_version<"3.6"',
     'chainmap ; python_version<"3.3"',
     'click',
     'jinja2',

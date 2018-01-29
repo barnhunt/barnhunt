@@ -8,8 +8,33 @@ import re
 from six import python_2_unicode_compatible
 
 from .inkscape import svg
+from .compat import enum
 
 log = logging.getLogger()
+
+
+class LayerFlags(enum.Flag):
+    HIDDEN = enum.auto()
+    OVERLAY = enum.auto()
+
+    @property
+    def flag_char(self):
+        return self.name[0].lower()
+
+    def __str__(self):
+        return ''.join(
+            flag.flag_char for flag in self.__class__ if self & flag)
+
+    def parse(self, s):
+        value = self.__class__(0)
+        lookup = dict((flag.flag_char, flag) for flag in self.__class__)
+        for c in set(s):
+            flag = lookup.get(c)
+            if flag is not None:
+                value |= flag
+            else:
+                log.warning("unknown character '%s' in flags %r", c, s)
+        return value
 
 
 @python_2_unicode_compatible
@@ -18,15 +43,24 @@ class LayerAdapter(object):
     """
 
     def __init__(self, elem):
+        flags, label = self._parse_label(svg.layer_label(elem))
         self.elem = elem
+        self.flags = flags
+        self.label = label
+
+    @staticmethod
+    def _parse_label(label):
+        m = re.match(r'\[(?P<flags>\w+)\]\s*', label)
+        if m:
+            flags = LayerFlags.parse(m.group('flags'))
+            label = label[m.end():]
+        else:
+            flags = LayerFlags(0)
+        return flags, label
 
     @property
     def id(self):
         return self.elem.get('id')
-
-    @property
-    def label(self):
-        return svg.layer_label(self.elem)
 
     @property
     def parent(self):
@@ -34,6 +68,10 @@ class LayerAdapter(object):
         if parent is None:
             return None
         return LayerAdapter(parent)
+
+    @property
+    def children(self):
+        return [LayerAdapter(child) for child in svg.sublayers(self.elem)]
 
     def __hash__(self):
         assert self.id
