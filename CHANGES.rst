@@ -2,6 +2,29 @@
 Changes
 *******
 
+Next Release
+============
+
+Things still to be fixed
+------------------------
+
+Things still to be fixed: I'm pretty sure things are direly broken if
+a drawing contains no overlays, and somewhat broken if a drawing
+contains more than two layers of overlays.  The problems have to do
+with how the output PDF filenames are determined...
+
+New layer flag scheme
+---------------------
+New scheme for marking overlay and hidden layers.  One can now set
+bit-flags on layers by including the flags in square brackets at the
+beginning of the layer label.  I.e. a label like ``"[o] Master Trial
+1"`` marks the layer as an overlay layer, while ``"[h] Prototypes"``
+marks a hidden layer.
+
+If no layers have any flags, ``barnhunt pdfs`` will fall back to the
+old name-based heuristics for determing hidden and overlay layers.
+
+
 Release 0.1a9 (2017-01-03)
 ==========================
 
