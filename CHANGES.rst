@@ -2,8 +2,8 @@
 Changes
 *******
 
-Next Release
-============
+Release 0.1a10 (2017-01-30)
+===========================
 
 Things still to be fixed
 ------------------------
