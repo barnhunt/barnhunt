@@ -24,7 +24,8 @@ POSITIVE_INT = click.IntRange(1, None)
 
 @click.group()
 @click.option('-v', '--verbose', count=True)
-def main(verbose):
+@click.version_option()
+def main(verbose, version):
     """ Utilities for creating Barn Hunt course maps.
 
     """
