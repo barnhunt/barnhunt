@@ -31,22 +31,26 @@ def walk_layers(elem):
     from top to bottom.)
 
     """
+    for elem, children in walk_layers2(elem):
+        yield elem
+
+
+def walk_layers2(elem):
+    """Iterate over all layers under elem.
+
+    This is just like ``walk_layers``, except that it yields a
+    sequence of ``(elem, children)`` pairs.  ``Children`` will be a
+    list of the sub-layers of ``elem``.  It can be modified in-place
+    to "prune" the traversal of the layer tree.
+
+    """
     nodes = elem.findall('./' + LAYER_XP)
     while nodes:
         elem = nodes.pop()
-        yield elem
-        nodes.extend(elem.iterfind('./' + LAYER_XP))
-
-
-def sublayers(elem):
-    """Iterate over direct sub-layers of elem.
-
-    The layers iterated over in reverse order.  (In the SVG tree, layers
-    are listed from bottom to top in the stacking order.  We list them
-    from top to bottom.)
-
-    """
-    return reversed(elem.findall('./' + LAYER_XP))
+        children = elem.findall('./' + LAYER_XP)
+        children.reverse()
+        yield elem, children
+        nodes.extend(reversed(children))
 
 
 def is_layer(elem):

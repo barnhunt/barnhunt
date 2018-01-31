@@ -43,6 +43,14 @@ def sublayer(sublevel):
 
 
 class TestLayerAdapter(object):
+    def test_explicit_label(self, sublevel):
+        adapter = LayerAdapter(sublevel, label="My label")
+        assert adapter.label == "My label"
+
+    def test_kwargs(self, toplevel):
+        adapter = LayerAdapter(toplevel, foo=42)
+        assert adapter.foo == 42
+
     def test_basic(self, sublayer):
         assert sublayer.id == 'sublevel'
         assert sublayer.label == 'Sublayer'

@@ -50,6 +50,20 @@ def test_walk_layers(coursemap1):
         ]
 
 
+def test_walk_layers2(coursemap1):
+    layers = []
+    for elem, children in svg.walk_layers2(coursemap1.root):
+        layers.append(elem)
+        if elem.get('id') in ('t1master', 'cruft'):
+            children[:] = []
+    assert [layer.get('id') for layer in layers] == [
+        't1novice',
+        't1master',
+        'ring',
+        'cruft',
+        ]
+
+
 def test_parent_layer(coursemap1):
     assert svg.parent_layer(coursemap1.t1master) is None
     assert svg.parent_layer(coursemap1.overlays) is coursemap1.t1master

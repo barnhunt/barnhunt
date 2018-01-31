@@ -8,7 +8,11 @@ from lxml import etree
 from six.moves import range as xrange
 
 from .compat import ChainMap
-from .coursemaps import CourseMaps, render_templates
+from .coursemaps import (
+    CourseMaps,
+    dwim_layer_info,
+    render_templates,
+    )
 from .parallel import ParallelUnorderedStarmap
 from .templating import FileAdapter, render_template
 from .inkscape.runner import Inkscape
@@ -66,7 +70,8 @@ def pdfs(svgfile, output_directory, shell_mode_inkscape, processes=None):
 
     inkscape = Inkscape(shell_mode=shell_mode_inkscape)
 
-    coursemaps = CourseMaps()
+    layer_info = dwim_layer_info(tree)
+    coursemaps = CourseMaps(layer_info)
     pdfs = ((tree_, pdf_filename(context))
             for context, tree_ in coursemaps(tree))
 
