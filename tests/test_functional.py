@@ -41,7 +41,7 @@ def test_rats():
 
 def test_coords():
     runner = CliRunner()
-    result = runner.invoke(main, ['coords'])
+    result = runner.invoke(main, ['coords', '-n', '50'])
     assert result.exit_code == 0
     lines = result.output.rstrip().split('\n')
     pairs = [list(map(int, line.split(',')))

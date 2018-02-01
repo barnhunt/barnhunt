@@ -7,6 +7,16 @@ Next Release
 
 - Add ``--version`` command line option
 
+Pager for ``coords``
+--------------------
+
+- A fancy pager (poor man's ``less``) has been added for viewing the
+  output of the ``barnhunt coords`` subcommand.  If any of ``sys.stdin``
+  or ``sys.stdout`` is not a tty, then the pager will be disabled.
+
+- Since there is now a fancy pager, the default for ``--number-of-rows``
+  has been increased to 1000.
+
 Release 0.1a10 (2017-01-30)
 ===========================
 

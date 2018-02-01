@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
 import itertools
 import logging
 import os
@@ -13,6 +16,7 @@ from .coursemaps import (
     dwim_layer_info,
     render_templates,
     )
+from .pager import get_pager
 from .parallel import ParallelUnorderedStarmap
 from .templating import FileAdapter, render_template
 from .inkscape.runner import Inkscape
@@ -25,7 +29,7 @@ POSITIVE_INT = click.IntRange(1, None)
 @click.group()
 @click.option('-v', '--verbose', count=True)
 @click.version_option()
-def main(verbose, version):
+def main(verbose):
     """ Utilities for creating Barn Hunt course maps.
 
     """
@@ -104,10 +108,11 @@ def rats_(number_of_rows):
 
 @main.command()
 @click.option(
-    '-n', '--number-of-rows', type=POSITIVE_INT,
+    '-n', '--number-of-rows', type=POSITIVE_INT, default=1000,
     metavar="<n>",
-    help="Number of coordinates to generate.  (Default: 50).",
-    default=50
+    help="Number of coordinates to generate. "
+    "(Default: 1000 or the number of points in the grid, "
+    "whichever is fewer).",
     )
 @click.option(
     '-g', '--group-size', type=POSITIVE_INT,
@@ -140,15 +145,14 @@ def coords(dimensions, number_of_rows, group_size):
     dim_x = dimensions[0] + 1
     dim_y = dimensions[1] + 1
     n_pts = dim_x * dim_y
+    number_of_rows = min(number_of_rows, n_pts)
 
     def coord(pt):
         y, x = divmod(pt, dim_x)
         return x, y
 
-    number_of_rows = min(number_of_rows, n_pts)
-    pts = random.sample(xrange(n_pts), number_of_rows)
-
-    for n, (x, y) in enumerate(map(coord, pts)):
-        if n and n % group_size == 0:
-            print
-        print("%3d,%3d" % (x, y))
+    pager = get_pager(group_size)
+    pager([
+        "{0[0]:3d},{0[1]:3d}".format(coord(pt))
+        for pt in random.sample(xrange(n_pts), number_of_rows)
+        ])
