@@ -2,8 +2,8 @@
 Changes
 *******
 
-Next Release
-============
+Release 0.1a11 (2017-02-01)
+===========================
 
 - Add ``--version`` command line option
 
