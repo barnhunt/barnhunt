@@ -8,12 +8,11 @@ from six import string_types
 from barnhunt import coursemaps
 from barnhunt.coursemaps import (
     dwim_layer_info,
-    render_templates,
-    _get_local_context,
     CourseMaps,
     CompatLayerInfo,
     FlaggedLayerInfo,
     LayerFlags,
+    TemplateRenderer,
     )
 from barnhunt.inkscape import svg
 
@@ -30,23 +29,33 @@ def get_by_id(tree, id):
     return root.find('.//*[@id="%s"]' % id)
 
 
-def test_render_templates():
+@pytest.fixture
+def template_renderer():
+    class DummyLayerInfo(object):
+        def __init__(self, layer):
+            self.label = "LayerInfo.label"
+
+    layer_info = DummyLayerInfo
+    return TemplateRenderer(layer_info)
+
+
+def test_render_templates(template_renderer):
     xml = '<tspan xmlns="%(svg)s">{{ somevar }}</tspan>' % svg.NSMAP
     tree = etree.parse(BytesIO(xml.encode('utf-8')))
-    result = render_templates(tree, {'somevar': 'foo'})
+    result = template_renderer(tree, {'somevar': 'foo'})
     assert result.getroot().text == 'foo'
     assert tree.getroot().text == '{{ somevar }}'
 
 
-def test_render_templates_failure(caplog):
+def test_render_templates_failure(template_renderer, caplog):
     xml = '<tspan xmlns="%(svg)s">{{ foo() }}</tspan>' % svg.NSMAP
     tree = etree.parse(BytesIO(xml.encode('utf-8')))
-    result = render_templates(tree, {})
+    result = template_renderer(tree, {})
     assert result.getroot().text == '{{ foo() }}'
     assert "'foo' is undefined" in caplog.text
 
 
-def test_get_local_context():
+def test_get_local_context(template_renderer):
     xml = '''<g xmlns="%(svg)s"
                 xmlns:inkscape="%(inkscape)s"
                 inkscape:groupmode="layer"
@@ -55,9 +64,9 @@ def test_get_local_context():
              </g>''' % svg.NSMAP
     tree = etree.parse(BytesIO(xml.encode('utf-8')))
     tspan = tree.getroot()[0]
-    context = _get_local_context(tspan, dict(foo='bar'))
+    context = template_renderer._get_local_context(tspan, dict(foo='bar'))
     assert context['foo'] == 'bar'
-    assert context['layer'].label == 'The Layer'
+    assert context['layer'].label == 'LayerInfo.label'
 
 
 class DummyElem(object):

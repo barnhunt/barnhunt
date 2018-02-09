@@ -10,25 +10,29 @@ from .templating import LayerAdapter, is_string_literal, render_template
 log = logging.getLogger()
 
 
-def render_templates(tree, context):
-    tree = svg.copy_etree(tree)
-    for elem in tree.iter(svg.SVG_TSPAN_TAG):
-        if elem.text and not is_string_literal(elem.text):
-            local_context = _get_local_context(elem, context)
-            try:
-                elem.text = render_template(elem.text, local_context)
-            except jinja2.TemplateError as ex:
-                log.error("Error expanding template in SVG file: %s" % ex)
-    return tree
+class TemplateRenderer(object):
+    def __init__(self, layer_info):
+        self.layer_info = layer_info
 
+    def __call__(self, tree, context):
+        tree = svg.copy_etree(tree)
+        for elem in tree.iter(svg.SVG_TSPAN_TAG):
+            if elem.text and not is_string_literal(elem.text):
+                local_context = self._get_local_context(elem, context)
+                try:
+                    elem.text = render_template(elem.text, local_context)
+                except jinja2.TemplateError as ex:
+                    log.error("Error expanding template in SVG file: %s" % ex)
+        return tree
 
-def _get_local_context(elem, parent_context):
-    context = parent_context.copy()
-    layer = svg.parent_layer(elem)
-    if layer is not None:
-        layer = LayerAdapter(layer)
-    context['layer'] = layer
-    return context
+    def _get_local_context(self, elem, parent_context):
+        context = parent_context.copy()
+        layer = svg.parent_layer(elem)
+        if layer is not None:
+            info = self.layer_info(layer)
+            layer = LayerAdapter(layer, info.label)
+        context['layer'] = layer
+        return context
 
 
 class CourseMaps(object):

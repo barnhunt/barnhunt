@@ -13,8 +13,8 @@ from six.moves import range as xrange
 from .compat import ChainMap
 from .coursemaps import (
     CourseMaps,
+    TemplateRenderer,
     dwim_layer_info,
-    render_templates,
     )
 from .pager import get_pager
 from .parallel import ParallelUnorderedStarmap
@@ -61,11 +61,14 @@ def pdfs(svgfile, output_directory, shell_mode_inkscape, processes=None):
 
     tree = etree.parse(svgfile)
 
+    layer_info = dwim_layer_info(tree)
+
     # Expand jinja templates in text within SVG file
     template_vars = {
         'random_seed': 0,       # FIXME: support this and add command-line arg
         'svgfile': FileAdapter(svgfile),
         }
+    render_templates = TemplateRenderer(layer_info)
     tree = render_templates(tree, template_vars)
 
     def pdf_filename(context):
@@ -75,7 +78,6 @@ def pdfs(svgfile, output_directory, shell_mode_inkscape, processes=None):
 
     inkscape = Inkscape(shell_mode=shell_mode_inkscape)
 
-    layer_info = dwim_layer_info(tree)
     coursemaps = CourseMaps(layer_info)
     pdfs = ((tree_, pdf_filename(context))
             for context, tree_ in coursemaps(tree))
