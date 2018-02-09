@@ -2,8 +2,8 @@
 Changes
 *******
 
-Next Release
-============
+Release 0.1a12 (2017-02-09)
+===========================
 
 - Remove tags from layer.label when expanding templated text in SVG file.
 
