@@ -2,6 +2,11 @@
 Changes
 *******
 
+Next Release
+============
+
+No changes yet.
+
 Release 0.1a12 (2017-02-09)
 ===========================
 
