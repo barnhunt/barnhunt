@@ -5,7 +5,12 @@ Changes
 Next Release
 ============
 
-No changes yet.
+- Pexpect==4.4.0 appears to have a subtle brokenness when
+  ``searchwindowsize`` is set to something other than ``None``.  The
+  problem seems to be in `pexpect.expect.py`__, and is triggered when
+  multiple chunks of output are read before a match is found.
+
+__ https://github.com/pexpect/pexpect/blob/master/pexpect/expect.py#L22
 
 Release 0.1a12 (2017-02-09)
 ===========================

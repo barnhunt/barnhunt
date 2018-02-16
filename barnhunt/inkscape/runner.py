@@ -99,7 +99,15 @@ class ShellModeInkscape(object):
 
     def _wait_for_prompt(self, prompt=u'\n>', expect_lines=1):
         """Wait for prompt."""
-        self.child.expect_exact(prompt, searchwindowsize=len(prompt))
+        # NB: pexpect (==4.4.0) appears to be broken when
+        # searchwindowsize is set to something other than None.
+        #
+        # The problem seems to be in `pexpect.expect.py`__, and is
+        # triggered when multiple chunks of output are read before a
+        # match is found.
+        #
+        # __ https://github.com/pexpect/pexpect/blob/master/pexpect/expect.py#L22
+        self.child.expect_exact(u'\n>') #, searchwindowsize=len(prompt))
         self._log_output(expect_lines)
 
     def _log_output(self, expect_lines=0):
