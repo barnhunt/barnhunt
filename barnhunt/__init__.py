@@ -54,10 +54,7 @@ def pdfs(svgfile, output_directory, shell_mode_inkscape, processes=None):
 
     """
     # FIXME: make configurable
-    basename_tmpl = (
-        '{{ course.label|safepath }}'
-        '{% if overlay %}/{{ overlay.label|safepath }}{% endif %}'
-        )
+    basename_tmpl = '{{ overlays|map("safepath")|join("/") }}'
 
     tree = etree.parse(svgfile)
 

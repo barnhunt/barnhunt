@@ -5,6 +5,9 @@ Changes
 Next Release
 ============
 
+The template for the output filename has been generalized to work sensibly
+in the case where overlays are nested more than two deep.
+
 Templating
 ----------
 
