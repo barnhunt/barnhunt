@@ -60,27 +60,6 @@ def test_get_local_context(template_renderer):
     assert context['layer'].label == 'The Layer'
 
 
-def test_get_local_context_overlays(template_renderer):
-    xml = '''<g xmlns="%(svg)s"
-                xmlns:inkscape="%(inkscape)s"
-                inkscape:groupmode="layer"
-                inkscape:label="[o] The Course">
-               <g inkscape:groupmode="layer"
-                  inkscape:label="[o] Overlay">
-                 <g inkscape:groupmode="layer"
-                    inkscape:label="Sublayer">
-                   <tspan>{{ layer.label }}</tspan>
-                 </g>
-               </g>
-             </g>''' % svg.NSMAP
-    tree = etree.parse(BytesIO(xml.encode('utf-8')))
-    tspan = tree.getroot()[0][0][0]
-    context = template_renderer._get_local_context(tspan, dict())
-    assert context['course'].label == 'The Course'
-    assert context['overlay'].label == 'Overlay'
-    assert context['overlays'] == [context['course'], context['overlay']]
-
-
 class DummyElem(object):
     parent = None
 
@@ -94,6 +73,11 @@ class DummyElem(object):
         self.label = label
         self.children = children
         self.visible = True
+
+    def get(self, attr, dflt=None):
+        if attr == 'id':
+            return self.label.lower()
+        return dflt
 
     def __eq__(self, other):
         if isinstance(other, string_types):
@@ -225,7 +209,7 @@ class TestCourseMaps(object):
         result = list(coursemaps(tree))
         assert len(result) == 1
         context, pruned = result[0]
-        assert context == {'course': None, 'overlay': None, 'overlays': []}
+        assert context == {'course': None, 'overlay': None, 'overlays': ()}
         assert pruned.root.children == [Elem("Layer", [Elem("Child")])]
 
         for layer in svg.walk_layers(pruned.root):
@@ -238,18 +222,11 @@ class TestCourseMaps(object):
         assert context['overlay'] is None
 
     def test_get_context_one_overlay(self, coursemaps):
-        path = [DummyElem("Foo")]
+        path = [DummyElem("[o] Foo")]
         context = coursemaps._get_context(path)
         assert len(context['overlays']) == 1
         assert context['course'].label == "Foo"
         assert context['overlay'] is None
-
-    def test_get_context_nested_overlay(self, coursemaps):
-        path = [DummyElem("Foo"), DummyElem("Bar")]
-        context = coursemaps._get_context(path)
-        assert len(context['overlays']) == 2
-        assert context['course'].label == "Foo"
-        assert context['overlay'].label == "Bar"
 
     def test_iter_overlays(self, coursemaps, dummy_tree):
         root = dummy_tree.getroot()

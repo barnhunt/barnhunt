@@ -12,6 +12,7 @@ from barnhunt.templating import (
     FileAdapter,
     LayerAdapter,
     _hash_string,
+    get_element_context,
     is_string_literal,
     random_rats,
     render_template,
@@ -97,6 +98,23 @@ class TestLayerAdapter(object):
     ])
 def test_hash_string(s, h):
     assert _hash_string(s) == h
+
+
+def test_get_element_context_one_overlay(coursemap2):
+    novice = get_element_context(coursemap2.novice_title)
+    assert novice['course'].label == "T1 Novice"
+    assert novice.get('overlay') is None
+
+
+def test_get_element_context_two_overlay(coursemap2):
+    master = get_element_context(coursemap2.blind1_title)
+    assert master['course'].label == "T1 Master"
+    assert master['overlay'].label == "Blind 1"
+
+
+def test_get_element_context_no_layers(coursemap2):
+    context = get_element_context(coursemap2.root)
+    assert context == {}
 
 
 @pytest.fixture

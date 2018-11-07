@@ -4,7 +4,11 @@ import jinja2
 
 from .inkscape import svg
 from .layerinfo import LayerFlags
-from .templating import LayerAdapter, is_string_literal, render_template
+from .templating import (
+    get_element_context,
+    is_string_literal,
+    render_template,
+    )
 
 log = logging.getLogger()
 
@@ -26,30 +30,13 @@ class TemplateRenderer(object):
 
     def _get_local_context(self, elem, parent_context):
         context = parent_context.copy()
-        layer = svg.parent_layer(elem)
-        if layer is not None:
-            layer = LayerAdapter(layer, self.layer_info)
-        context['layer'] = layer
-
-        if layer is not None:
-            # Some shorthand
-            overlays = []
-            for ancestor in layer.lineage:
-                if ancestor.is_overlay:
-                    overlays.insert(0, ancestor)
-            context['overlays'] = overlays
-            if overlays:
-                # Course is the outermost containing overlay
-                context['course'] = overlays[0]
-            if len(overlays) > 1:
-                # Overlay is the nearest containing overlay
-                context['overlay'] = overlays[-1]
-
+        context.update(get_element_context(elem, self.layer_info))
         return context
 
 
 class CourseMaps(object):
     context = {
+        'overlays': (),
         'course': None,
         'overlay': None,
         }
@@ -71,18 +58,12 @@ class CourseMaps(object):
             yield context, pruned
 
     def _get_context(self, path):
-        def layer_adapter(elem):
-            return LayerAdapter(elem, self.layer_info)
-
         context = self.context.copy()
-        overlays = [layer_adapter(overlay) for overlay in path]
-        context['overlays'] = overlays
-        if overlays:
-            # The top layer overlay is the "course"
-            context['course'] = overlays[0]
-        if len(overlays) > 1:
-            # The lowest level overlay is the "overlay"
-            context['overlay'] = overlays[-1]
+        if path:
+            overlay = path[-1]
+            local_context = get_element_context(overlay, self.layer_info)
+            local_context.pop('layer', None)
+            context.update(local_context)
         return context
 
     def _iter_overlays(self, elem):

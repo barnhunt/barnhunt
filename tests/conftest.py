@@ -69,6 +69,52 @@ COURSEMAP1 = b"""<?xml version="1.0" encoding="ascii" standalone="no"?>
 </svg>
 """
 
+COURSEMAP2 = b"""<?xml version="1.0" encoding="ascii" standalone="no"?>
+<svg id="root"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+  <g id="cruft"
+     inkscape:groupmode="layer"
+     inkscape:label="[h] Junk">
+  </g>
+  <g id="ring"
+     style="display:none"
+     inkscape:groupmode="layer"
+     inkscape:label="Outline">
+    <text>
+      <tspan id="ring_leaf">Ring</tspan>
+    </text>
+  </g>
+  <g id="t1master"
+     inkscape:groupmode="layer"
+     inkscape:label="[o] T1 Master">
+    <g id="overlays"
+       inkscape:groupmode="layer"
+       inkscape:label="Overlays">
+      <g id="blind1"
+         inkscape:groupmode="layer"
+         inkscape:label="[o] Blind 1">
+        <text>
+          <tspan id="blind1_title"
+            >{{ course.label }} - {{ overlay.label }}</tspan>
+        </text>
+      </g>
+      <g id="build"
+         inkscape:groupmode="layer"
+         inkscape:label="[o] Build Notes">
+      </g>
+    </g>
+  </g>
+  <g id="t1novice"
+     inkscape:groupmode="layer"
+     inkscape:label="[o] T1 Novice">
+    <text>
+      <tspan id="novice_title">{{ course.label }}</tspan>
+    </text>
+  </g>
+</svg>
+"""
+
 
 class XML(object):
     def __init__(self, raw_bytes):
@@ -93,3 +139,8 @@ def svg1():
 @pytest.fixture
 def coursemap1():
     return XML(COURSEMAP1)
+
+
+@pytest.fixture
+def coursemap2():
+    return XML(COURSEMAP2)

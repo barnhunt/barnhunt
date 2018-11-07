@@ -84,6 +84,33 @@ def _hash_string(s):
     return hash(int(hashlib.sha1(bytes_).hexdigest(), 16))
 
 
+def get_element_context(elem, layer_info_class=FlaggedLayerInfo):
+    for layer in svg.lineage(elem):
+        if svg.is_layer(layer):
+            break
+    else:
+        return {}
+
+    layer = LayerAdapter(layer, layer_info_class)
+    overlays = []
+    for ancestor in layer.lineage:
+        if ancestor.is_overlay:
+            overlays.insert(0, ancestor)
+
+    context = {
+        'layer': layer,
+        'overlays': tuple(overlays),
+        }
+    if overlays:
+        # Course is the outermost containing overlay
+        context['course'] = overlays[0]
+    if len(overlays) > 1:
+        # Overlay is the innermost containing overlay, but only if is
+        # distinct from course.
+        context['overlay'] = overlays[-1]
+    return context
+
+
 @python_2_unicode_compatible
 class FileAdapter(object):
     """Adapt a file object for ease of use in templates
