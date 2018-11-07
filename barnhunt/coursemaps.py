@@ -30,6 +30,21 @@ class TemplateRenderer(object):
         if layer is not None:
             layer = LayerAdapter(layer, self.layer_info)
         context['layer'] = layer
+
+        if layer is not None:
+            # Some shorthand
+            overlays = []
+            for ancestor in layer.lineage:
+                if ancestor.is_overlay:
+                    overlays.insert(0, ancestor)
+            context['overlays'] = overlays
+            if overlays:
+                # Course is the outermost containing overlay
+                context['course'] = overlays[0]
+            if len(overlays) > 1:
+                # Overlay is the nearest containing overlay
+                context['overlay'] = overlays[-1]
+
         return context
 
 
@@ -60,12 +75,14 @@ class CourseMaps(object):
             return LayerAdapter(elem, self.layer_info)
 
         context = self.context.copy()
-        if path:
+        overlays = [layer_adapter(overlay) for overlay in path]
+        context['overlays'] = overlays
+        if overlays:
             # The top layer overlay is the "course"
-            context['course'] = layer_adapter(path[0])
+            context['course'] = overlays[0]
+        if len(overlays) > 1:
             # The lowest level overlay is the "overlay"
-            if len(path) > 1:
-                context['overlay'] = layer_adapter(path[-1])
+            context['overlay'] = overlays[-1]
         return context
 
     def _iter_overlays(self, elem):

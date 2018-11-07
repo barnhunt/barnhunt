@@ -27,12 +27,7 @@ def get_by_id(tree, id):
 
 @pytest.fixture
 def template_renderer():
-    class DummyLayerInfo(object):
-        def __init__(self, layer):
-            self.label = "LayerInfo.label"
-
-    layer_info = DummyLayerInfo
-    return TemplateRenderer(layer_info)
+    return TemplateRenderer(FlaggedLayerInfo)
 
 
 def test_render_templates(template_renderer):
@@ -62,7 +57,28 @@ def test_get_local_context(template_renderer):
     tspan = tree.getroot()[0]
     context = template_renderer._get_local_context(tspan, dict(foo='bar'))
     assert context['foo'] == 'bar'
-    assert context['layer'].label == 'LayerInfo.label'
+    assert context['layer'].label == 'The Layer'
+
+
+def test_get_local_context_overlays(template_renderer):
+    xml = '''<g xmlns="%(svg)s"
+                xmlns:inkscape="%(inkscape)s"
+                inkscape:groupmode="layer"
+                inkscape:label="[o] The Course">
+               <g inkscape:groupmode="layer"
+                  inkscape:label="[o] Overlay">
+                 <g inkscape:groupmode="layer"
+                    inkscape:label="Sublayer">
+                   <tspan>{{ layer.label }}</tspan>
+                 </g>
+               </g>
+             </g>''' % svg.NSMAP
+    tree = etree.parse(BytesIO(xml.encode('utf-8')))
+    tspan = tree.getroot()[0][0][0]
+    context = template_renderer._get_local_context(tspan, dict())
+    assert context['course'].label == 'The Course'
+    assert context['overlay'].label == 'Overlay'
+    assert context['overlays'] == [context['course'], context['overlay']]
 
 
 class DummyElem(object):
@@ -209,7 +225,7 @@ class TestCourseMaps(object):
         result = list(coursemaps(tree))
         assert len(result) == 1
         context, pruned = result[0]
-        assert context == {'course': None, 'overlay': None}
+        assert context == {'course': None, 'overlay': None, 'overlays': []}
         assert pruned.root.children == [Elem("Layer", [Elem("Child")])]
 
         for layer in svg.walk_layers(pruned.root):
@@ -224,12 +240,14 @@ class TestCourseMaps(object):
     def test_get_context_one_overlay(self, coursemaps):
         path = [DummyElem("Foo")]
         context = coursemaps._get_context(path)
+        assert len(context['overlays']) == 1
         assert context['course'].label == "Foo"
         assert context['overlay'] is None
 
     def test_get_context_nested_overlay(self, coursemaps):
         path = [DummyElem("Foo"), DummyElem("Bar")]
         context = coursemaps._get_context(path)
+        assert len(context['overlays']) == 2
         assert context['course'].label == "Foo"
         assert context['overlay'].label == "Bar"
 

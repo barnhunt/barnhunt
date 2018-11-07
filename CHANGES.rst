@@ -23,6 +23,27 @@ Templating
       nearest parent layer which is an overlay.  If the layer is not
       contained within an overlay, returns ``None``.
 
+- Added new values to context when expanding text in SVG:
+
+  overlays
+      A list of all overlay layers in the lineage of the text
+      element, in order from outermost to innermost.
+
+  course
+      The outermost overlay layer.  (Equivalent to ``overlays[0]``.)
+      This value already existed in the context used for filename expansion.
+
+  overlay
+      If the element is at least two overlays deep, this is the
+      innermost overlay.  Otherwise it is unset.  This value already
+      existed in the context used for filename expansion.
+
+- Added new values to context when expanding output filenames:
+
+  overlays
+      A list of all overlay layers in the lineage of the overlay
+      being expanded.
+
 
 Bugs
 ----
