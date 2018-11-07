@@ -14,8 +14,8 @@ from .compat import ChainMap
 from .coursemaps import (
     CourseMaps,
     TemplateRenderer,
-    dwim_layer_info,
     )
+from .layerinfo import dwim_layer_info
 from .pager import get_pager
 from .parallel import ParallelUnorderedStarmap
 from .templating import FileAdapter, render_template

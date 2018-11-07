@@ -106,8 +106,8 @@ class ShellModeInkscape(object):
         # triggered when multiple chunks of output are read before a
         # match is found.
         #
-        # __ https://github.com/pexpect/pexpect/blob/master/pexpect/expect.py#L22
-        self.child.expect_exact(u'\n>') #, searchwindowsize=len(prompt))
+        # __ https://github.com/pexpect/pexpect/blob/master/pexpect/expect.py#L22  # noqa
+        self.child.expect_exact(u'\n>')  # , searchwindowsize=len(prompt))
         self._log_output(expect_lines)
 
     def _log_output(self, expect_lines=0):

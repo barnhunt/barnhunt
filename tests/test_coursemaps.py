@@ -5,15 +5,11 @@ from lxml import etree
 import pytest
 from six import string_types
 
-from barnhunt import coursemaps
 from barnhunt.coursemaps import (
-    dwim_layer_info,
     CourseMaps,
-    CompatLayerInfo,
-    FlaggedLayerInfo,
-    LayerFlags,
     TemplateRenderer,
     )
+from barnhunt.layerinfo import FlaggedLayerInfo
 from barnhunt.inkscape import svg
 
 
@@ -263,118 +259,3 @@ class TestCourseMaps(object):
         overlays, cruft = coursemaps._find_overlays(root)
         assert overlays == ["[o] Overlay 1", "[o] Overlay 2"]
         assert cruft == set(["[h] Hidden"])
-
-
-@pytest.mark.parametrize('s, flags', [
-    ("", LayerFlags(0)),
-    ("h", LayerFlags.HIDDEN),
-    ("o", LayerFlags.OVERLAY),
-    ("ho", LayerFlags.OVERLAY | LayerFlags.HIDDEN),
-    ("hoo", LayerFlags.OVERLAY | LayerFlags.HIDDEN),
-    ("oh", LayerFlags.OVERLAY | LayerFlags.HIDDEN),
-    ])
-def test_layerflags_parse(s, flags):
-    assert LayerFlags.parse(s) == flags
-
-
-def test_layerflags_parse_warns(caplog):
-    assert LayerFlags.parse("hx") == LayerFlags.HIDDEN
-    assert "unknown character" in caplog.text
-
-
-@pytest.mark.parametrize('s, flags', [
-    ("", LayerFlags(0)),
-    ("h", LayerFlags.HIDDEN),
-    ("o", LayerFlags.OVERLAY),
-    ("ho", LayerFlags.OVERLAY | LayerFlags.HIDDEN),
-    ])
-def test_layerflags_str(s, flags):
-    assert str(flags) == s
-
-
-@pytest.mark.parametrize('predicate_name, expected_ids', [
-    ('is_ring', [
-        'ring',
-        ]),
-    ('is_course', [
-        't1novice',
-        't1master',
-        ]),
-    ('is_cruft', [
-        'cruft',
-        ]),
-    ('is_overlay', [
-        'blind1',
-        'build',
-        ]),
-    ])
-def test_predicate(predicate_name, coursemap1, expected_ids):
-    predicate = getattr(coursemaps, predicate_name)
-    tree = coursemap1.tree
-    matches = set(elem for elem in tree.iter() if predicate(elem))
-    expected = set(get_by_id(tree, id) for id in expected_ids)
-    assert matches == expected
-
-
-@pytest.mark.parametrize('layer_label, label, flags', [
-    ('[h] Hidden', "Hidden", LayerFlags.HIDDEN),
-    ('[o] An Overlay', "An Overlay", LayerFlags.OVERLAY),
-    ('Plain Jane', "Plain Jane", LayerFlags(0)),
-    ])
-@pytest.mark.usefixtures('dummy_svg')
-def test_FlaggedLayerInfo(layer_label, label, flags):
-    elem = DummyElem(layer_label)
-    info = FlaggedLayerInfo(elem)
-    assert info.elem is elem
-    assert info.label == label
-    assert info.flags is flags
-
-
-@pytest.mark.usefixtures('dummy_svg')
-class TestCompatLayerInfo(object):
-    @pytest.mark.parametrize('label, flags', [
-        ('Prototypes', LayerFlags.HIDDEN),
-        ('Master 1', LayerFlags.OVERLAY),
-        ('Test Ring', LayerFlags(0)),
-        ])
-    def test_init(self, label, flags):
-        elem = DummyElem(label)
-        info = CompatLayerInfo(elem)
-        assert info.elem is elem
-        assert info.label == label
-        assert info.flags is flags
-
-    def test_overlay(self):
-        overlay = DummyElem("Test ovl")
-        not_overlay = DummyElem("Test not ovl")
-        DummyElem(children=[
-            DummyElem("Master 2", [
-                DummyElem("Overlays", [overlay]),
-                DummyElem("Stuff", [not_overlay]),
-                ]),
-            ])
-
-        info = CompatLayerInfo(overlay)
-        assert info.flags is LayerFlags.OVERLAY
-
-        info = CompatLayerInfo(not_overlay)
-        assert info.flags is LayerFlags(0)
-
-
-@pytest.mark.usefixtures('dummy_svg')
-class Test_dwim_layer_info(object):
-    @pytest.fixture
-    def dummy_tree(self, leaf_label_1):
-        Elem = DummyElem
-        root = Elem(children=[
-            Elem("Layer", [Elem(leaf_label_1)]),
-            ])
-        return DummyETree(root)
-
-    @pytest.mark.parametrize('leaf_label_1', ["[h] Hidden"])
-    def test_flagged_info(self, dummy_tree):
-        assert dwim_layer_info(dummy_tree) is FlaggedLayerInfo
-
-    @pytest.mark.parametrize('leaf_label_1', ["Not Flagged"])
-    def test_compat_info(self, dummy_tree):
-        assert dwim_layer_info(dummy_tree) is CompatLayerInfo

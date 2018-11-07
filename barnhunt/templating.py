@@ -7,6 +7,7 @@ import re
 
 from six import python_2_unicode_compatible
 
+from .layerinfo import FlaggedLayerInfo, LayerFlags
 from .inkscape import svg
 
 log = logging.getLogger()
@@ -17,30 +18,51 @@ class LayerAdapter(object):
     """Adapt an Inkscape SVG layer element for ease of use in templates
     """
 
-    def __init__(self, elem, label=None, **kwargs):
-        if label is None:
-            label = svg.layer_label(elem)
+    def __init__(self, elem, layer_info_class=FlaggedLayerInfo):
         self.elem = elem
-        self.label = label
-        self.__dict__.update(kwargs)
+        self._layer_info_class = layer_info_class
+        self._info = layer_info_class(elem)
 
     @property
     def id(self):
         return self.elem.get('id')
 
     @property
+    def label(self):
+        return self._info.label
+
+    @property
+    def is_overlay(self):
+        return bool(self._info.flags & LayerFlags.OVERLAY)
+
+    @property
     def parent(self):
         parent = svg.parent_layer(self.elem)
         if parent is None:
             return None
-        return LayerAdapter(parent)
+        return LayerAdapter(parent, self._layer_info_class)
+
+    @property
+    def lineage(self):
+        layer = self
+        while layer:
+            yield layer
+            layer = layer.parent
+
+    @property
+    def overlay(self):
+        for layer in self.lineage:
+            if layer.is_overlay:
+                return layer
 
     def __hash__(self):
         assert self.id
         return _hash_string(self.id)
 
     def __eq__(self, other):
-        return type(other) is type(self) and other.elem == self.elem
+        return type(other) is type(self) \
+            and other.elem == self.elem \
+            and other._layer_info_class == self._layer_info_class
 
     def __ne__(self, other):
         return not self.__eq__(other)

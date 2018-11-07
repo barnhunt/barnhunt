@@ -5,6 +5,33 @@ Changes
 Next Release
 ============
 
+Templating
+----------
+
+- Added new attributes to layers:
+
+  layer.is_overlay
+      Boolean.  True if layer is an overlay.
+
+  layer.lineage
+      Sequence starting with layer and including each parent layer in
+      turn.
+
+  layer.overlay
+      Returns the nearest overlay layer.  If the layer is an overlay,
+      ``layer.overlay`` returns ``layer``, otherwise it returns the
+      nearest parent layer which is an overlay.  If the layer is not
+      contained within an overlay, returns ``None``.
+
+
+Bugs
+----
+
+- Templating: (New style) layer flags in parent layers were not being
+  removed from the layer labels.  (E.g. ``"{{ layer.parent.label }}"``
+  was expanding to ``"[o] Some Overlay"``, when it should expand to
+  ``"Some Overlay"``.)
+
 - Pexpect==4.4.0 appears to have a subtle brokenness when
   ``searchwindowsize`` is set to something other than ``None``.  The
   problem seems to be in `pexpect.expect.py`__, and is triggered when

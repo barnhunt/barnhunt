@@ -21,53 +21,70 @@ from barnhunt.templating import (
 
 @pytest.fixture
 def toplevel():
-    return etree.Element(svg.SVG_G_TAG, attrib={
+    elem = etree.Element(svg.SVG_G_TAG, attrib={
         'id': 'toplevel',
         svg.INKSCAPE_GROUPMODE: 'layer',
         svg.INKSCAPE_LABEL: 'Parent',
         })
+    return LayerAdapter(elem)
 
 
 @pytest.fixture
-def sublevel(toplevel):
-    return etree.SubElement(toplevel, svg.SVG_G_TAG, attrib={
-        'id': 'sublevel',
+def overlay(toplevel):
+    elem = etree.SubElement(toplevel.elem, svg.SVG_G_TAG, attrib={
+        'id': 'overlay',
+        svg.INKSCAPE_GROUPMODE: 'layer',
+        svg.INKSCAPE_LABEL: '[o] Overlay',
+        })
+    return LayerAdapter(elem)
+
+
+@pytest.fixture
+def sublayer(overlay):
+    elem = etree.SubElement(overlay.elem, svg.SVG_G_TAG, attrib={
+        'id': 'sublayer',
         svg.INKSCAPE_GROUPMODE: 'layer',
         svg.INKSCAPE_LABEL: 'Sublayer',
         })
-
-
-@pytest.fixture
-def sublayer(sublevel):
-    return LayerAdapter(sublevel)
+    return LayerAdapter(elem)
 
 
 class TestLayerAdapter(object):
-    def test_explicit_label(self, sublevel):
-        adapter = LayerAdapter(sublevel, label="My label")
-        assert adapter.label == "My label"
+    def test_id(self, sublayer):
+        assert sublayer.id == 'sublayer'
 
-    def test_kwargs(self, toplevel):
-        adapter = LayerAdapter(toplevel, foo=42)
-        assert adapter.foo == 42
-
-    def test_basic(self, sublayer):
-        assert sublayer.id == 'sublevel'
+    def test_label(self, sublayer):
         assert sublayer.label == 'Sublayer'
 
+    def test_flagged_label(self, overlay):
+        assert overlay.label == 'Overlay'
+
+    def test_is_overlay(self, overlay, sublayer):
+        assert overlay.is_overlay
+        assert not sublayer.is_overlay
+
+    def test_lineage(self, toplevel, overlay, sublayer):
+        assert list(sublayer.lineage) == [sublayer, overlay, toplevel]
+
+    def test_overlay(self, overlay, sublayer, toplevel):
+        assert overlay.overlay == overlay
+        assert sublayer.overlay == overlay
+        assert toplevel.overlay is None
+
     def test_parent(self, sublayer):
-        assert sublayer.parent.id == 'toplevel'
-        assert sublayer.parent.parent is None
+        assert sublayer.parent.id == 'overlay'
+        assert sublayer.parent.parent.id == 'toplevel'
+        assert sublayer.parent.parent.parent is None
 
     def test_hash(self, sublayer):
-        assert hash(sublayer) == _hash_string('sublevel')
+        assert hash(sublayer) == _hash_string('sublayer')
 
-    def test_eq(self, toplevel, sublevel):
-        assert LayerAdapter(sublevel) == LayerAdapter(sublevel)
-        assert LayerAdapter(sublevel) != LayerAdapter(toplevel)
+    def test_eq(self, toplevel, sublayer):
+        assert sublayer != toplevel
+        assert sublayer == LayerAdapter(sublayer.elem)
 
     def test_repr(self, sublayer):
-        assert repr(sublayer) == '<LayerAdapter id=sublevel>'
+        assert repr(sublayer) == '<LayerAdapter id=sublayer>'
 
     def test_str(self, sublayer):
         assert str(sublayer) == 'Sublayer'
