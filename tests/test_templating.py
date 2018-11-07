@@ -153,6 +153,10 @@ def test_safepath(pathcomp, expected):
     assert safepath(pathcomp) == expected
 
 
+def test_safepath_coerces_to_text():
+    assert safepath(42) == "42"
+
+
 class Test_render_template(object):
     @pytest.mark.parametrize('tmpl, output', [
         ("foo", "foo"),

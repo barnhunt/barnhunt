@@ -48,6 +48,10 @@ Templating
 Bugs
 ----
 
+- Templating: the ``safepath`` filter would fail with a ``TypeError``
+  if applied to anything but a string.  Now it coerces its argument to
+  text.
+
 - Templating: (New style) layer flags in parent layers were not being
   removed from the layer labels.  (E.g. ``"{{ layer.parent.label }}"``
   was expanding to ``"[o] Some Overlay"``, when it should expand to
