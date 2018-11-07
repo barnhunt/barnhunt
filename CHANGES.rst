@@ -2,8 +2,8 @@
 Changes
 *******
 
-Next Release
-============
+Release 0.1 (2018-11-07)
+========================
 
 - Python 3.7 is now supported.
 
