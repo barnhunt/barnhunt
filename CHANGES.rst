@@ -67,6 +67,11 @@ Bugs
 
 __ https://github.com/pexpect/pexpect/blob/master/pexpect/expect.py#L22
 
+Bit-Rot
+-------
+
+- Use ``log.warning``, rather than the deprecated ``log.warn``.
+
 Release 0.1a12 (2017-02-09)
 ===========================
 

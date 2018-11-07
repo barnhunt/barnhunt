@@ -41,8 +41,8 @@ def logging_output(cmd):
             logfile.flush()
             if logfile.tell() > 0:
                 logfile.seek(0)
-                log.warn("Unexpected output from %r:\n%s",
-                         cmd, logfile.read())
+                log.warning("Unexpected output from %r:\n%s",
+                            cmd, logfile.read())
 
 
 class ShellModeInkscape(object):
@@ -113,8 +113,8 @@ class ShellModeInkscape(object):
     def _log_output(self, expect_lines=0):
         before = self.child.before
         if before and before.count('\n') + 1 != expect_lines:
-            log.warn("Unexpected output from shell-mode inkscape:\n%s",
-                     before.replace('\r\n', '\n'))
+            log.warning("Unexpected output from shell-mode inkscape:\n%s",
+                        before.replace('\r\n', '\n'))
 
 
 def ensure_directory_exists(path):
