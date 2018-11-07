@@ -1,3 +1,4 @@
+from functools import partial
 import hashlib
 import jinja2
 import logging
@@ -125,7 +126,7 @@ def default_random_seed(context):
 
 
 @jinja2.contextfunction
-def random_rats(context, n=5, min=1, max=5, seed=None):
+def random_rats(context, n=5, min=1, max=5, seed=None, skip=0):
     """Generate random rat numbers.
 
     Returns a tuple of ``n`` random integers in the range [``min``,
@@ -153,11 +154,21 @@ def random_rats(context, n=5, min=1, max=5, seed=None):
     As a result subsequent calls with ``seed`` set to ``False`` will
     generate different rat counts.
 
+    A positive value is passed for ``skip`` will cause that many
+    random number to be generated and discarded before picking the
+    ``n`` random numbers which are finally used.  This can be used to
+    generate independentt sets of random numbers all based on the same
+    seed.
+
     """
     if seed is None:
         seed = default_random_seed(context)
     rng = random.Random(seed) if seed is not False else global_rng
-    return tuple(rng.randint(min, max) for _ in range(n))
+
+    rand = partial(rng.randint, min, max)
+    for _ in range(skip):
+        rand()
+    return tuple(rand() for _ in range(n))
 
 
 def safepath(path_comp):

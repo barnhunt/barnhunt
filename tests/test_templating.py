@@ -144,6 +144,12 @@ class Test_random_rats(object):
                    for n in range(20))
         assert noseed == random_rats({})
 
+    def test_skip(self):
+        noskip = random_rats({})
+        rats = random_rats({}, skip=2)
+        assert rats != noskip
+        assert rats[:3] == noskip[2:]
+
 
 @pytest.mark.parametrize("pathcomp, expected", [
     ("a b", "a_b"),
