@@ -21,12 +21,24 @@ class TemplateRenderer(object):
         tree = svg.copy_etree(tree)
         for elem in tree.iter(svg.SVG_TSPAN_TAG):
             if elem.text and not is_string_literal(elem.text):
-                local_context = self._get_local_context(elem, context)
-                try:
-                    elem.text = render_template(elem.text, local_context)
-                except jinja2.TemplateError as ex:
-                    log.error("Error expanding template in SVG file: %s" % ex)
+                if not self._is_hidden(elem):
+                    local_context = self._get_local_context(elem, context)
+                    try:
+                        elem.text = render_template(elem.text, local_context)
+                    except jinja2.TemplateError as ex:
+                        log.error(
+                            "Error expanding template in SVG file: %s" % ex)
         return tree
+
+    def _is_hidden(self, elem):
+        return any(self._is_hidden_layer(ancestor)
+                   for ancestor in svg.lineage(elem))
+
+    def _is_hidden_layer(self, elem):
+        if not svg.is_layer(elem):
+            return False
+        info = self.layer_info(elem)
+        return (info.flags & LayerFlags.HIDDEN) == LayerFlags.HIDDEN
 
     def _get_local_context(self, elem, parent_context):
         context = parent_context.copy()

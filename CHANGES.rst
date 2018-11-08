@@ -8,6 +8,10 @@ Next Release
 Templating
 ----------
 
+- Do not expand text within hidden layers.  This avoids generating
+  error messages (e.g. "'overlay' is undefined") due to template
+  expansion of usused text.
+
 - Add optional ``skip`` argument to the ``random_rats`` function.
   This allows the generation of more than one set of stable random rat
   numbers per layer.  E.g. ``random_rats(skip=5)`` will generate a set
