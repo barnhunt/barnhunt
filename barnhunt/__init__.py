@@ -42,49 +42,51 @@ def main(verbose):
 
 
 @main.command()
-@click.argument('svgfile', type=click.File('r'))
+@click.argument('svgfiles', type=click.File('r'), nargs=-1, required=True)
 @click.option('-o', '--output-directory', type=click.Path(file_okay=False),
               default='.')
 @click.option('--processes', '-p', type=POSITIVE_INT, default=None)
 @click.option(
     '--shell-mode-inkscape/--no-shell-mode-inkscape', default=True,
     help="Run inkscape in shell-mode for efficiency.  Default is true.")
-def pdfs(svgfile, output_directory, shell_mode_inkscape, processes=None):
+def pdfs(svgfiles, output_directory, shell_mode_inkscape, processes=None):
     """ Export PDFs from inkscape SVG coursemaps.
 
     """
     # FIXME: make configurable
     basename_tmpl = '{{ overlays|map("safepath")|join("/") }}'
 
-    tree = etree.parse(svgfile)
+    def pdfs():
+        for svgfile in svgfiles:
+            tree = etree.parse(svgfile)
 
-    layer_info = dwim_layer_info(tree)
+            layer_info = dwim_layer_info(tree)
 
-    # Expand jinja templates in text within SVG file
-    template_vars = {
-        'random_seed': 0,       # FIXME: support this and add command-line arg
-        'svgfile': FileAdapter(svgfile),
-        }
-    render_templates = TemplateRenderer(layer_info)
-    tree = render_templates(tree, template_vars)
+            # Expand jinja templates in text within SVG file
+            template_vars = {
+                # FIXME: support random_seed and add command-line arg
+                'random_seed': 0,
+                'svgfile': FileAdapter(svgfile),
+                }
+            render_templates = TemplateRenderer(layer_info)
+            tree = render_templates(tree, template_vars)
 
-    def pdf_filename(context):
-        basename = render_template(basename_tmpl,
-                                   ChainMap(context, template_vars))
-        return os.path.join(output_directory, basename) + '.pdf'
+            coursemaps = CourseMaps(layer_info)
+            for context, tree_ in coursemaps(tree):
+                basename_ctx = ChainMap(context, template_vars)
+                basename = render_template(basename_tmpl, basename_ctx)
+                pdf_filename = os.path.join(output_directory,
+                                            basename + '.pdf')
+                yield tree_, pdf_filename
 
     inkscape = Inkscape(shell_mode=shell_mode_inkscape)
-
-    coursemaps = CourseMaps(layer_info)
-    pdfs = ((tree_, pdf_filename(context))
-            for context, tree_ in coursemaps(tree))
 
     if processes == 1:
         starmap = itertools.starmap
     else:
         starmap = ParallelUnorderedStarmap(processes)
 
-    for fn in starmap(inkscape.export_pdf, pdfs):
+    for fn in starmap(inkscape.export_pdf, pdfs()):
         log.info("Wrote %r" % fn)
 
 

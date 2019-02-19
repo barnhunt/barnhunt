@@ -5,7 +5,12 @@ Changes
 Next Release
 ============
 
-No changes yet.
+``barnhunt pdfs``
+-----------------
+
+- It is now possible to render coursemaps from multiple SVG files in a
+  single invocation.  (Just list all the files to be rendered on the
+  command line.)
 
 Release 0.2 (2018-11-07)
 ========================
