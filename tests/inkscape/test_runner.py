@@ -94,12 +94,12 @@ class TestShellModeInkscape(object):
 
 
 def run_in_threads(target, args=(), nthreads=16):
-        threads = [threading.Thread(target=target, args=args)
-                   for _ in range(16)]
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
+    threads = [threading.Thread(target=target, args=args)
+               for _ in range(16)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
 
 
 class Test_ensure_directory_exists(object):
