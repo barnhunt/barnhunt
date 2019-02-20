@@ -2,6 +2,11 @@
 Changes
 *******
 
+Next Release
+============
+
+No changes yet.
+
 Release 0.3 (2010-02-20)
 ========================
 
