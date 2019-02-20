@@ -18,6 +18,7 @@ install_requires = [
     'click',
     'jinja2',
     'lxml',
+    'pdfrw',
     'pexpect',
     'shellescape',
     'six',

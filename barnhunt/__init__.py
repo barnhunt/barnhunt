@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
+from collections import defaultdict
 import itertools
 import logging
 import os
 import random
+from tempfile import mkstemp
 
 import click
 from lxml import etree
+from pdfrw import PdfReader, PdfWriter
 from six.moves import range as xrange
 
 from .compat import ChainMap
@@ -19,7 +22,8 @@ from .layerinfo import dwim_layer_info
 from .pager import get_pager
 from .parallel import ParallelUnorderedStarmap
 from .templating import FileAdapter, render_template
-from .inkscape.runner import Inkscape
+# FIXME: move ensure_directory_exists
+from .inkscape.runner import Inkscape, ensure_directory_exists
 
 log = logging.getLogger('')
 
@@ -73,21 +77,66 @@ def pdfs(svgfiles, output_directory, shell_mode_inkscape, processes=None):
 
             coursemaps = CourseMaps(layer_info)
             for context, tree_ in coursemaps(tree):
+                basename = None
+                for overlay in reversed(context['overlays']):
+                    basename = getattr(overlay, 'output_basename', None)
+                    if basename:
+                        break
+
                 basename_ctx = ChainMap(context, template_vars)
-                basename = render_template(basename_tmpl, basename_ctx)
+                if basename is None:
+                    basename = render_template(basename_tmpl, basename_ctx)
+
                 pdf_filename = os.path.join(output_directory,
                                             basename + '.pdf')
-                yield tree_, pdf_filename
+                description = render_template('{{ overlays|join("/") }}',
+                                              basename_ctx)
+                yield tree_, pdf_filename, description
 
     inkscape = Inkscape(shell_mode=shell_mode_inkscape)
+
+    temporary_files = []
+
+    def render(order, render_info):
+        tree, pdf_filename, description = render_info
+        fd, fn = mkstemp(suffix='.pdf', prefix='barnhunt-')
+        os.close(fd)
+        temporary_files.append(fn)
+        inkscape.export_pdf(tree, fn)
+        return pdf_filename, order, fn, description
 
     if processes == 1:
         starmap = itertools.starmap
     else:
         starmap = ParallelUnorderedStarmap(processes)
 
-    for fn in starmap(inkscape.export_pdf, pdfs()):
-        log.info("Wrote %r" % fn)
+    by_output = defaultdict(list)
+    try:
+        for pdf_filename, order, fn, desc in starmap(render,
+                                                     enumerate(pdfs())):
+            log.debug("Rendered %s to %r", desc, fn)
+            by_output[pdf_filename].append((order, fn, desc))
+
+        def fn_order(pdf_filename):
+            return max(order for order, fn, desc in by_output[pdf_filename])
+        for pdf_filename in sorted(by_output.keys(), key=fn_order):
+            dirpath = os.path.dirname(pdf_filename)
+            if dirpath:
+                ensure_directory_exists(dirpath)
+            writer = PdfWriter()
+            page_count = 0
+            for order, fn, desc in sorted(by_output[pdf_filename]):
+                reader = PdfReader(fn)
+                log.debug("Read %s from %r", desc, fn)
+                assert len(reader.pages) == 1
+                page_count += len(reader.pages)
+                writer.addpages(reader.pages)
+            # FIXME: add some metadata?
+            writer.write(pdf_filename)
+            log.info("Wrote %d page(s) to %r", page_count, pdf_filename)
+
+    finally:
+        map(os.unlink, temporary_files)
 
 
 @main.command('rats')

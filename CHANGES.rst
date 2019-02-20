@@ -8,6 +8,12 @@ Next Release
 ``barnhunt pdfs``
 -----------------
 
+- Multi-page output support.
+
+  There is a new syntax to specify the output file basename for an overlay.
+  Multiple overlays which specify the same output file will all be saved to
+  the same file.
+
 - It is now possible to render coursemaps from multiple SVG files in a
   single invocation.  (Just list all the files to be rendered on the
   command line.)
