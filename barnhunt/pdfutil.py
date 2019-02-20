@@ -13,6 +13,8 @@ from .inkscape.runner import ensure_directory_exists
 
 
 def concat_pdfs(in_fns, out_fn):
+    if len(in_fns) == 0:
+        raise ValueError("No PDFs to concatenate")
     dirpath = os.path.dirname(out_fn)
     if dirpath:
         ensure_directory_exists(dirpath)
@@ -20,8 +22,11 @@ def concat_pdfs(in_fns, out_fn):
         shutil.copy(in_fns[0], out_fn)
     else:
         writer = PdfWriter()
-        for in_fn in in_fns:
+        for n, in_fn in enumerate(in_fns):
             reader = PdfReader(in_fn)
+            if n == 0:
+                info = reader.Info
             writer.addpages(reader.pages)
-        # FIXME: add/copy some metadata?
+        # Copy metadata from first PDF
+        writer.trailer.Info = info
         writer.write(out_fn)
