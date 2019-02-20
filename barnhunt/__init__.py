@@ -20,7 +20,7 @@ from six.moves import (
 from .coursemaps import iter_coursemaps
 from .pager import get_pager
 from .parallel import ParallelUnorderedStarmap
-from .pdfs import concat_pdfs
+from .pdfutil import concat_pdfs
 from .inkscape.runner import Inkscape
 
 log = logging.getLogger('')
