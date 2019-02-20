@@ -34,20 +34,28 @@ class LayerFlags(enum.Flag):
 
 class FlaggedLayerInfo(object):
     def __init__(self, elem):
-        flags, label = self._parse_label(svg.layer_label(elem))
+        label = svg.layer_label(elem)
+        flags, output_basename, label = self._parse_label(label)
         self.elem = elem
         self.flags = flags
+        self.output_basename = output_basename
         self.label = label
 
     @staticmethod
     def _parse_label(label):
-        m = re.match(r'\[(?P<flags>\w+)\]\s*', label)
+        m = re.match(r'\['
+                     r'  (?P<flags>\w+)'
+                     r'  (?:\|*(?P<output_basename>\w[-\w\d]*))?'
+                     r'\]\s*',
+                     label, re.X)
         if m:
             flags = LayerFlags.parse(m.group('flags'))
+            output_basename = m.group('output_basename')
             label = label[m.end():]
         else:
             flags = LayerFlags(0)
-        return flags, label
+            output_basename = None
+        return flags, output_basename, label
 
 
 # Regexp which matches the label of the top-level "Ring" layer
@@ -112,6 +120,7 @@ class CompatLayerInfo(object):
             flags = LayerFlags(0)
         self.elem = elem
         self.flags = flags
+        self.output_basename = None
         self.label = label
 
 

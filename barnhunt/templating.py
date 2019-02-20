@@ -33,6 +33,10 @@ class LayerAdapter(object):
         return self._info.label
 
     @property
+    def output_basename(self):
+        return self._info.output_basename
+
+    @property
     def is_overlay(self):
         return bool(self._info.flags & LayerFlags.OVERLAY)
 

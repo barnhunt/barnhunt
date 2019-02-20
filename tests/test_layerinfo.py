@@ -180,18 +180,20 @@ def test_predicate(predicate_name, coursemap1, expected_ids):
     assert matches == expected
 
 
-@pytest.mark.parametrize('layer_label, label, flags', [
-    ('[h] Hidden', "Hidden", LayerFlags.HIDDEN),
-    ('[o] An Overlay', "An Overlay", LayerFlags.OVERLAY),
-    ('Plain Jane', "Plain Jane", LayerFlags(0)),
+@pytest.mark.parametrize('layer_label, label, flags, output_basename', [
+    ('[h] Hidden', "Hidden", LayerFlags.HIDDEN, None),
+    ('[o] An Overlay', "An Overlay", LayerFlags.OVERLAY, None),
+    ('Plain Jane', "Plain Jane", LayerFlags(0), None),
+    ('[o|foo] Another Overlay', "Another Overlay", LayerFlags.OVERLAY, "foo"),
     ])
 @pytest.mark.usefixtures('dummy_svg')
-def test_FlaggedLayerInfo(layer_label, label, flags):
+def test_FlaggedLayerInfo(layer_label, label, flags, output_basename):
     elem = DummyElem(layer_label)
     info = FlaggedLayerInfo(elem)
     assert info.elem is elem
     assert info.label == label
     assert info.flags is flags
+    assert info.output_basename == output_basename
 
 
 @pytest.mark.usefixtures('dummy_svg')

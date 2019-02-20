@@ -35,7 +35,7 @@ def overlay(toplevel):
     elem = etree.SubElement(toplevel.elem, svg.SVG_G_TAG, attrib={
         'id': 'overlay',
         svg.INKSCAPE_GROUPMODE: 'layer',
-        svg.INKSCAPE_LABEL: '[o] Overlay',
+        svg.INKSCAPE_LABEL: '[o|somefile] Overlay',
         })
     return LayerAdapter(elem)
 
@@ -56,6 +56,10 @@ class TestLayerAdapter(object):
 
     def test_label(self, sublayer):
         assert sublayer.label == 'Sublayer'
+
+    def test_output_basename(self, overlay, sublayer):
+        assert overlay.output_basename == 'somefile'
+        assert sublayer.output_basename is None
 
     def test_flagged_label(self, overlay):
         assert overlay.label == 'Overlay'
