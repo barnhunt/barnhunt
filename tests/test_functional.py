@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 
@@ -9,7 +10,8 @@ from barnhunt import main
 
 
 @pytest.mark.parametrize('processes', [None, '1'])
-def test_pdfs(tmpdir, processes):
+def test_pdfs(tmpdir, caplog, processes):
+    caplog.set_level(logging.INFO)
     here = os.path.dirname(__file__)
     drawing_svg = os.path.join(here, 'drawing.svg')
     cmd = ['pdfs', '-o', str(tmpdir), drawing_svg]
@@ -20,13 +22,13 @@ def test_pdfs(tmpdir, processes):
     assert result.exit_code == 0
     outputs = set(f.relto(tmpdir) for f in tmpdir.visit())
     assert outputs == {
-        'Novice_1.pdf',
+        'novice.pdf',
         'Master_1',
         'Master_1/Blind_1.pdf',
         }
 
     # Check that template was expanded
-    pdf = PdfFileReader(open(str(tmpdir.join('Novice_1.pdf')), 'rb'))
+    pdf = PdfFileReader(open(str(tmpdir.join('novice.pdf')), 'rb'))
     assert 'Novice 1' in pdf.pages[0].extractText()
 
 

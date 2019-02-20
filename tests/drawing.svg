@@ -63,7 +63,7 @@
   <g
      inkscape:groupmode="layer"
      id="layer2"
-     inkscape:label="Master 1"
+     inkscape:label="[o] Master 1"
      style="display:inline">
     <g
        inkscape:groupmode="layer"
@@ -72,7 +72,7 @@
       <g
          inkscape:groupmode="layer"
          id="layer4"
-         inkscape:label="Blind 1">
+         inkscape:label="[o] Blind 1">
         <text
            id="text4493"
            y="55.851189"
@@ -90,7 +90,7 @@
   <g
      inkscape:groupmode="layer"
      id="layer5"
-     inkscape:label="Novice 1"
+     inkscape:label="[o|novice] Novice 1"
      style="display:none">
     <text
        xml:space="preserve"

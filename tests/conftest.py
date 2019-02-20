@@ -93,7 +93,7 @@ COURSEMAP2 = b"""<?xml version="1.0" encoding="ascii" standalone="no"?>
        inkscape:label="Overlays">
       <g id="blind1"
          inkscape:groupmode="layer"
-         inkscape:label="[o] Blind 1">
+         inkscape:label="[o|blinds] Blind 1">
         <text>
           <tspan id="blind1_title"
             >{{ course.label }} - {{ overlay.label }}</tspan>
@@ -101,7 +101,7 @@ COURSEMAP2 = b"""<?xml version="1.0" encoding="ascii" standalone="no"?>
       </g>
       <g id="build"
          inkscape:groupmode="layer"
-         inkscape:label="[o] Build Notes">
+         inkscape:label="[o|build_notes] Build Notes">
       </g>
     </g>
   </g>

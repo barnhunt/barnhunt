@@ -121,6 +121,16 @@ def test_get_element_context_no_layers(coursemap2):
     assert context == {}
 
 
+def test_get_element_context_output_basename(coursemap2):
+    context = get_element_context(coursemap2.blind1_title)
+    assert context['output_basename'] == 'blinds'
+
+
+def test_get_element_context_output_basename_none(coursemap2):
+    context = get_element_context(coursemap2.novice_title)
+    assert context.get('output_basename') is None
+
+
 @pytest.fixture
 def srcfile():
     return FileAdapter(open(__file__, 'rb'))
