@@ -18,6 +18,12 @@ Next Release
   single invocation.  (Just list all the files to be rendered on the
   command line.)
 
+Tests
+-----
+
+- test_layerinfo.test_layerflags_str: Fix test to deal with arbitrary ordering
+  of enum.Flag flags.
+
 Release 0.2 (2018-11-07)
 ========================
 

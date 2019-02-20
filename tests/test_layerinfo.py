@@ -153,7 +153,7 @@ def test_layerflags_parse_warns(caplog):
     ("ho", LayerFlags.OVERLAY | LayerFlags.HIDDEN),
     ])
 def test_layerflags_str(s, flags):
-    assert str(flags) == s
+    assert set(str(flags)) == set(s)
 
 
 @pytest.mark.parametrize('predicate_name, expected_ids', [
