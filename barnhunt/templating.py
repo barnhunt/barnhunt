@@ -97,13 +97,17 @@ def get_element_context(elem, layer_info_class=FlaggedLayerInfo):
 
     layer = LayerAdapter(layer, layer_info_class)
     overlays = []
+    output_basename = None
     for ancestor in layer.lineage:
         if ancestor.is_overlay:
             overlays.insert(0, ancestor)
+        if output_basename is None and ancestor.output_basename is not None:
+            output_basename = ancestor.output_basename
 
     context = {
         'layer': layer,
         'overlays': tuple(overlays),
+        'output_basename': output_basename,
         }
     if overlays:
         # Course is the outermost containing overlay

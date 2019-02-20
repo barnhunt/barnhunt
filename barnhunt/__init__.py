@@ -1,29 +1,27 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-from collections import defaultdict
-import itertools
+from collections import OrderedDict
+from itertools import (
+    chain,
+    starmap,
+    )
 import logging
 import os
 import random
 from tempfile import mkstemp
 
 import click
-from lxml import etree
-from pdfrw import PdfReader, PdfWriter
-from six.moves import range as xrange
-
-from .compat import ChainMap
-from .coursemaps import (
-    CourseMaps,
-    TemplateRenderer,
+from six.moves import (
+    range as xrange,
+    map as imap,
     )
-from .layerinfo import dwim_layer_info
+
+from .coursemaps import iter_coursemaps
 from .pager import get_pager
 from .parallel import ParallelUnorderedStarmap
-from .templating import FileAdapter, render_template
-# FIXME: move ensure_directory_exists
-from .inkscape.runner import Inkscape, ensure_directory_exists
+from .pdfs import concat_pdfs
+from .inkscape.runner import Inkscape
 
 log = logging.getLogger('')
 
@@ -57,86 +55,44 @@ def pdfs(svgfiles, output_directory, shell_mode_inkscape, processes=None):
     """ Export PDFs from inkscape SVG coursemaps.
 
     """
-    # FIXME: make configurable
-    basename_tmpl = '{{ overlays|map("safepath")|join("/") }}'
+    coursemaps = iter_coursemaps(svgfiles)
 
-    def pdfs():
-        for svgfile in svgfiles:
-            tree = etree.parse(svgfile)
+    pages = OrderedDict()
+    descriptions = dict()
 
-            layer_info = dwim_layer_info(tree)
-
-            # Expand jinja templates in text within SVG file
-            template_vars = {
-                # FIXME: support random_seed and add command-line arg
-                'random_seed': 0,
-                'svgfile': FileAdapter(svgfile),
-                }
-            render_templates = TemplateRenderer(layer_info)
-            tree = render_templates(tree, template_vars)
-
-            coursemaps = CourseMaps(layer_info)
-            for context, tree_ in coursemaps(tree):
-                basename = None
-                for overlay in reversed(context['overlays']):
-                    basename = getattr(overlay, 'output_basename', None)
-                    if basename:
-                        break
-
-                basename_ctx = ChainMap(context, template_vars)
-                if basename is None:
-                    basename = render_template(basename_tmpl, basename_ctx)
-
-                pdf_filename = os.path.join(output_directory,
-                                            basename + '.pdf')
-                description = render_template('{{ overlays|join("/") }}',
-                                              basename_ctx)
-                yield tree_, pdf_filename, description
+    def render_info(coursemap):
+        basename = coursemap['basename']
+        pdf_fn = os.path.join(output_directory, basename + '.pdf')
+        fd, temp_fn = mkstemp(prefix='barnhunt-', suffix='.pdf')
+        pages.setdefault(pdf_fn, []).append(temp_fn)
+        os.close(fd)
+        descriptions[temp_fn] = coursemap.get('description')
+        return coursemap['tree'], temp_fn
 
     inkscape = Inkscape(shell_mode=shell_mode_inkscape)
 
-    temporary_files = []
-
-    def render(order, render_info):
-        tree, pdf_filename, description = render_info
-        fd, fn = mkstemp(suffix='.pdf', prefix='barnhunt-')
-        os.close(fd)
-        temporary_files.append(fn)
-        inkscape.export_pdf(tree, fn)
-        return pdf_filename, order, fn, description
-
     if processes == 1:
-        starmap = itertools.starmap
+        starmap_ = starmap
     else:
-        starmap = ParallelUnorderedStarmap(processes)
+        starmap_ = ParallelUnorderedStarmap(processes)
 
-    by_output = defaultdict(list)
     try:
-        for pdf_filename, order, fn, desc in starmap(render,
-                                                     enumerate(pdfs())):
-            log.debug("Rendered %s to %r", desc, fn)
-            by_output[pdf_filename].append((order, fn, desc))
+        for fn in starmap_(inkscape.export_pdf, imap(render_info, coursemaps)):
+            log.info("Rendered %s", descriptions.get(fn, fn))
 
-        def fn_order(pdf_filename):
-            return max(order for order, fn, desc in by_output[pdf_filename])
-        for pdf_filename in sorted(by_output.keys(), key=fn_order):
-            dirpath = os.path.dirname(pdf_filename)
-            if dirpath:
-                ensure_directory_exists(dirpath)
-            writer = PdfWriter()
-            page_count = 0
-            for order, fn, desc in sorted(by_output[pdf_filename]):
-                reader = PdfReader(fn)
-                log.debug("Read %s from %r", desc, fn)
-                assert len(reader.pages) == 1
-                page_count += len(reader.pages)
-                writer.addpages(reader.pages)
-            # FIXME: add some metadata?
-            writer.write(pdf_filename)
-            log.info("Wrote %d page(s) to %r", page_count, pdf_filename)
+        for output_fn, temp_fns in pages.items():
+            if log.isEnabledFor(logging.INFO):
+                for fn in temp_fns:
+                    log.info("Reading %s", descriptions.get(fn, fn))
 
+            concat_pdfs(temp_fns, output_fn)
+
+            n_pages = len(temp_fns)
+            log.warning("Wrote %d page%s to %r",
+                        n_pages, 's' if n_pages != 1 else '', output_fn)
     finally:
-        map(os.unlink, temporary_files)
+        for temp_fn in chain.from_iterable(pages.values()):
+            os.unlink(temp_fn)
 
 
 @main.command('rats')
