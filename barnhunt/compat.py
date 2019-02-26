@@ -1,11 +1,5 @@
 import sys
 
-# FIXME: unused?
-try:
-    from collections import ChainMap
-except ImportError:
-    from chainmap import ChainMap  # noqa: F401
-
 try:
     import enum
 except ImportError:
