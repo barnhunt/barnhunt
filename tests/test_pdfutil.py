@@ -1,5 +1,3 @@
-import os
-
 from PyPDF2 import PdfFileReader
 import pytest
 
@@ -9,28 +7,17 @@ from barnhunt.pdfutil import (
     )
 
 
-@pytest.fixture
-def pdf1():
-    here = os.path.dirname(__file__)
-    return os.path.join(here, 'test1.pdf')
-
-
-@pytest.fixture
-def pdf2():
-    here = os.path.dirname(__file__)
-    return os.path.join(here, 'test2.pdf')
-
-
-def test_concat_pdfs(tmpdir, pdf1, pdf2):
+def test_concat_pdfs(tmpdir, test1_pdf, test2_pdf):
     output_fn = str(tmpdir.join('foo/output.pdf'))
-    concat_pdfs([pdf1, pdf2], output_fn)
+    input_fns = [str(test1_pdf), str(test2_pdf)]
+    concat_pdfs(input_fns, output_fn)
     assert page_count(output_fn) == 2
     assert pdf_title(output_fn) == 'Test File #1'
 
 
-def test_concat_pdfs_one_pdf(tmpdir, pdf1):
+def test_concat_pdfs_one_pdf(tmpdir, test1_pdf):
     output_fn = str(tmpdir.join('single.pdf'))
-    concat_pdfs([pdf1], output_fn)
+    concat_pdfs([str(test1_pdf)], output_fn)
     assert page_count(output_fn) == 1
     assert pdf_title(output_fn) == 'Test File #1'
 
@@ -41,17 +28,21 @@ def test_concat_pdfs_no_pdfs(tmpdir):
         concat_pdfs([], output_fn)
 
 
-def test_two_up_two_pages(tmpdir, pdf1, pdf2):
+def test_two_up_two_pages(tmpdir, test1_pdf, test2_pdf):
     out_path = tmpdir.join('output.pdf')
-    in_files = [open(pdf1, 'rb'), open(pdf2, 'rb')]
+    in_files = [test1_pdf.open('rb'), test2_pdf.open('rb')]
     with out_path.open('wb') as out_file:
         two_up(in_files, out_file)
     assert page_count(str(out_path)) == 1
 
 
-def test_two_up_three_pages(tmpdir, pdf1, pdf2):
+def test_two_up_three_pages(tmpdir, test1_pdf, test2_pdf):
     out_path = tmpdir.join('output.pdf')
-    in_files = [open(pdf1, 'rb'), open(pdf1, 'rb'), open(pdf2, 'rb')]
+    in_files = [
+        test1_pdf.open('rb'),
+        test1_pdf.open('rb'),
+        test2_pdf.open('rb'),
+        ]
     with out_path.open('wb') as out_file:
         two_up(in_files, out_file)
     assert page_count(str(out_path)) == 2

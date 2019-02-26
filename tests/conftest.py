@@ -1,7 +1,9 @@
 from io import BytesIO
+import os
 
 from lxml import etree
 
+import py
 import pytest
 
 TEST_SVG = b"""<?xml version="1.0" encoding="ascii" standalone="no"?>
@@ -144,3 +146,18 @@ def coursemap1():
 @pytest.fixture
 def coursemap2():
     return XML(COURSEMAP2)
+
+
+@pytest.fixture
+def tests_dir():
+    return py.path.local(os.path.dirname(__file__))
+
+
+@pytest.fixture
+def test1_pdf(tests_dir):
+    return tests_dir.join('test1.pdf')
+
+
+@pytest.fixture
+def test2_pdf(tests_dir):
+    return tests_dir.join('test2.pdf')
