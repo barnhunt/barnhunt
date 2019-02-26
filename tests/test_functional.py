@@ -52,3 +52,21 @@ def test_coords():
     for x, y in pairs:
         assert 0 <= x <= 25
         assert 0 <= y <= 30
+
+
+@pytest.fixture
+def pdf1():
+    here = os.path.dirname(__file__)
+    return os.path.join(here, 'test1.pdf')
+
+
+def test_2up(tmpdir, pdf1):
+    runner = CliRunner()
+    result = runner.invoke(main, [
+        '2up', '-o', str(tmpdir.join('output.pdf')), pdf1,
+        ])
+    assert result.exit_code == 0
+    outputs = set(f.relto(tmpdir) for f in tmpdir.visit())
+    assert outputs == {
+        'output.pdf',
+        }

@@ -5,7 +5,13 @@ Changes
 Next Release
 ============
 
-No changes yet.
+New Subcommand: 2up
+-------------------
+
+New ``2up`` subcommand to format PDFs for 2-up printing.  Pages are
+pre-shuffled so that the 2-up pages do not need to be shuffled after
+cutting.
+
 
 Release 0.3 (2010-02-20)
 ========================

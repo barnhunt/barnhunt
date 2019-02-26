@@ -20,7 +20,7 @@ from six.moves import (
 from .coursemaps import iter_coursemaps
 from .pager import get_pager
 from .parallel import ParallelUnorderedStarmap
-from .pdfutil import concat_pdfs
+from .pdfutil import concat_pdfs, two_up
 from .inkscape.runner import Inkscape
 
 log = logging.getLogger('')
@@ -162,3 +162,20 @@ def coords(dimensions, number_of_rows, group_size):
         "{0[0]:3d},{0[1]:3d}".format(coord(pt))
         for pt in random.sample(xrange(n_pts), number_of_rows)
         ])
+
+
+@main.command(name="2up")
+@click.argument('pdffiles', type=click.File('rb'), nargs=-1, required=True)
+@click.option('-o', '--output-file', type=click.File('wb', atomic=True),
+              required=True)
+def pdf_2up(pdffiles, output_file):
+    """Format PDF(s) for 2-up printing.
+
+    Pages printed "pre-shuffled".  The first half of the input pages
+    will be printed on the top half of the output pages, and the
+    second half on the lower part of the output pages.  This way, the
+    resulting stack out output can be cut in half, and the pages will
+    be in proper order without having to shuffle them.
+
+    """
+    two_up(pdffiles, output_file)
