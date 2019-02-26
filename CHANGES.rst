@@ -2,6 +2,11 @@
 Changes
 *******
 
+Next Release
+============
+
+No changes yet.
+
 Release 0.4 (2019-02-25)
 ========================
 
