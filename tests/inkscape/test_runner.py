@@ -12,7 +12,6 @@ from barnhunt.inkscape.runner import (
     Inkscape,
     RunInkscape,
     ShellModeInkscape,
-    ensure_directory_exists,
     logging_output,
     )
 
@@ -100,38 +99,6 @@ def run_in_threads(target, args=(), nthreads=16):
         t.start()
     for t in threads:
         t.join()
-
-
-class Test_ensure_directory_exists(object):
-    def test_creates_dir(self, tmpdir):
-        target = tmpdir.join('foo')
-        ensure_directory_exists(str(target))
-        assert target.isdir()
-
-    def test_existing_dir(self, tmpdir):
-        ensure_directory_exists(str(tmpdir))
-
-    def test_existing_file(self, tmpdir):
-        tmpdir.ensure('file')
-        target = tmpdir.join('file', 'dir')
-        with pytest.raises(OSError) as excinfo:
-            ensure_directory_exists(str(target))
-        assert excinfo.value.errno == errno.ENOTDIR
-
-    def test_thread_safe(self, tmpdir):
-        exceptions = []
-
-        def mkdir(d):
-            try:
-                ensure_directory_exists(d)
-            except Exception as ex:
-                exceptions.append(str(ex))
-
-        for n in range(8):
-            target = tmpdir.join('try-%d' % n, 'b', 'c', 'd')
-            dirpath = str(target)
-            run_in_threads(mkdir, (dirpath,))
-            assert len(exceptions) == 0
 
 
 class TestInkscape(object):

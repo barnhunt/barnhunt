@@ -18,6 +18,7 @@ install_requires = [
     'click',
     'jinja2',
     'lxml',
+    'pathlib2 ; python_version<"3.5"',
     'pdfrw',
     'pexpect',
     'shellescape',

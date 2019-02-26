@@ -5,15 +5,12 @@ from __future__ import absolute_import
 
 from collections import namedtuple
 from itertools import chain
-import os
 import shutil
 
 from pdfrw import PageMerge, PdfReader, PdfWriter
 from six.moves import zip_longest
 
-
-# FIXME: move ensure_directory_exists
-from .inkscape.runner import ensure_directory_exists
+from .compat import pathlib
 
 
 def concat_pdfs(in_fns, out_fn):
@@ -21,9 +18,7 @@ def concat_pdfs(in_fns, out_fn):
     """
     if len(in_fns) == 0:
         raise ValueError("No PDFs to concatenate")
-    dirpath = os.path.dirname(out_fn)
-    if dirpath:
-        ensure_directory_exists(dirpath)
+    pathlib.Path(out_fn).parent.mkdir(parents=True, exist_ok=True)
     if len(in_fns) == 1:
         shutil.copy(in_fns[0], out_fn)
     else:
@@ -49,9 +44,7 @@ def two_up(infiles, outfile, width=612, height=792):
         _Rectangle(0, height / 2, width, height / 2),
         _Rectangle(0, 0, width, height / 2),
         ]
-    dirpath = os.path.dirname(outfile.name)
-    if dirpath:
-        ensure_directory_exists(dirpath)
+    pathlib.Path(outfile.name).parent.mkdir(parents=True, exist_ok=True)
     writer = PdfWriter(outfile)
 
     for pair in zip_longest(pages[:n_out], pages[n_out:]):

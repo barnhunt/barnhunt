@@ -1,14 +1,15 @@
 from contextlib import contextmanager
-import errno
 import locale
 import logging
-import os
 from subprocess import check_call, STDOUT
 from tempfile import NamedTemporaryFile, TemporaryFile
 import threading
 
 import pexpect
 import shellescape
+
+from ..compat import pathlib
+
 
 log = logging.getLogger()
 
@@ -117,16 +118,6 @@ class ShellModeInkscape(object):
                         before.replace('\r\n', '\n'))
 
 
-def ensure_directory_exists(path):
-    try:
-        os.makedirs(path)
-    except OSError as ex:
-        if ex.errno != errno.EEXIST:
-            raise
-    else:
-        log.debug("created directory %r", path)
-
-
 class Inkscape(object):
     def __init__(self, executable='inkscape', shell_mode=True):
         runner_class = ShellModeInkscape if shell_mode else RunInkscape
@@ -134,9 +125,7 @@ class Inkscape(object):
 
     def export_pdf(self, tree, filename):
         log.debug("Writing %r", filename)
-        dirpath = os.path.dirname(filename)
-        if dirpath:
-            ensure_directory_exists(dirpath)
+        pathlib.Path(filename).parent.mkdir(parents=True, exist_ok=True)
         with NamedTemporaryFile(suffix='.svg') as svg:
             tree.write(svg, xml_declaration=True)
             svg.flush()
