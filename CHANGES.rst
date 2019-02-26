@@ -2,8 +2,8 @@
 Changes
 *******
 
-Next Release
-============
+Release 0.4 (2019-02-25)
+========================
 
 New Subcommand: 2up
 -------------------
@@ -13,7 +13,7 @@ pre-shuffled so that the 2-up pages do not need to be shuffled after
 cutting.
 
 
-Release 0.3 (2010-02-20)
+Release 0.3 (2019-02-20)
 ========================
 
 ``barnhunt pdfs``

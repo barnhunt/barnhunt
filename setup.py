@@ -3,7 +3,7 @@ from pkg_resources import require
 from setuptools import setup, find_packages
 import sys
 
-version = '0.3.post1.dev0'
+version = '0.4'
 
 # Environment markers aren't sufficiently support with earlier setuptools
 require('setuptools >= 20.8.1')
