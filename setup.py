@@ -2,7 +2,7 @@ import os
 from pkg_resources import require
 from setuptools import setup, find_packages
 
-version = '0.4.post1.dev0'
+version = '0.5'
 
 # Environment markers aren't sufficiently support with earlier setuptools
 require('setuptools >= 20.8.1')

@@ -2,10 +2,12 @@
 Changes
 *******
 
-Next Release
-============
+Release 0.5 (2021-05-04)
+========================
 
-No changes yet.
+Make ``-o`` option to ``2up`` subcommand optional.
+
+Remove support for python < 3.6.
 
 Release 0.4 (2019-02-25)
 ========================
