@@ -177,7 +177,8 @@ def default_2up_output_file():
             "files are specified.",
             ctx=ctx)
     input_path = input_paths.pop()
-    output_path = input_path.with_stem(input_path.stem + "-2up")
+    output_path = input_path.with_name(
+        input_path.stem + "-2up" + input_path.suffix)
     click.echo("Writing output to {0!s}".format(output_path))
     return output_path
 
