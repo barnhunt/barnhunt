@@ -17,6 +17,7 @@ from six.moves import (
     map as imap,
     )
 
+from .compat import pathlib
 from .coursemaps import iter_coursemaps
 from .pager import get_pager
 from .parallel import ParallelUnorderedStarmap
@@ -164,10 +165,29 @@ def coords(dimensions, number_of_rows, group_size):
         ])
 
 
+def default_2up_output_file():
+    """Compute default output filename.
+    """
+    ctx = click.get_current_context()
+    input_paths = set(pathlib.Path(infp.name)
+                      for infp in ctx.params.get('pdffiles', ()))
+    if len(input_paths) != 1:
+        raise click.UsageError(
+            "Can not deduce default output filename when multiple input "
+            "files are specified.",
+            ctx=ctx)
+    input_path = input_paths.pop()
+    output_path = input_path.with_stem(input_path.stem + "-2up")
+    click.echo("Writing output to {0!s}".format(output_path))
+    return output_path
+
+
 @main.command(name="2up")
 @click.argument('pdffiles', type=click.File('rb'), nargs=-1, required=True)
 @click.option('-o', '--output-file', type=click.File('wb', atomic=True),
-              required=True)
+              default=default_2up_output_file,
+              help="Output file name. "
+              "(Default input filename with '-2up' appended to stem.)")
 def pdf_2up(pdffiles, output_file):
     """Format PDF(s) for 2-up printing.
 
