@@ -3,7 +3,6 @@ from itertools import islice
 
 from lxml import etree
 import pytest
-from six import string_types
 
 from barnhunt.coursemaps import (
     CourseMaps,
@@ -125,7 +124,7 @@ class DummyElem(object):
         return dflt
 
     def __eq__(self, other):
-        if isinstance(other, string_types):
+        if isinstance(other, str):
             # NB: doesn't check children
             return self.label == other
         # NB: visible is ignored

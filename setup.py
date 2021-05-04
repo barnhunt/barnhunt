@@ -1,7 +1,6 @@
 import os
 from pkg_resources import require
 from setuptools import setup, find_packages
-import sys
 
 version = '0.4.post1.dev0'
 
@@ -13,30 +12,15 @@ README = open(os.path.join(here, 'README.rst')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
 install_requires = [
-    'aenum ; python_version<"3.6"',
     'click',
     'jinja2',
     'lxml',
-    'pathlib2 ; python_version<"3.5"',
     'pdfrw',
     'pexpect',
     'shellescape',
-    'six',
     'tinycss2',
     'webencodings',
     ]
-
-tests_require = [
-    'pytest >= 3.3',            # > 3.3 for integrated pytest-catchlog support
-    'PyPDF2',
-    ]
-
-setup_requires = [
-    ]
-
-needs_pytest = {'pytest', 'test', 'ptr'}.intersection(sys.argv)
-if needs_pytest:
-    setup_requires.append('pytest-runner')
 
 setup(name='barnhunt',
       version=version,
@@ -48,7 +32,6 @@ setup(name='barnhunt',
           'Environment :: Console',
           'Intended Audience :: End Users/Desktop',
           'License :: OSI Approved :: BSD License',
-          'Programming Language :: Python :: 2',
           'Programming Language :: Python :: 3',
           'Topic :: Multimedia :: Graphics :: Conversion',
           'Topic :: Printing',
@@ -63,12 +46,7 @@ setup(name='barnhunt',
       packages=find_packages(exclude=('tests', 'tests.*')),
       zip_safe=True,
 
-      setup_requires=setup_requires,
-      tests_require=tests_require,
       install_requires=install_requires,
-      extras_require={
-          'test': tests_require,
-          },
       entry_points={
           'console_scripts': [
               'barnhunt = barnhunt:main',

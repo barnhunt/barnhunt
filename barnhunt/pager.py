@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 """Support for paging output
 """
-from __future__ import absolute_import
+import enum
 import sys
 
 import click
-from six import unichr
-
-from .compat import enum
 
 
 def get_pager(group_size):
@@ -101,7 +98,7 @@ def ESC(c):
 
 
 def ALT(c):
-    return unichr(0x100 | ord(c))
+    return chr(0x100 | ord(c))
 
 
 def ANSI_CSI(s):

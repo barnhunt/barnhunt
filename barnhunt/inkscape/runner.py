@@ -1,14 +1,13 @@
 from contextlib import contextmanager
 import locale
 import logging
+import pathlib
 from subprocess import check_call, STDOUT
 from tempfile import NamedTemporaryFile, TemporaryFile
 import threading
 
 import pexpect
 import shellescape
-
-from ..compat import pathlib
 
 
 log = logging.getLogger()

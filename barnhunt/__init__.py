@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
 from collections import OrderedDict
 from itertools import (
     chain,
@@ -8,16 +6,12 @@ from itertools import (
     )
 import logging
 import os
+import pathlib
 import random
 from tempfile import mkstemp
 
 import click
-from six.moves import (
-    range as xrange,
-    map as imap,
-    )
 
-from .compat import pathlib
 from .coursemaps import iter_coursemaps
 from .pager import get_pager
 from .parallel import ParallelUnorderedStarmap
@@ -78,7 +72,7 @@ def pdfs(svgfiles, output_directory, shell_mode_inkscape, processes=None):
         starmap_ = ParallelUnorderedStarmap(processes)
 
     try:
-        for fn in starmap_(inkscape.export_pdf, imap(render_info, coursemaps)):
+        for fn in starmap_(inkscape.export_pdf, map(render_info, coursemaps)):
             log.info("Rendered %s", descriptions.get(fn, fn))
 
         for output_fn, temp_fns in pages.items():
@@ -161,7 +155,7 @@ def coords(dimensions, number_of_rows, group_size):
     pager = get_pager(group_size)
     pager([
         "{0[0]:3d},{0[1]:3d}".format(coord(pt))
-        for pt in random.sample(xrange(n_pts), number_of_rows)
+        for pt in random.sample(range(n_pts), number_of_rows)
         ])
 
 

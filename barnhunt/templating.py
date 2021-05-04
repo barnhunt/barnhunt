@@ -6,15 +6,12 @@ import os
 import random
 import re
 
-from six import python_2_unicode_compatible, text_type
-
 from .layerinfo import FlaggedLayerInfo, LayerFlags
 from .inkscape import svg
 
 log = logging.getLogger()
 
 
-@python_2_unicode_compatible
 class LayerAdapter(object):
     """Adapt an Inkscape SVG layer element for ease of use in templates
     """
@@ -119,7 +116,6 @@ def get_element_context(elem, layer_info_class=FlaggedLayerInfo):
     return context
 
 
-@python_2_unicode_compatible
 class FileAdapter(object):
     """Adapt a file object for ease of use in templates
     """
@@ -209,7 +205,7 @@ def random_rats(context, n=5, min=1, max=5, seed=None, skip=0):
 def safepath(path_comp):
     """A jinja filter to replace shell-unfriendly characters with underscore.
     """
-    return re.sub(r"[\000-\040/\\\177\s]", '_', text_type(path_comp),
+    return re.sub(r"[\000-\040/\\\177\s]", '_', str(path_comp),
                   flags=re.UNICODE)
 
 

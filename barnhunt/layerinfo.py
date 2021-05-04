@@ -1,7 +1,7 @@
+import enum
 import logging
 import re
 
-from .compat import enum
 from .inkscape import svg
 
 log = logging.getLogger()

@@ -1,7 +1,6 @@
 from itertools import islice
 
 import pytest
-from six import string_types
 
 from barnhunt import layerinfo
 from barnhunt.layerinfo import (
@@ -40,7 +39,7 @@ class DummyElem(object):
         self.visible = True
 
     def __eq__(self, other):
-        if isinstance(other, string_types):
+        if isinstance(other, str):
             # NB: doesn't check children
             return self.label == other
         # NB: visible is ignored

@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
 """ Code for rendering Inkscape SVG to PDFS
 """
-from __future__ import absolute_import
-
 from collections import namedtuple
-from itertools import chain
+from itertools import chain, zip_longest
+import pathlib
 import shutil
 
 from pdfrw import PageMerge, PdfReader, PdfWriter
-from six.moves import zip_longest
-
-from .compat import pathlib
 
 
 def concat_pdfs(in_fns, out_fn):

@@ -1,10 +1,9 @@
 """ Helpers for dealing with inline CSS
 
 """
-from collections import MutableMapping
+from collections.abc import MutableMapping
 import logging
 
-from six import python_2_unicode_compatible
 from tinycss2 import (
     ast,
     parse_component_value_list,
@@ -37,7 +36,6 @@ def _parse_inline_css(input):
     return parsed
 
 
-@python_2_unicode_compatible
 class InlineCSS(MutableMapping):
     def __init__(self, input=None):
         self._parsed = _parse_inline_css(input) if input else []

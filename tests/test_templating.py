@@ -4,7 +4,6 @@ import os
 import jinja2
 from lxml import etree
 import pytest
-import six
 import stat
 
 from barnhunt.inkscape import svg
@@ -96,9 +95,8 @@ class TestLayerAdapter(object):
 
 
 @pytest.mark.parametrize("s, h", [
-    # FIXME: fragile
-    ("", 628939552449298973 if six.PY3 else -879499768803923226),
-    (u"Fü", 1702320224449935351 if six.PY3 else 1298042436948015324),
+    ("", 628939552449298973),
+    (u"Fü", 1702320224449935351),
     ])
 def test_hash_string(s, h):
     assert _hash_string(s) == h
@@ -199,9 +197,7 @@ class Test_render_template(object):
     @pytest.mark.parametrize('tmpl, output', [
         ("foo", "foo"),
         ("{{ 'a b'|safepath }}", "a_b"),
-        # XXX: fragile
-        ("{{ rats(seed=0)|join(',') }}",
-         "4,4,1,3,5" if six.PY3 else "5,4,3,2,3"),
+        ("{{ rats(seed=0)|join(',') }}", "4,4,1,3,5"),
         ])
     def test_render(self, tmpl, output):
         context = {}
