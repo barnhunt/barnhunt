@@ -20,3 +20,6 @@ class ParallelUnorderedStarmap(object):
                 yield imap_iter.next(self.timeout)
         except StopIteration:
             pass
+        except Exception:
+            self.pool.terminate()
+            raise
