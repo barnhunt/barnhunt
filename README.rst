@@ -17,7 +17,3 @@ Author
 This package was written by `Jeff Dairiki`_.
 
 .. _Jeff Dairiki: mailto:dairiki@dairiki.org
-
-.. |build status| image::
-    https://travis-ci.org/dairiki/xsendfile_middleware.svg?branch=master
-    :target: https://travis-ci.org/dairiki/xsendfile_middleware
