@@ -13,7 +13,7 @@ class DummyShellmodeInkscape(cmd.Cmd):
         return False
 
     def do_echo(self, line):
-        print("warning: %s" % line)
+        print(f"warning: {line}")
         return False
 
     def do_quit(self, line):

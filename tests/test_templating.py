@@ -150,7 +150,7 @@ class TestFileAdapter(object):
         assert hash(srcfile) == hash(dev_ino)
 
     def test_repr(self, srcfile):
-        assert repr(srcfile) == '<FileAdapter %r>' % __file__
+        assert repr(srcfile) == f'<FileAdapter {__file__!r}>'
 
     def test_str(self, srcfile):
         assert str(srcfile) == __file__

@@ -70,7 +70,7 @@ class LayerAdapter(object):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return "<%s id=%s>" % (self.__class__.__name__, self.id)
+        return f"<{self.__class__.__name__} id={self.id}>"
 
     def __str__(self):
         return self.label
@@ -140,7 +140,7 @@ class FileAdapter(object):
         return hash((st.st_dev, st.st_ino))
 
     def __repr__(self):
-        return "<%s %r>" % (self.__class__.__name__, self.name)
+        return f"<{self.__class__.__name__} {self.name!r}>"
 
     def __str__(self):
         return self.name

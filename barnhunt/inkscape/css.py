@@ -79,7 +79,7 @@ class InlineCSS(MutableMapping):
         return len(list(self.__iter__()))
 
     def __repr__(self):
-        return "<%s %r>" % (self.__class__.__name__, self._parsed)
+        return f"<{self.__class__.__name__} {self._parsed!r}>"
 
     def serialize(self):
         return serialize([tok for tok in self._parsed if tok.type != 'error'])

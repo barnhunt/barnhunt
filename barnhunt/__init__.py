@@ -173,7 +173,7 @@ def default_2up_output_file():
     input_path = input_paths.pop()
     output_path = input_path.with_name(
         input_path.stem + "-2up" + input_path.suffix)
-    click.echo("Writing output to {0!s}".format(output_path))
+    click.echo(f"Writing output to {output_path!s}")
     return output_path
 
 

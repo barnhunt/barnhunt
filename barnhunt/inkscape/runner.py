@@ -130,7 +130,7 @@ class Inkscape(object):
             svg.flush()
             self.run_inkscape([svg.name,
                                '--export-area-page',
-                               '--export-pdf=%s' % filename])
+                               f'--export-pdf={filename!s}'])
         return filename
 
     def close(self):

@@ -34,7 +34,7 @@ def test_get_pager_returns_grouper():
 
 def test_Grouper(capsys):
     pager = Grouper(3)
-    pager(["%d" % n for n in range(5)])
+    pager([f"{n:d}" for n in range(5)])
     output = capsys.readouterr().out
     assert output.split('\n') == [
         '0', '1', '2', '', '3', '4', '', ''

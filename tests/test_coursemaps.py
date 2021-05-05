@@ -13,7 +13,7 @@ from barnhunt.inkscape import svg
 
 
 def get_by_id(tree, id):
-    matches = tree.xpath('//*[@id="%s"]' % id)
+    matches = tree.xpath(f'//*[@id="{id}"]')
     assert len(matches) <= 1
     return matches[0] if matches else None
 
@@ -21,7 +21,7 @@ def get_by_id(tree, id):
     root = getroot() if getroot else tree
     if root.get('id') == id:
         return root
-    return root.find('.//*[@id="%s"]' % id)
+    return root.find(f'.//*[@id="{id}"]')
 
 
 @pytest.fixture
@@ -138,9 +138,10 @@ class DummyElem(object):
 
     def __repr__(self):
         if self.children:
-            return "<%s: %r %r>" % (self.__class__.__name__,
-                                    self.label, self.children)
-        return "<%s: %r>" % (self.__class__.__name__, self.label)
+            detail = f"{self.label!r} {self.children!r}"
+        else:
+            detail = repr(self.label)
+        return f"<{self.__class__.__name__}: {detail}>"
 
 
 class DummyETree(object):

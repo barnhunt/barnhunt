@@ -62,11 +62,7 @@ class TTYPager(object):
                             bold=hilight,
                             bg='cyan' if hilight else None)
             click.echo()
-            click.echo(
-                u"Viewing {beg}–{end}. [jkq] ".format(
-                    beg=beg + 1,
-                    end=i + 1),
-                nl=False)
+            click.echo(f"Viewing {beg + 1}–{i + 1}. [jkq] ", nl=False)
 
             cmd = self._get_cmd()
             if cmd == Command.QUIT:
@@ -162,7 +158,7 @@ class Command(enum.Enum):
             self.__class__._lookup = _lookup = {}
 
         for key in keys:
-            assert key not in _lookup, "redefinition of key {!r}".format(key)
+            assert key not in _lookup, f"redefinition of key {key!r}"
             _lookup[key] = self
 
     @classmethod

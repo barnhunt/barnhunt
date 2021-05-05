@@ -32,7 +32,7 @@ class TemplateRenderer(object):
                         elem.text = render_template(elem.text, local_context)
                     except jinja2.TemplateError as ex:
                         log.error(
-                            "Error expanding template in SVG file: %s" % ex)
+                            f"Error expanding template in SVG file: {ex!s}")
         return tree
 
     def _is_hidden(self, elem):
