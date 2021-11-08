@@ -7,10 +7,17 @@ Unreleased
 
 Support python 3.10.
 
+Bitrot
+------
+
+Address `DeprecationWarning: 'contextfunction' is renamed to
+'pass_context'` from Jinja2. Require `Jinja2>3`.
+
 OCDisms
 -------
 
 Run `pyupgrade --py36-plus` on source.
+
 
 Release 0.5 (2021-05-04)
 ========================

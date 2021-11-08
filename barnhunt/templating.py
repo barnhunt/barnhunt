@@ -156,7 +156,7 @@ def default_random_seed(context):
     return hash((random_seed, svgfile, layer))
 
 
-@jinja2.contextfunction
+@jinja2.pass_context
 def random_rats(context, n=5, min=1, max=5, seed=None, skip=0):
     """Generate random rat numbers.
 
