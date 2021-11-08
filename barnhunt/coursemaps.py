@@ -1,4 +1,5 @@
 import logging
+import os
 
 import jinja2
 from lxml import etree
@@ -122,6 +123,11 @@ DESCRIPTION_TMPL = ('{{ svgfile.name }}'
                     '{% endif %}')
 
 
+def _hash_dev_ino(svgfile):
+    st = os.fstat(svgfile.fileno())
+    return hash((st.st_dev, st.st_ino))
+
+
 def iter_coursemaps(svgfiles):
     """ Returns an iterable of (context, tree) pairs for coursemaps in
     SVGFILES.
@@ -130,13 +136,14 @@ def iter_coursemaps(svgfiles):
     for svgfile in svgfiles:
         tree = etree.parse(svgfile)
         layer_info_class = dwim_layer_info(tree)
+        default_random_seed = _hash_dev_ino(svgfile)
 
         # Expand jinja templates in text within SVG file
         file_context = {
-            # FIXME: support random_seed and add command-line arg
-            'random_seed': 0,
+            'random_seed': svg.get_random_seed(tree, default_random_seed),
             'svgfile': FileAdapter(svgfile),
-            }
+        }
+
         render_templates = TemplateRenderer(layer_info_class)
         tree = render_templates(tree, file_context)
 

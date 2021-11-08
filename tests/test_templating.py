@@ -166,7 +166,7 @@ class Test_random_rats:
             rats = random_rats(context)
             self.check_plausibility(rats)
 
-    @pytest.mark.parametrize('varname', ['random_seed', 'svgfile', 'layer'])
+    @pytest.mark.parametrize('varname', ['random_seed', 'layer'])
     def test_results_change_if_seed_changes(self, varname):
         noseed = random_rats({})
         assert any(noseed != random_rats({varname: n})

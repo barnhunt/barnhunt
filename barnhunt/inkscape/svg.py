@@ -11,15 +11,21 @@ from .css import InlineCSS
 NSMAP = {
     'svg': "http://www.w3.org/2000/svg",
     'inkscape': "http://www.inkscape.org/namespaces/inkscape",
+    'bh': 'http://dairiki.org/barnhunt/inkscape-extensions',
     }
 
-SVG_G_TAG = '{%(svg)s}g' % NSMAP
-SVG_TSPAN_TAG = '{%(svg)s}tspan' % NSMAP
+etree.register_namespace('bh', NSMAP['bh'])
 
-INKSCAPE_GROUPMODE = '{%(inkscape)s}groupmode' % NSMAP
-INKSCAPE_LABEL = '{%(inkscape)s}label' % NSMAP
+SVG_SVG_TAG = etree.QName(NSMAP['svg'], 'svg')
+SVG_G_TAG = etree.QName(NSMAP['svg'], 'g')
+SVG_TSPAN_TAG = etree.QName(NSMAP['svg'], 'tspan')
 
-LAYER_XP = '{%(svg)s}g[@{%(inkscape)s}groupmode="layer"]' % NSMAP
+INKSCAPE_GROUPMODE = etree.QName(NSMAP['inkscape'], 'groupmode')
+INKSCAPE_LABEL = etree.QName(NSMAP['inkscape'], 'label')
+
+LAYER_XP = f'{SVG_G_TAG}[@{INKSCAPE_GROUPMODE}="layer"]'
+
+BH_RANDOM_SEED = etree.QName(NSMAP['bh'], 'random-seed')
 
 
 def walk_layers(elem):
@@ -129,3 +135,44 @@ def copy_etree(tree, omit_elements=None, update_nsmap=None):
         nsmap.update(update_nsmap)
     rv._setroot(copy_elem(root, nsmap=nsmap))
     return rv
+
+
+def _svg_attrib(tree):
+    svg_elem = tree.getroot()
+    if svg_elem.tag != SVG_SVG_TAG:
+        raise ValueError(
+            f"Expected XML root to be an <svg> tag, not <{svg_elem.tag}>")
+    return svg_elem.attrib
+
+
+def get_svg_attrib(tree, attr, default=None):
+    """Get XML attribute from root <svg> element.
+
+    The attribute name, `attr`, should be namedspaced.
+
+    Returns `default` (default `None`) if the attribute does not exist.
+
+    """
+    return _svg_attrib(tree).get(attr, default)
+
+
+def set_svg_attrib(tree, attr, value):
+    """Get XML attribute on root <svg> element.
+
+    The attribute specified by the namedspaced `attr` is set to `value`.
+
+    `Tree` is modified *in place*.
+    """
+    _svg_attrib(tree)[attr] = value
+
+
+def get_random_seed(tree, default=None):
+    value = get_svg_attrib(tree, BH_RANDOM_SEED)
+    if value is None:
+        return default
+    try:
+        return int(value, base=0)
+    except ValueError as ex:
+        raise ValueError(
+            f"Expected integer, not {value!r} for /svg/@bh:random-seed"
+        ) from ex

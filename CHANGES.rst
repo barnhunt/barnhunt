@@ -7,6 +7,28 @@ Unreleased
 
 Support python 3.10.
 
+Random Seed
+-----------
+
+The way the random seed (used for generating random rat numbers) for
+each SVG layer is computed has been changed in a
+**backward-incompatible** way.  This was done so that rat numbers can
+be kept from changing when an SVG source file is copied or edited in
+such a way that the device and/or inode of the file changes.
+
+Now, the file-level random seed (an integer) is read from the
+`bh:random-seed` attribute of the root `svg` element of the SVG
+file. If no `bh:random-seed` attribute is set, the file-level seed is
+computed by hashing the device and inode numbers of the SVG file.
+
+The layer-level seed is formed by hashing the file-level random seed
+with the SML *id* of the layer.
+
+(Formerly, the layer-level seed was form by hashing a triple of the
+file-level seeed (which was always zero), the hash of the SVG files
+device and inode, and the id of the layer.)
+
+
 Bitrot
 ------
 

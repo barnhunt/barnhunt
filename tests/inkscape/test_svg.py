@@ -17,6 +17,18 @@ def tree1():
     return etree.parse(BytesIO(XML1))
 
 
+SVG1 = b'''<svg xmlns:test="http://dairiki.org/testing"
+                xmlns:bh="http://dairiki.org/barnhunt/inkscape-extensions"
+                xmlns="http://www.w3.org/2000/svg"
+                test:attr="test attr value"
+                bh:random-seed="42"></svg>'''
+
+
+@pytest.fixture
+def svgtree1():
+    return etree.parse(BytesIO(SVG1))
+
+
 def test_is_layer(coursemap1):
     tree = coursemap1.tree
     matches = set(filter(svg.is_layer, tree.iter()))
@@ -104,3 +116,44 @@ class Test_copy_etree:
         copy1 = svg.copy_etree(tree1, omit_elements=(tree1.find('aa')))
         assert copy1.find('aa') is None
         assert copy1.find('aaa') is None
+
+
+@pytest.mark.parametrize('attr, expect', [
+    ("attr", "test attr value"),
+    ("unknown", "DEFVAL"),
+    ])
+def test_get_svg_attrib(svgtree1, attr, expect):
+    attr = etree.QName("http://dairiki.org/testing", attr)
+    assert svg.get_svg_attrib(svgtree1, attr, "DEFVAL") == expect
+
+
+def test_get_svg_attrib_raises_value_error(tree1):
+    with pytest.raises(ValueError):
+        svg.get_svg_attrib(tree1, 'attr')
+
+
+def test_set_svg_attrib(svgtree1):
+    attr = etree.QName("http://dairiki.org/testing", 'newattr')
+    svg.set_svg_attrib(svgtree1, attr, "new value")
+    assert svgtree1.getroot().get(attr) == "new value"
+
+
+def test_set_svg_attrib_raises_value_error(tree1):
+    with pytest.raises(ValueError):
+        svg.set_svg_attrib(tree1, 'attr', 'value')
+
+
+def test_get_random_seed(svgtree1):
+    assert svg.get_random_seed(svgtree1) == 42
+
+
+def test_get_random_seed_default(svgtree1):
+    del svgtree1.getroot().attrib[svg.BH_RANDOM_SEED]
+    assert svg.get_random_seed(svgtree1, 'missing') == 'missing'
+
+
+def test_get_random_seed_raise_value_error(svgtree1):
+    svgtree1.getroot().attrib[svg.BH_RANDOM_SEED] = 'not an int'
+    with pytest.raises(ValueError) as excinfo:
+        svg.get_random_seed(svgtree1)
+    assert "Expected integer" in str(excinfo.value)

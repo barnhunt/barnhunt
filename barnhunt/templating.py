@@ -151,9 +151,8 @@ global_rng = random.Random()
 
 def default_random_seed(context):
     random_seed = context.get('random_seed')
-    svgfile = context.get('svgfile')
     layer = context.get('layer')
-    return hash((random_seed, svgfile, layer))
+    return hash((random_seed, layer))
 
 
 @jinja2.pass_context
@@ -173,12 +172,12 @@ def random_rats(context, n=5, min=1, max=5, seed=None, skip=0):
     The same counts will be generated for the same seed.
 
     If no ``seed`` is specified, the value of ``hash(random_seed,
-    svgfile, layer)``, where ``random_seed``, ``svgfile`` and
-    ``layer`` are obtained from the current template context (with any
-    missing values be replace by ``None``), will be used for the seed.
-    The hash of ``svgfile`` depends on the device and inode number of
-    the input SVG file.  The hash of ``layer`` depends on the XML id
-    of the layer.
+    layer)``, where ``random_seed``, and ``layer`` are obtained from
+    the current template context (with any missing values replaced
+    with ``None``), will be used for the seed.  The ``random_seed``,
+    if not specified in the input SVG file is constructed from the
+    device and inode number of the input SVG file.  The hash of
+    ``layer`` depends on the XML id of the layer.
 
     As a special case, passing ``seed``=``False`` will cause a global
     random number generator to be used, and it will not be reseeded.

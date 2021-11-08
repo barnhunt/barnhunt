@@ -1,5 +1,6 @@
 from io import BytesIO
 from itertools import islice
+import os
 
 from lxml import etree
 import pytest
@@ -7,6 +8,7 @@ import pytest
 from barnhunt.coursemaps import (
     CourseMaps,
     TemplateRenderer,
+    _hash_dev_ino,
     )
 from barnhunt.layerinfo import FlaggedLayerInfo
 from barnhunt.inkscape import svg
@@ -299,3 +301,10 @@ class TestCourseMaps:
         overlays, cruft = coursemaps._find_overlays(root)
         assert overlays == ["[o] Overlay 1", "[o] Overlay 2"]
         assert cruft == {"[h] Hidden"}
+
+
+def test_hash_dev_ino():
+    with open(__file__, 'rb') as srcfile:
+        st = os.stat(__file__)
+        dev_ino = st.st_dev, st.st_ino
+        assert _hash_dev_ino(srcfile) == hash(dev_ino)
