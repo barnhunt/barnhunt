@@ -2,6 +2,11 @@
 Changes
 *******
 
+Unreleased
+==========
+
+Support python 3.10.
+
 Release 0.5 (2021-05-04)
 ========================
 
