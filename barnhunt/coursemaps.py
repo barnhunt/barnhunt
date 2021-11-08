@@ -18,7 +18,7 @@ from .templating import (
 log = logging.getLogger()
 
 
-class TemplateRenderer(object):
+class TemplateRenderer:
     def __init__(self, layer_info):
         self.layer_info = layer_info
 
@@ -51,7 +51,7 @@ class TemplateRenderer(object):
         return context
 
 
-class CourseMaps(object):
+class CourseMaps:
     default_context = {
         'overlays': (),
         'course': None,

@@ -20,7 +20,7 @@ def tree1():
 def test_is_layer(coursemap1):
     tree = coursemap1.tree
     matches = set(filter(svg.is_layer, tree.iter()))
-    assert set(elem.get('id') for elem in matches) == set([
+    assert {elem.get('id') for elem in matches} == {
         't1novice',
         't1master',
         'overlays',
@@ -28,7 +28,7 @@ def test_is_layer(coursemap1):
         'build',
         'ring',
         'cruft',
-        ])
+        }
 
 
 def test_lineage(coursemap1):
@@ -87,7 +87,7 @@ def test_layer_label(coursemap1):
     assert svg.layer_label(coursemap1.cruft) == "Cruft"
 
 
-class Test_copy_etree(object):
+class Test_copy_etree:
     def test_copy(self, tree1):
         copy1 = svg.copy_etree(tree1)
         assert etree.tostring(copy1) == etree.tostring(tree1)

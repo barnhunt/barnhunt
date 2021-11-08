@@ -12,7 +12,7 @@ from .inkscape import svg
 log = logging.getLogger()
 
 
-class LayerAdapter(object):
+class LayerAdapter:
     """Adapt an Inkscape SVG layer element for ease of use in templates
     """
 
@@ -116,7 +116,7 @@ def get_element_context(elem, layer_info_class=FlaggedLayerInfo):
     return context
 
 
-class FileAdapter(object):
+class FileAdapter:
     """Adapt a file object for ease of use in templates
     """
     def __init__(self, fp):

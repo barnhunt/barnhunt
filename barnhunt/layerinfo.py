@@ -22,7 +22,7 @@ class LayerFlags(enum.Flag):
     @classmethod
     def parse(cls, s):
         value = cls(0)
-        lookup = dict((flag.flag_char, flag) for flag in cls)
+        lookup = {flag.flag_char: flag for flag in cls}
         for c in set(s):
             flag = lookup.get(c)
             if flag is not None:
@@ -32,7 +32,7 @@ class LayerFlags(enum.Flag):
         return value
 
 
-class FlaggedLayerInfo(object):
+class FlaggedLayerInfo:
     def __init__(self, elem):
         label = svg.layer_label(elem)
         flags, output_basename, label = self._parse_label(label)
@@ -105,7 +105,7 @@ def is_overlay(layer):
         and any(is_course(a) for a in svg.lineage(parent)))
 
 
-class CompatLayerInfo(object):
+class CompatLayerInfo:
     is_course = staticmethod(is_course)
     is_cruft = staticmethod(is_cruft)
     is_overlay = staticmethod(is_overlay)

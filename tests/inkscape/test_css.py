@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 
 import pytest
@@ -6,7 +5,7 @@ import pytest
 from barnhunt.inkscape.css import InlineCSS
 
 
-class TestInlineCSS(object):
+class TestInlineCSS:
     def test_setitem(self):
         css = InlineCSS()
         css['display'] = 'none'
@@ -61,5 +60,5 @@ class TestInlineCSS(object):
         assert css.serialize() == style
 
     def test_str(self):
-        css = InlineCSS(u'x: fü')
-        assert str(css) == u'x: fü;'
+        css = InlineCSS('x: fü')
+        assert str(css) == 'x: fü;'

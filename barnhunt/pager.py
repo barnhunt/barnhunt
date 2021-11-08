@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Support for paging output
 """
 import enum
@@ -15,7 +14,7 @@ def get_pager(group_size):
     return pager_class(group_size)
 
 
-class Grouper(object):
+class Grouper:
     """Simple "pager" which just spews all lines to stdout, with blank
     lines every ``group_size`` lines.
 
@@ -31,7 +30,7 @@ class Grouper(object):
             print('')
 
 
-class TTYPager(object):
+class TTYPager:
     """Fancy terminal pager.
 
     Displays ``group_size`` lines per page.

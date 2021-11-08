@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """ Code for rendering Inkscape SVG to PDFS
 """
 from collections import namedtuple

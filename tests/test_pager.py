@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import sys
 
 import pytest
@@ -41,7 +40,7 @@ def test_Grouper(capsys):
         ]
 
 
-class TestTTYPager(object):
+class TestTTYPager:
     @pytest.fixture
     def pager(self):
         return TTYPager(2)

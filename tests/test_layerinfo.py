@@ -24,7 +24,7 @@ def get_by_id(tree, id):
     return root.find(f'.//*[@id="{id}"]')
 
 
-class DummyElem(object):
+class DummyElem:
     parent = None
 
     def __init__(self, label=None, children=None, visible=None):
@@ -59,7 +59,7 @@ class DummyElem(object):
         return f"<{self.__class__.__name__}: {detail}>"
 
 
-class DummyETree(object):
+class DummyETree:
     def __init__(self, root):
         self.root = root
 
@@ -71,7 +71,7 @@ def dummy_etree(layers):
     return DummyETree(root=DummyElem(children=layers))
 
 
-class DummySvg(object):
+class DummySvg:
     @staticmethod
     def copy_etree(tree, omit_elements):
         def copy_elem(elem):
@@ -175,8 +175,8 @@ def test_layerflags_str(s, flags):
 def test_predicate(predicate_name, coursemap1, expected_ids):
     predicate = getattr(layerinfo, predicate_name)
     tree = coursemap1.tree
-    matches = set(elem for elem in tree.iter() if predicate(elem))
-    expected = set(get_by_id(tree, id) for id in expected_ids)
+    matches = {elem for elem in tree.iter() if predicate(elem)}
+    expected = {get_by_id(tree, id) for id in expected_ids}
     assert matches == expected
 
 
@@ -197,7 +197,7 @@ def test_FlaggedLayerInfo(layer_label, label, flags, output_basename):
 
 
 @pytest.mark.usefixtures('dummy_svg')
-class TestCompatLayerInfo(object):
+class TestCompatLayerInfo:
     @pytest.mark.parametrize('label, flags', [
         ('Prototypes', LayerFlags.HIDDEN),
         ('Master 1', LayerFlags.OVERLAY),
@@ -228,7 +228,7 @@ class TestCompatLayerInfo(object):
 
 
 @pytest.mark.usefixtures('dummy_svg')
-class Test_dwim_layer_info(object):
+class Test_dwim_layer_info:
     @pytest.fixture
     def dummy_tree(self, leaf_label_1):
         Elem = DummyElem

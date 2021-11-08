@@ -20,7 +20,7 @@ def test_pdfs(tmpdir, caplog, processes):
     runner = CliRunner()
     result = runner.invoke(main, cmd)
     assert result.exit_code == 0
-    outputs = set(f.relto(tmpdir) for f in tmpdir.visit())
+    outputs = {f.relto(tmpdir) for f in tmpdir.visit()}
     assert outputs == {
         'novice.pdf',
         'Master_1',

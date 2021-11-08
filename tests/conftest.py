@@ -118,7 +118,7 @@ COURSEMAP2 = b"""<?xml version="1.0" encoding="ascii" standalone="no"?>
 """
 
 
-class XML(object):
+class XML:
     def __init__(self, raw_bytes):
         self.tree = etree.parse(BytesIO(raw_bytes))
 

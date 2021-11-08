@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import os
 
 import jinja2
@@ -49,7 +48,7 @@ def sublayer(overlay):
     return LayerAdapter(elem)
 
 
-class TestLayerAdapter(object):
+class TestLayerAdapter:
     def test_id(self, sublayer):
         assert sublayer.id == 'sublayer'
 
@@ -96,7 +95,7 @@ class TestLayerAdapter(object):
 
 @pytest.mark.parametrize("s, h", [
     ("", 628939552449298973),
-    (u"Fü", 1702320224449935351),
+    ("Fü", 1702320224449935351),
     ])
 def test_hash_string(s, h):
     assert _hash_string(s) == h
@@ -134,7 +133,7 @@ def srcfile():
     return FileAdapter(open(__file__, 'rb'))
 
 
-class TestFileAdapter(object):
+class TestFileAdapter:
     def test_name(self, srcfile):
         assert srcfile.name == __file__
 
@@ -156,7 +155,7 @@ class TestFileAdapter(object):
         assert str(srcfile) == __file__
 
 
-class Test_random_rats(object):
+class Test_random_rats:
     def check_plausibility(self, results):
         assert len(results) == 5
         assert all(1 <= r <= 5 for r in results)
@@ -193,7 +192,7 @@ def test_safepath_coerces_to_text():
     assert safepath(42) == "42"
 
 
-class Test_render_template(object):
+class Test_render_template:
     @pytest.mark.parametrize('tmpl, output', [
         ("foo", "foo"),
         ("{{ 'a b'|safepath }}", "a_b"),

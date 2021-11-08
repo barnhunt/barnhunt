@@ -13,7 +13,7 @@ import shellescape
 log = logging.getLogger()
 
 
-class RunInkscape(object):
+class RunInkscape:
     """ Run inkscape with specific arguments.
     """
     def __init__(self, executable='inkscape'):
@@ -45,7 +45,7 @@ def logging_output(cmd):
                             cmd, logfile.read())
 
 
-class ShellModeInkscape(object):
+class ShellModeInkscape:
     """Run inkscape with specific arguments.
 
     This uses inkscape's --shell mode so that (for efficiency)
@@ -97,7 +97,7 @@ class ShellModeInkscape(object):
                                    timeout=self.timeout)
         self._wait_for_prompt()
 
-    def _wait_for_prompt(self, prompt=u'\n>', expect_lines=1):
+    def _wait_for_prompt(self, prompt='\n>', expect_lines=1):
         """Wait for prompt."""
         # NB: pexpect (==4.4.0) appears to be broken when
         # searchwindowsize is set to something other than None.
@@ -107,7 +107,7 @@ class ShellModeInkscape(object):
         # match is found.
         #
         # __ https://github.com/pexpect/pexpect/blob/master/pexpect/expect.py#L22  # noqa
-        self.child.expect_exact(u'\n>')  # , searchwindowsize=len(prompt))
+        self.child.expect_exact('\n>')  # , searchwindowsize=len(prompt))
         self._log_output(expect_lines)
 
     def _log_output(self, expect_lines=0):
@@ -117,7 +117,7 @@ class ShellModeInkscape(object):
                         before.replace('\r\n', '\n'))
 
 
-class Inkscape(object):
+class Inkscape:
     def __init__(self, executable='inkscape', shell_mode=True):
         runner_class = ShellModeInkscape if shell_mode else RunInkscape
         self.run_inkscape = runner_class(executable)

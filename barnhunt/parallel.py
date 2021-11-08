@@ -1,7 +1,7 @@
 from multiprocessing.pool import ThreadPool
 
 
-class ParallelUnorderedStarmap(object):
+class ParallelUnorderedStarmap:
     """Multi-threaded version of itertools.starmap.
     """
     def __init__(self, processes=None, timeout=3600):

@@ -104,7 +104,7 @@ def test_get_local_context(template_renderer):
     assert context['layer'].label == 'The Layer'
 
 
-class DummyElem(object):
+class DummyElem:
     parent = None
 
     def __init__(self, label=None, children=None, visible=None):
@@ -144,7 +144,7 @@ class DummyElem(object):
         return f"<{self.__class__.__name__}: {detail}>"
 
 
-class DummyETree(object):
+class DummyETree:
     def __init__(self, root):
         self.root = root
 
@@ -156,7 +156,7 @@ def dummy_etree(layers):
     return DummyETree(root=DummyElem(children=layers))
 
 
-class DummySvg(object):
+class DummySvg:
     @staticmethod
     def copy_etree(tree, omit_elements):
         def copy_elem(elem):
@@ -215,7 +215,7 @@ def dummy_svg(monkeypatch):
 
 
 @pytest.mark.usefixtures('dummy_svg')
-class TestCourseMaps(object):
+class TestCourseMaps:
     @pytest.fixture
     def coursemaps(self):
         return CourseMaps(layer_info=FlaggedLayerInfo)
@@ -279,18 +279,18 @@ class TestCourseMaps(object):
         assert result == [
             (
                 ["[o] Overlay 1", "[o] Overlay 1.1"],
-                set(["[h] Hidden", "[h] Hidden 1.2", "[o] Overlay 1.3",
-                     "[o] Overlay 2"])
-                ),
+                {"[h] Hidden", "[h] Hidden 1.2", "[o] Overlay 1.3",
+                 "[o] Overlay 2"}
+            ),
             (
                 ["[o] Overlay 1", "[o] Overlay 1.3"],
-                set(["[h] Hidden", "[o] Overlay 1.1", "[h] Hidden 1.2",
-                     "[o] Overlay 2"])
-                ),
+                {"[h] Hidden", "[o] Overlay 1.1", "[h] Hidden 1.2",
+                 "[o] Overlay 2"}
+            ),
             (
                 ["[o] Overlay 2", "[o] Overlay 2.1"],
-                set(["[h] Hidden", "[o] Overlay 1"])
-                ),
+                {"[h] Hidden", "[o] Overlay 1"}
+            ),
             ]
 
     @pytest.mark.usefixtures('dummy_svg')
@@ -298,4 +298,4 @@ class TestCourseMaps(object):
         root = dummy_tree.getroot()
         overlays, cruft = coursemaps._find_overlays(root)
         assert overlays == ["[o] Overlay 1", "[o] Overlay 2"]
-        assert cruft == set(["[h] Hidden"])
+        assert cruft == {"[h] Hidden"}

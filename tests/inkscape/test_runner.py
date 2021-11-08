@@ -16,7 +16,7 @@ from barnhunt.inkscape.runner import (
     )
 
 
-class TestRunInkscape(object):
+class TestRunInkscape:
     def test_success(self):
         RunInkscape(executable='/bin/true')([])
 
@@ -41,7 +41,7 @@ def test_logging_output(caplog):
     assert 'bar' in caplog.text
 
 
-class TestShellModeInkscape(object):
+class TestShellModeInkscape:
     @pytest.fixture
     def inkscape(self):
         return self._make_dummy()
@@ -101,14 +101,14 @@ def run_in_threads(target, args=(), nthreads=16):
         t.join()
 
 
-class TestInkscape(object):
+class TestInkscape:
     @pytest.fixture
     def runner(self):
         return DummyInkscapeRunner()
 
     @pytest.fixture
     def tree(self):
-        class DummyTree(object):
+        class DummyTree:
             def write(self, outfp, xml_declaration=False):
                 pass
         return DummyTree()
@@ -135,7 +135,7 @@ class TestInkscape(object):
         assert runner.closed
 
 
-class DummyInkscapeRunner(object):
+class DummyInkscapeRunner:
     def __init__(self):
         self.commands = []
         self.closed = False

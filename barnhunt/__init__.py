@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from collections import OrderedDict
 from itertools import (
     chain,
@@ -163,8 +162,8 @@ def default_2up_output_file():
     """Compute default output filename.
     """
     ctx = click.get_current_context()
-    input_paths = set(pathlib.Path(infp.name)
-                      for infp in ctx.params.get('pdffiles', ()))
+    input_paths = {pathlib.Path(infp.name)
+                   for infp in ctx.params.get('pdffiles', ())}
     if len(input_paths) != 1:
         raise click.UsageError(
             "Can not deduce default output filename when multiple input "

@@ -7,6 +7,11 @@ Unreleased
 
 Support python 3.10.
 
+OCDisms
+-------
+
+Run `pyupgrade --py36-plus` on source.
+
 Release 0.5 (2021-05-04)
 ========================
 
