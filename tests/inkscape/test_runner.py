@@ -119,14 +119,14 @@ class TestInkscape:
         rv.run_inkscape = runner
         return rv
 
-    def test_export_pdf(self, inkscape, runner, tree, tmpdir):
-        output_path = str(tmpdir.join('foo/bar.pdf'))
+    def test_export_pdf(self, inkscape, runner, tree, tmp_path):
+        output_path = tmp_path.joinpath('foo/bar.pdf').__fspath__()
         inkscape.export_pdf(tree, output_path)
         assert len(runner.commands) == 1
         args = runner.commands[0]
         assert args[1] == '--export-area-page'
         assert args[2] == f'--export-pdf={output_path}'
-        assert tmpdir.join('foo').isdir()
+        assert tmp_path.joinpath('foo').is_dir()
 
     def test_contextmanager(self, inkscape, runner):
         with inkscape as rv:

@@ -60,25 +60,27 @@ def test_random_seed(tmp_drawing_svg, caplog):
 
 
 @pytest.mark.parametrize('processes', [None, '1'])
-def test_pdfs(tmpdir, caplog, processes):
+def test_pdfs(tmp_path, caplog, processes):
     caplog.set_level(logging.INFO)
     here = os.path.dirname(__file__)
     drawing_svg = os.path.join(here, 'drawing.svg')
-    cmd = ['pdfs', '-o', str(tmpdir), drawing_svg]
+    cmd = ['pdfs', '-o', str(tmp_path), drawing_svg]
     if processes is not None:
         cmd[1:1] = ['-p', processes]
     runner = CliRunner()
     result = runner.invoke(main, cmd)
     assert result.exit_code == 0
-    outputs = {f.relto(tmpdir) for f in tmpdir.visit()}
-    assert outputs == {
+    expected_pdfs = {
         'novice.pdf',
-        'Master_1',
         'Master_1/Blind_1.pdf',
-        }
+    }
+    outputs = {Path(dirpath).joinpath(fn)
+               for dirpath, _, filenames in os.walk(tmp_path)
+               for fn in filenames}
+    assert outputs == {tmp_path.joinpath(pdf) for pdf in expected_pdfs}
 
     # Check that template was expanded
-    pdf = PdfFileReader(open(str(tmpdir.join('novice.pdf')), 'rb'))
+    pdf = PdfFileReader(open(tmp_path.joinpath('novice.pdf'), 'rb'))
     assert 'Novice 1' in pdf.pages[0].extractText()
 
 
@@ -104,8 +106,8 @@ def test_coords():
         assert 0 <= y <= 30
 
 
-def test_2up(tmpdir, test1_pdf):
-    outfile = tmpdir.join('output.pdf')
+def test_2up(tmp_path, test1_pdf):
+    outfile = tmp_path.joinpath('output.pdf')
     runner = CliRunner()
     result = runner.invoke(main, ['2up', '-o', str(outfile), str(test1_pdf)])
     assert result.exit_code == 0
