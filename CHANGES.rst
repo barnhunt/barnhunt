@@ -8,7 +8,7 @@ Release 1.0.1 (2021-11-10)
 Diagnostics
 -----------
 
-`Barnhunt pdfs` now issues a warning when generating PDFs from an SVG
+``Barnhunt pdfs`` now issues a warning when generating PDFs from an SVG
 file which does not have an explicit random-seed set.
 
 Bugs Fixed
@@ -32,30 +32,30 @@ be kept from changing when an SVG source file is copied or edited in
 such a way that the device and/or inode of the file changes.
 
 Now, the file-level random seed (an integer) is read from the
-`bh:random-seed` attribute of the root `svg` element of the SVG
-file. If no `bh:random-seed` attribute is set, the file-level seed is
+``bh:random-seed`` attribute of the root ``svg`` element of the SVG
+file. If no ``bh:random-seed`` attribute is set, the file-level seed is
 computed by hashing the device and inode numbers of the SVG file.
 
 The layer-level seed is formed by hashing the file-level random seed
-with the SML *id* of the layer.
+with the XML *id* of the layer.
 
 (Formerly, the layer-level seed was form by hashing a triple of the
 file-level seeed (which was always zero), the hash of the SVG files
 device and inode, and the id of the layer.)
 
-A new `barnhunt random-seed` sub-command has been implemented to help
+A new ``barnhunt random-seed`` sub-command has been implemented to help
 with setting the random seed for SVG source files.
 
 Bitrot
 ------
 
-Address `DeprecationWarning: 'contextfunction' is renamed to
-'pass_context'` from Jinja2. Require `Jinja2>3`.
+Address ``DeprecationWarning: 'contextfunction' is renamed to
+'pass_context'`` from Jinja2. Require ``Jinja2>3``.
 
 OCDisms
 -------
 
-Run `pyupgrade --py36-plus` on source.
+Run ``pyupgrade --py36-plus`` on source.
 
 
 Release 0.5 (2021-05-04)
