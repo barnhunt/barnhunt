@@ -157,3 +157,13 @@ def test_get_random_seed_raise_value_error(svgtree1):
     with pytest.raises(ValueError) as excinfo:
         svg.get_random_seed(svgtree1)
     assert "Expected integer" in str(excinfo.value)
+
+
+def test_set_random_seed(svgtree1):
+    svg.set_random_seed(svgtree1, 42)
+    assert svgtree1.getroot().attrib[svg.BH_RANDOM_SEED] == '42'
+
+
+def test_set_random_seed_raises_value_error(svgtree1):
+    with pytest.raises(ValueError):
+        svg.set_random_seed(svgtree1, "42")

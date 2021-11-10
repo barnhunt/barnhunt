@@ -176,3 +176,7 @@ def get_random_seed(tree, default=None):
         raise ValueError(
             f"Expected integer, not {value!r} for /svg/@bh:random-seed"
         ) from ex
+
+
+def set_random_seed(tree, value):
+    set_svg_attrib(tree, BH_RANDOM_SEED, f"{value:d}")

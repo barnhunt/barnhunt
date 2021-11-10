@@ -28,6 +28,8 @@ with the SML *id* of the layer.
 file-level seeed (which was always zero), the hash of the SVG files
 device and inode, and the id of the layer.)
 
+A new `barnhunt random-seed` sub-command has been implemented to help
+with setting the random seed for SVG source files.
 
 Bitrot
 ------

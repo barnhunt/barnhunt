@@ -9,6 +9,7 @@ import pathlib
 import random
 from tempfile import mkstemp
 
+from atomicwrites import atomic_write
 import click
 
 from .coursemaps import iter_coursemaps
@@ -35,6 +36,44 @@ def main(verbose):
     logging.basicConfig(
         level=log_level,
         format="(%(levelname)1.1s) [%(threadName)s] %(message)s")
+
+
+@main.command()
+@click.argument(
+    'svgfiles', type=click.Path(exists=True,
+                                dir_okay=False,
+                                writable=True),
+    nargs=-1, required=True)
+@click.option(
+    '--force-reseed/--no-force-reseed', '-f',
+    help="Force reseeding, even if a seed has been previously set.")
+def random_seed(svgfiles, force_reseed):
+    """Set random-seem for SVG file.
+
+    This command sets a random random seed in the named SVG files.
+    The random seed is used, e.g., when generating random rat numbers.
+    Having the seed specified in the source SVG file ensures that the
+    random rat numbers are reproduceable.
+
+    By default, this will only set a random seed if one has not
+    already been set.  Use the --force-reseed to override this
+    behavior.
+    """
+    from lxml import etree
+
+    from barnhunt.inkscape import svg
+
+    for svgpath in svgfiles:
+        tree = etree.parse(svgpath)
+        if not force_reseed:
+            if svg.get_random_seed(tree) is not None:
+                log.info("%s: already has random-seed set, skipping", svgpath)
+                continue
+        random_seed = random.randrange(2**128)
+        log.debug("%s: setting random seed to %d", svgpath, random_seed)
+        svg.set_random_seed(tree, random_seed)
+        with atomic_write(svgpath, mode="wb", overwrite=True) as f:
+            tree.write(f)
 
 
 @main.command()

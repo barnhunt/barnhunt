@@ -1,12 +1,62 @@
 import logging
 import os
+from pathlib import Path
 import re
+from shutil import copyfile
 
 from click.testing import CliRunner
+from lxml import etree
 from PyPDF2 import PdfFileReader
 import pytest
 
 from barnhunt import main
+
+
+@pytest.fixture
+def tmp_drawing_svg(tmp_path):
+    drawing_svg = Path(__file__).parent.joinpath('drawing.svg')
+    tmp_drawing_svg = tmp_path.joinpath('drawing.svg')
+    copyfile(drawing_svg, tmp_drawing_svg)
+    return tmp_drawing_svg
+
+
+def test_random_seed(tmp_drawing_svg, caplog):
+    caplog.set_level(logging.INFO)
+    svgfile = tmp_drawing_svg.__fspath__()
+
+    def get_random_seed():
+        tree = etree.parse(svgfile)
+        root = tree.getroot()
+        assert root.tag == '{http://www.w3.org/2000/svg}svg'
+        value = root.attrib[
+            '{http://dairiki.org/barnhunt/inkscape-extensions}random-seed'
+        ]
+        return int(value)
+
+    def run_it(*args):
+        cmd = ['random-seed']
+        cmd.extend(args)
+        cmd.append(svgfile)
+        runner = CliRunner()
+        result = runner.invoke(main, cmd)
+        assert result.exit_code == 0
+
+    # Set seed in SVG file without pre-existing seed
+    run_it()
+    random_seed = get_random_seed()
+    assert isinstance(random_seed, int)
+
+    # Check that existing seed is not overwritten
+    caplog.clear()
+    run_it()
+    assert get_random_seed() == random_seed
+    assert re.search(r'\balready\b.*\bset\b', caplog.text)
+
+    # Force overwriting of existin seed
+    caplog.clear()
+    run_it("--force-reseed")
+    assert get_random_seed() != random_seed
+    assert not re.search(r'\balready\b.*\bset\b', caplog.text)
 
 
 @pytest.mark.parametrize('processes', [None, '1'])
