@@ -2,6 +2,15 @@
 Changes
 *******
 
+Next Release
+============
+
+Bugs Fixed
+----------
+
+Open SVG files in binary mode in order to let the XMl parser figure
+out the encoding from the XML declaration.
+
 Release 1.0 (2021-11-10)
 ========================
 

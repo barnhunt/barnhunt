@@ -77,7 +77,7 @@ def random_seed(svgfiles, force_reseed):
 
 
 @main.command()
-@click.argument('svgfiles', type=click.File('r'), nargs=-1, required=True)
+@click.argument('svgfiles', type=click.File('rb'), nargs=-1, required=True)
 @click.option('-o', '--output-directory', type=click.Path(file_okay=False),
               default='.')
 @click.option('--processes', '-p', type=POSITIVE_INT, default=None)
