@@ -136,11 +136,15 @@ def iter_coursemaps(svgfiles):
     for svgfile in svgfiles:
         tree = etree.parse(svgfile)
         layer_info_class = dwim_layer_info(tree)
-        default_random_seed = _hash_dev_ino(svgfile)
+
+        random_seed = svg.get_random_seed(tree)
+        if random_seed is None:
+            log.warning("%s: no random-seed is set in SVG file", svgfile.name)
+            random_seed = _hash_dev_ino(svgfile)
 
         # Expand jinja templates in text within SVG file
         file_context = {
-            'random_seed': svg.get_random_seed(tree, default_random_seed),
+            'random_seed': random_seed,
             'svgfile': FileAdapter(svgfile),
         }
 

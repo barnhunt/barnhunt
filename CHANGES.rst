@@ -5,6 +5,12 @@ Changes
 Next Release
 ============
 
+Diagnostics
+-----------
+
+`Barnhunt pdfs` now issues a warning when generating PDFs from an SVG
+file which does not have an explicit random-seed set.
+
 Bugs Fixed
 ----------
 

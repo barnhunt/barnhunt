@@ -2,7 +2,6 @@ import logging
 import os
 from pathlib import Path
 import re
-from shutil import copyfile
 
 from click.testing import CliRunner
 from lxml import etree
@@ -10,14 +9,6 @@ from PyPDF2 import PdfFileReader
 import pytest
 
 from barnhunt import main
-
-
-@pytest.fixture
-def tmp_drawing_svg(tmp_path):
-    drawing_svg = Path(__file__).parent.joinpath('drawing.svg')
-    tmp_drawing_svg = tmp_path.joinpath('drawing.svg')
-    copyfile(drawing_svg, tmp_drawing_svg)
-    return tmp_drawing_svg
 
 
 def test_random_seed(tmp_drawing_svg, caplog):

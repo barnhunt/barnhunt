@@ -9,6 +9,7 @@ from barnhunt.coursemaps import (
     CourseMaps,
     TemplateRenderer,
     _hash_dev_ino,
+    iter_coursemaps,
     )
 from barnhunt.layerinfo import FlaggedLayerInfo
 from barnhunt.inkscape import svg
@@ -308,3 +309,11 @@ def test_hash_dev_ino():
         st = os.stat(__file__)
         dev_ino = st.st_dev, st.st_ino
         assert _hash_dev_ino(srcfile) == hash(dev_ino)
+
+
+# XXX: more unit tests for iter_coursemaps are probably in order
+def test_iter_coursemaps_warns_if_no_random_seed(caplog, drawing_svg):
+    svgfiles = [drawing_svg.open('rb')]
+    for _ in iter_coursemaps(svgfiles):
+        pass
+    assert "no random-seed" in caplog.text
