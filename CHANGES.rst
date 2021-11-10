@@ -2,8 +2,8 @@
 Changes
 *******
 
-Unreleased
-==========
+Release 1.0 (2021-11-10)
+========================
 
 Support python 3.10.
 
