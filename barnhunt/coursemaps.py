@@ -69,8 +69,15 @@ class CourseMaps:
     def __call__(self, tree):
         for path, hidden_layers in self._iter_overlays(tree.getroot()):
             context = self._get_context(path)
+            output_basename = context.get("output_basename")
+            if output_basename:
+                omit_elements = hidden_layers.union(
+                    self._find_exclusions(output_basename, tree.getroot())
+                )
+            else:
+                omit_elements = hidden_layers
             # Copy tree, omitting hidden layers
-            pruned = svg.copy_etree(tree, omit_elements=hidden_layers)
+            pruned = svg.copy_etree(tree, omit_elements=omit_elements)
             # Ensure all remaining layers are marked for display
             for layer in svg.walk_layers(pruned.getroot()):
                 svg.ensure_visible(layer)
@@ -109,6 +116,13 @@ class CourseMaps:
                 overlays.append(node)
                 children[:] = []
         return overlays, cruft
+
+    def _find_exclusions(self, output_basename, elem):
+        for node, children in svg.walk_layers2(elem):
+            info = self.layer_info(node)
+            if output_basename in info.exclude_from:
+                yield node
+                children[:] = []
 
 
 BASENAME_TMPL = ('{% if output_basename -%}'

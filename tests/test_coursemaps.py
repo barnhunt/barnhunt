@@ -237,8 +237,11 @@ class TestCourseMaps:
                 ]),
             Elem("[o] Overlay 2", [
                 Elem("[o] Overlay 2.1"),
-                ])
-            ])
+                ]),
+            Elem("Test", [
+                Elem("[!base]Not in base"),
+            ]),
+        ])
         return DummyETree(root)
 
     def test_init_with_context(self):
@@ -295,6 +298,15 @@ class TestCourseMaps:
                 {"[h] Hidden", "[o] Overlay 1"}
             ),
             ]
+
+    @pytest.mark.parametrize("output_basename, exclusions", [
+        ("base", {"[!base]Not in base"}),
+        ("notbase", set()),
+    ])
+    def test_find_exclusions(self, coursemaps, dummy_tree, output_basename, exclusions):
+        root = dummy_tree.getroot()
+        result = set(coursemaps._find_exclusions(output_basename, root))
+        assert result == exclusions
 
     @pytest.mark.usefixtures('dummy_svg')
     def test_find_overlays(self, coursemaps, dummy_tree):

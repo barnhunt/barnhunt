@@ -2,6 +2,18 @@
 Changes
 *******
 
+Release 1.1 (unreleased)
+========================
+
+"Base Map" support
+------------------
+
+Add ability to mark layers for exclusion from particular output files.
+
+Tagging a layer with ``[!``_output-basename_``]`` will exclude that layer
+from any maps which are directed to the specified output filename.
+
+
 Release 1.0.1 (2021-11-10)
 ==========================
 

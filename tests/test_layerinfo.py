@@ -180,20 +180,22 @@ def test_predicate(predicate_name, coursemap1, expected_ids):
     assert matches == expected
 
 
-@pytest.mark.parametrize('layer_label, label, flags, output_basename', [
-    ('[h] Hidden', "Hidden", LayerFlags.HIDDEN, None),
-    ('[o] An Overlay', "An Overlay", LayerFlags.OVERLAY, None),
-    ('Plain Jane', "Plain Jane", LayerFlags(0), None),
-    ('[o|foo] Another Overlay', "Another Overlay", LayerFlags.OVERLAY, "foo"),
+@pytest.mark.parametrize('layer_label, label, flags, output_basename, exclude_from', [
+    ('[h] Hidden', "Hidden", LayerFlags.HIDDEN, None, set()),
+    ('[o] An Overlay', "An Overlay", LayerFlags.OVERLAY, None, set()),
+    ('Plain Jane', "Plain Jane", LayerFlags(0), None, set()),
+    ('[o|foo] Another Overlay', "Another Overlay", LayerFlags.OVERLAY, "foo", set()),
+    ('[!base]Second Layer', "Second Layer", LayerFlags(0), None, {"base"}),
     ])
 @pytest.mark.usefixtures('dummy_svg')
-def test_FlaggedLayerInfo(layer_label, label, flags, output_basename):
+def test_FlaggedLayerInfo(layer_label, label, flags, output_basename, exclude_from):
     elem = DummyElem(layer_label)
     info = FlaggedLayerInfo(elem)
     assert info.elem is elem
     assert info.label == label
     assert info.flags is flags
     assert info.output_basename == output_basename
+    assert info.exclude_from == exclude_from
 
 
 @pytest.mark.usefixtures('dummy_svg')
