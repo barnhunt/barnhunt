@@ -89,6 +89,15 @@ def parent_layer(elem):
     return None
 
 
+def sibling_layers(elem):
+    """Iterate over sibling layers, including self."""
+    parent = elem.getparent()
+    if parent is not None:
+        for sibling in parent:
+            if is_layer(sibling):
+                yield sibling
+
+
 def ensure_visible(elem):
     style = InlineCSS(elem.get('style'))
     if style.get('display', '').strip() == 'none':

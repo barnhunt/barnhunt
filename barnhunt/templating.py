@@ -30,8 +30,8 @@ class LayerAdapter:
         return self._info.label
 
     @property
-    def output_basename(self):
-        return self._info.output_basename
+    def output_basenames(self):
+        return self._info.output_basenames or None
 
     @property
     def is_overlay(self):
@@ -94,17 +94,13 @@ def get_element_context(elem, layer_info_class=FlaggedLayerInfo):
 
     layer = LayerAdapter(layer, layer_info_class)
     overlays = []
-    output_basename = None
     for ancestor in layer.lineage:
         if ancestor.is_overlay:
             overlays.insert(0, ancestor)
-        if output_basename is None and ancestor.output_basename is not None:
-            output_basename = ancestor.output_basename
 
     context = {
         'layer': layer,
         'overlays': tuple(overlays),
-        'output_basename': output_basename,
         }
     if overlays:
         # Course is the outermost containing overlay
@@ -114,6 +110,14 @@ def get_element_context(elem, layer_info_class=FlaggedLayerInfo):
         # distinct from course.
         context['overlay'] = overlays[-1]
     return context
+
+
+def get_output_basenames(elem, layer_info_class=FlaggedLayerInfo):
+    for ancestor in svg.lineage(elem):
+        if svg.is_layer(ancestor):
+            info = layer_info_class(ancestor)
+            if info.output_basenames:
+                return info.output_basenames
 
 
 class FileAdapter:

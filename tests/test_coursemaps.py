@@ -126,6 +126,9 @@ class DummyElem:
             return self.label.lower()
         return dflt
 
+    def getparent(self):
+        return self.parent
+
     def __eq__(self, other):
         if isinstance(other, str):
             # NB: doesn't check children
@@ -138,6 +141,9 @@ class DummyElem:
 
     def __hash__(self):
         return hash(self.label)
+
+    def __iter__(self):
+        return iter(self.children)
 
     def __repr__(self):
         if self.children:

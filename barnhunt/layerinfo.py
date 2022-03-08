@@ -35,35 +35,39 @@ class LayerFlags(enum.Flag):
 class FlaggedLayerInfo:
     def __init__(self, elem):
         label = svg.layer_label(elem)
-        flags, output_basename, exclude_from, label = self._parse_label(label)
+        flags, output_basenames, exclude_from, include_in, label = self._parse_label(label)
         self.elem = elem
         self.flags = flags
-        self.output_basename = output_basename
+        self.output_basenames = output_basenames
         self.exclude_from = exclude_from
+        self.include_in = include_in
         self.label = label
 
     @staticmethod
     def _parse_label(label):
+        exclude_from = set()
+        include_in = set()
         m = re.match(r'\['
                      r'  (?P<flags>\w*)'
-                     r'  (?:\|*(?P<output_basename>\w[-\w\d]*))?'
-                     r'  (?P<exclude_from>(?:,*\!\w[-\w\d]*)*)'
+                     r'  (?:\|*(?P<output_basenames>(?:,*\w[-\w\d]*)*))?'
+                     r'  (?P<exclusions>(?:,*[!=]\w[-\w\d]*)*)'
                      r'\]\s*',
                      label, re.X)
         if m:
             flags = LayerFlags.parse(m.group('flags'))
-            output_basename = m.group('output_basename')
-            exclude_from = set(
-                basename[1:]
-                for basename in m.group("exclude_from").split(",")
-                if basename.startswith("!")
-            )
+            output_basenames = [_ for _ in m.group('output_basenames').split(",") if _]
+            for exclusion in m.group("exclusions").split(","):
+                if exclusion.startswith("!"):
+                    exclude_from.add(exclusion[1:])
+                elif exclusion.startswith("="):
+                    include_in.add(exclusion[1:])
+                else:
+                    assert exclusion == ""
             label = label[m.end():]
         else:
             flags = LayerFlags(0)
-            output_basename = None
-            exclude_from = set()
-        return flags, output_basename, exclude_from, label
+            output_basenames = []
+        return flags, output_basenames, exclude_from, include_in, label
 
 
 # Regexp which matches the label of the top-level "Ring" layer
@@ -128,9 +132,10 @@ class CompatLayerInfo:
             flags = LayerFlags(0)
         self.elem = elem
         self.flags = flags
-        self.output_basename = None
+        self.output_basenames = []
         self.label = label
         self.exclude_from = set()
+        self.include_in = set()
 
 
 def dwim_layer_info(tree):

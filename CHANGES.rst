@@ -10,8 +10,20 @@ Release 1.1 (unreleased)
 
 Add ability to mark layers for exclusion from particular output files.
 
-Tagging a layer with ``[!``_output-basename_``]`` will exclude that layer
-from any maps which are directed to the specified output filename.
+This adds the ability to list multiple comma-separated output base
+filenames for a given overlay.
+E.g. A layer with label ``"[o|build_notes,base] Build Notes"``
+will define an overlay which will generate maps in two separate
+output files.
+
+Tagging a layer with ``[!``_output-basename_``]`` will exclude that
+layer from any maps which are directed to the specified output
+filename.
+
+Tagging a layer with ``[=``_output-basename_``]`` will include that layer
+from any maps which are directed to the specified output filename, while
+excluding all other sibling layers not explicitly tagged to be included
+in that output file.
 
 
 Release 1.0.1 (2021-11-10)

@@ -55,9 +55,9 @@ class TestLayerAdapter:
     def test_label(self, sublayer):
         assert sublayer.label == 'Sublayer'
 
-    def test_output_basename(self, overlay, sublayer):
-        assert overlay.output_basename == 'somefile'
-        assert sublayer.output_basename is None
+    def test_output_basenames(self, overlay, sublayer):
+        assert overlay.output_basenames == ['somefile']
+        assert sublayer.output_basenames is None
 
     def test_flagged_label(self, overlay):
         assert overlay.label == 'Overlay'
@@ -118,14 +118,11 @@ def test_get_element_context_no_layers(coursemap2):
     assert context == {}
 
 
-def test_get_element_context_output_basename(coursemap2):
-    context = get_element_context(coursemap2.blind1_title)
-    assert context['output_basename'] == 'blinds'
-
-
-def test_get_element_context_output_basename_none(coursemap2):
-    context = get_element_context(coursemap2.novice_title)
-    assert context.get('output_basename') is None
+@pytest.mark.parametrize("id_", ["blind1_title", "novice_title"])
+def test_get_element_context_output_basename(coursemap2, id_):
+    elem = getattr(coursemap2, id_)
+    context = get_element_context(elem)
+    assert 'output_basenames' not in context
 
 
 @pytest.fixture

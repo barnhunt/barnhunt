@@ -1,5 +1,7 @@
 import logging
+import operator
 import os
+from functools import reduce
 
 import jinja2
 from lxml import etree
@@ -12,6 +14,7 @@ from .layerinfo import (
 from .templating import (
     FileAdapter,
     get_element_context,
+    get_output_basenames,
     is_string_literal,
     render_template,
     )
@@ -68,20 +71,24 @@ class CourseMaps:
 
     def __call__(self, tree):
         for path, hidden_layers in self._iter_overlays(tree.getroot()):
-            context = self._get_context(path)
-            output_basename = context.get("output_basename")
-            if output_basename:
-                omit_elements = hidden_layers.union(
-                    self._find_exclusions(output_basename, tree.getroot())
-                )
-            else:
-                omit_elements = hidden_layers
-            # Copy tree, omitting hidden layers
-            pruned = svg.copy_etree(tree, omit_elements=omit_elements)
-            # Ensure all remaining layers are marked for display
-            for layer in svg.walk_layers(pruned.getroot()):
-                svg.ensure_visible(layer)
-            yield context, pruned
+            base_context = self._get_context(path)
+            for basename in self._get_output_basenames(path):
+                if basename:
+                    omit_elements = hidden_layers.union(
+                        self._find_exclusions(basename, tree.getroot())
+                    )
+                else:
+                    omit_elements = hidden_layers
+                # Copy tree, omitting hidden layers
+                pruned = svg.copy_etree(tree, omit_elements=omit_elements)
+                # Ensure all remaining layers are marked for display
+                for layer in svg.walk_layers(pruned.getroot()):
+                    svg.ensure_visible(layer)
+                if basename:
+                    context = {**base_context, "output_basename": basename}
+                else:
+                    context = base_context
+                yield context, pruned
 
     def _get_context(self, path):
         context = self.context.copy()
@@ -91,6 +98,13 @@ class CourseMaps:
             local_context.pop('layer', None)
             context.update(local_context)
         return context
+
+    def _get_output_basenames(self, path):
+        basenames = None
+        if path:
+            overlay = path[-1]
+            basenames = get_output_basenames(overlay, self.layer_info)
+        return basenames or [None]
 
     def _iter_overlays(self, elem):
         overlays, cruft = self._find_overlays(elem)
@@ -118,9 +132,16 @@ class CourseMaps:
         return overlays, cruft
 
     def _find_exclusions(self, output_basename, elem):
+        def get_includes(node):
+            return self.layer_info(node).include_in
+
         for node, children in svg.walk_layers2(elem):
             info = self.layer_info(node)
-            if output_basename in info.exclude_from:
+            exclude = output_basename in info.exclude_from
+            if not exclude and output_basename not in info.include_in:
+                exclude = any(output_basename in get_includes(sibling)
+                              for sibling in svg.sibling_layers(node))
+            if exclude:
                 yield node
                 children[:] = []
 
@@ -163,10 +184,11 @@ def iter_coursemaps(svgfiles):
         }
 
         render_templates = TemplateRenderer(layer_info_class)
-        tree = render_templates(tree, file_context)
+        # FIXME: tree = render_templates(tree, file_context)
 
         coursemapper = CourseMaps(layer_info_class, file_context)
         for context, tree in coursemapper(tree):
+            tree = render_templates(tree, context)
             yield {
                 'tree': tree,
                 'context': context,
