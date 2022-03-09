@@ -35,7 +35,8 @@ class LayerFlags(enum.Flag):
 class FlaggedLayerInfo:
     def __init__(self, elem):
         label = svg.layer_label(elem)
-        flags, output_basenames, exclude_from, include_in, label = self._parse_label(label)
+        flags, output_basenames, exclude_from, include_in, label \
+            = self._parse_label(label)
         self.elem = elem
         self.flags = flags
         self.output_basenames = output_basenames
@@ -55,7 +56,11 @@ class FlaggedLayerInfo:
                      label, re.X)
         if m:
             flags = LayerFlags.parse(m.group('flags'))
-            output_basenames = [_ for _ in m.group('output_basenames').split(",") if _]
+            output_basenames = [
+                basename
+                for basename in m.group('output_basenames').split(",")
+                if basename
+            ]
             for exclusion in m.group("exclusions").split(","):
                 if exclusion.startswith("!"):
                     exclude_from.add(exclusion[1:])

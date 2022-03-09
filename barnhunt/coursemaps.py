@@ -1,7 +1,5 @@
 import logging
-import operator
 import os
-from functools import reduce
 
 import jinja2
 from lxml import etree

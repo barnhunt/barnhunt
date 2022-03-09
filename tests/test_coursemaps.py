@@ -309,7 +309,9 @@ class TestCourseMaps:
         ("base", {"[!base]Not in base"}),
         ("notbase", set()),
     ])
-    def test_find_exclusions(self, coursemaps, dummy_tree, output_basename, exclusions):
+    def test_find_exclusions(
+            self, coursemaps, dummy_tree, output_basename, exclusions
+    ):
         root = dummy_tree.getroot()
         result = set(coursemaps._find_exclusions(output_basename, root))
         assert result == exclusions

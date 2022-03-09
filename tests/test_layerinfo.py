@@ -186,8 +186,22 @@ def test_predicate(predicate_name, coursemap1, expected_ids):
         ('[h] Hidden', "Hidden", LayerFlags.HIDDEN, [], set(), set()),
         ('[o] An Overlay', "An Overlay", LayerFlags.OVERLAY, [], set(), set()),
         ('Plain Jane', "Plain Jane", LayerFlags(0), [], set(), set()),
-        ('[o|foo] Another Overlay', "Another Overlay", LayerFlags.OVERLAY, ["foo"], set(), set()),
-        ('[!base]Second Layer', "Second Layer", LayerFlags(0), [], {"base"}, set()),
+        (
+            '[o|foo] Another Overlay',
+            "Another Overlay",
+            LayerFlags.OVERLAY,
+            ["foo"],
+            set(),
+            set()
+        ),
+        (
+            '[!base]Second Layer',
+            "Second Layer",
+            LayerFlags(0),
+            [],
+            {"base"},
+            set()
+        ),
         ('[=base]Base desc', "Base desc", LayerFlags(0), [], set(), {"base"}),
     ]
 )
