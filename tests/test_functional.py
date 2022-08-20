@@ -5,7 +5,7 @@ import re
 
 from click.testing import CliRunner
 from lxml import etree
-from PyPDF2 import PdfFileReader
+from PyPDF2 import PdfReader
 import pytest
 
 from barnhunt import main
@@ -71,8 +71,8 @@ def test_pdfs(tmp_path, caplog, processes):
     assert outputs == {tmp_path.joinpath(pdf) for pdf in expected_pdfs}
 
     # Check that template was expanded
-    pdf = PdfFileReader(open(tmp_path.joinpath('novice.pdf'), 'rb'))
-    assert 'Novice 1' in pdf.pages[0].extractText()
+    pdf = PdfReader(open(tmp_path.joinpath('novice.pdf'), 'rb'))
+    assert 'Novice 1' in pdf.pages[0].extract_text()
 
 
 def test_rats():

@@ -2,6 +2,14 @@
 Changes
 *******
 
+Release 1.1.0a2 (unreleased)
+============================
+
+Bit Rot
+-------
+
+- Fixup tests to address deprecations in PyPDF2.
+
 Release 1.1.0a1 (2022-03-08)
 ============================
 

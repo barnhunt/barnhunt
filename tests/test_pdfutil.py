@@ -1,4 +1,4 @@
-from PyPDF2 import PdfFileReader
+from PyPDF2 import PdfReader
 import pytest
 
 from barnhunt.pdfutil import (
@@ -49,10 +49,10 @@ def test_two_up_three_pages(tmp_path, test1_pdf, test2_pdf):
 
 
 def page_count(pdf_fn):
-    pdf = PdfFileReader(open(pdf_fn, 'rb'))
+    pdf = PdfReader(open(pdf_fn, 'rb'))
     return len(pdf.pages)
 
 
 def pdf_title(pdf_fn):
-    pdf = PdfFileReader(open(pdf_fn, 'rb'))
-    return pdf.documentInfo.title
+    pdf = PdfReader(open(pdf_fn, 'rb'))
+    return pdf.metadata.title
