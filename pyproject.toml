@@ -42,8 +42,8 @@ requires = ["setuptools>=61", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic.readme]
-file = ["README.rst", "CHANGES.rst"]
-content-type = "text/x-rst"
+file = ["README.md", "CHANGES.md"]
+content-type = "text/markdown"
 
 [tool.setuptools.packages.find]
 include = ["barnhunt"]
