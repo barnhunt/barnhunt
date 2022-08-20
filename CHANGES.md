@@ -5,6 +5,11 @@
 - Dropped support for python 3.6
 - Changed license to GPL version 3
 
+#### Packaging
+
+- Added a stub `barnhunt.__main__` module to allow running via `python
+  -m barnhunt`.
+
 #### Bit Rot
 
 - Fixup tests to address deprecations in PyPDF2.

@@ -50,6 +50,14 @@ include = ["barnhunt"]
 
 [tool.setuptools_scm]
 
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: (?i:no cover)",
+    "if TYPE_CHECKING:",
+    'if __name__ == "__main__"',
+    '^\s*\.\.\.\s*$',
+]
+
 [tool.pytest.ini_options]
 norecursedirs = [
     ".tox",
