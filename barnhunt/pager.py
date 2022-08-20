@@ -19,15 +19,16 @@ class Grouper:
     lines every ``group_size`` lines.
 
     """
+
     def __init__(self, group_size):
         self.group_size = group_size
 
     def __call__(self, lines):
         group_size = self.group_size
         for i in range(0, len(lines), group_size):
-            for line in lines[i:i + group_size]:
+            for line in lines[i : i + group_size]:
                 print(line)
-            print('')
+            print("")
 
 
 class TTYPager:
@@ -38,6 +39,7 @@ class TTYPager:
     Allows for scrolling forward as well as backward.
 
     """
+
     def __init__(self, group_size):
         self.group_size = group_size
 
@@ -49,17 +51,15 @@ class TTYPager:
             Command.PAGE_DOWN: group_size,
             Command.PAGE_UP: -group_size,
             Command.REDRAW: 0,
-            }
+        }
         n = 0
         while lines:
             click.clear()
             beg = n - (n % group_size)
-            group = lines[beg:beg + group_size]
+            group = lines[beg : beg + group_size]
             for i, line in enumerate(group, beg):
                 hilight = i == n
-                click.secho(line,
-                            bold=hilight,
-                            bg='cyan' if hilight else None)
+                click.secho(line, bold=hilight, bg="cyan" if hilight else None)
             click.echo()
             click.echo(f"Viewing {beg + 1}–{i + 1}. [jkq] ", nl=False)
 
@@ -76,20 +76,20 @@ class TTYPager:
     def _get_cmd(self):
         while True:
             key = click.getchar()
-            if key == '\x1b':
+            if key == "\x1b":
                 key += click.getchar()
             try:
                 return Command.lookup(key)
             except KeyError:
-                click.echo('\a', nl=False)
+                click.echo("\a", nl=False)
 
 
 def CTL(c):
-    return chr(ord(c) & 0x1f)
+    return chr(ord(c) & 0x1F)
 
 
 def ESC(c):
-    return '\x1b' + c
+    return "\x1b" + c
 
 
 def ALT(c):
@@ -97,15 +97,15 @@ def ALT(c):
 
 
 def ANSI_CSI(s):
-    return '\x1b[' + s
+    return "\x1b[" + s
 
 
-K_Prior = ANSI_CSI('5~')        # Page_Up
-K_Next = ANSI_CSI('6~')         # Page_Down
-K_Up = ANSI_CSI('A')            # Up arrow
-K_Down = ANSI_CSI('B')          # Up arrow
-K_Return = '\r'
-K_Escape = '\x1b'
+K_Prior = ANSI_CSI("5~")  # Page_Up
+K_Next = ANSI_CSI("6~")  # Page_Down
+K_Up = ANSI_CSI("A")  # Up arrow
+K_Down = ANSI_CSI("B")  # Up arrow
+K_Return = "\r"
+K_Escape = "\x1b"
 
 
 class Command(enum.Enum):
@@ -115,44 +115,52 @@ class Command(enum.Enum):
     can be used to activate the given command.
 
     """
+
     PAGE_DOWN = (
-        ' ',
-        'v', CTL('v'),
-        'f', CTL('f'),
+        " ",
+        "v",
+        CTL("v"),
+        "f",
+        CTL("f"),
         K_Next,
         # 'z', ESC(' '), ALT(' '),
         # 'd', CTL('d'),
-        )
+    )
     PAGE_UP = (
-        'b', CTL('b'),
-        ESC('v'), ALT('v'),
+        "b",
+        CTL("b"),
+        ESC("v"),
+        ALT("v"),
         K_Prior,
         # 'w',
         # 'u', CTL('u'),
-        )
+    )
     UP = (
-        'k', CTL('k'),
-        'y', CTL('y'),
-        CTL('p'),
+        "k",
+        CTL("k"),
+        "y",
+        CTL("y"),
+        CTL("p"),
         K_Up,
-        )
+    )
     DOWN = (
-        'j', CTL('j'),
-        'e', CTL('e'),
+        "j",
+        CTL("j"),
+        "e",
+        CTL("e"),
         K_Return,
         K_Down,
-        )
+    )
     REDRAW = (
-        'r', CTL('r'),
-        CTL('l'),
-        'R',
-        )
-    QUIT = (
-        'q',
-        )
+        "r",
+        CTL("r"),
+        CTL("l"),
+        "R",
+    )
+    QUIT = ("q",)
 
     def __init__(self, *keys):
-        _lookup = getattr(self.__class__, '_lookup', None)
+        _lookup = getattr(self.__class__, "_lookup", None)
         if _lookup is None:
             self.__class__._lookup = _lookup = {}
 
@@ -162,7 +170,5 @@ class Command(enum.Enum):
 
     @classmethod
     def lookup(cls, key):
-        """Look up comand for ``key``.
-
-        """
+        """Look up comand for ``key``."""
         return cls._lookup[key]

@@ -1,16 +1,18 @@
 """ Code for rendering Inkscape SVG to PDFS
 """
-from collections import namedtuple
-from itertools import chain, zip_longest
 import pathlib
 import shutil
+from collections import namedtuple
+from itertools import chain
+from itertools import zip_longest
 
-from pdfrw import PageMerge, PdfReader, PdfWriter
+from pdfrw import PageMerge
+from pdfrw import PdfReader
+from pdfrw import PdfWriter
 
 
 def concat_pdfs(in_fns, out_fn):
-    """ Concatenate named PDF files to a single output file.
-    """
+    """Concatenate named PDF files to a single output file."""
     if len(in_fns) == 0:
         raise ValueError("No PDFs to concatenate")
     pathlib.Path(out_fn).parent.mkdir(parents=True, exist_ok=True)
@@ -29,16 +31,14 @@ def concat_pdfs(in_fns, out_fn):
 
 
 def two_up(infiles, outfile, width=612, height=792):
-    """ Generate 2-up version of PDF file(s).
-
-    """
+    """Generate 2-up version of PDF file(s)."""
     pages = list(chain.from_iterable(PdfReader(fp).pages for fp in infiles))
     n_out = (len(pages) + 1) // 2
 
     boxes = [
         _Rectangle(0, height / 2, width, height / 2),
         _Rectangle(0, 0, width, height / 2),
-        ]
+    ]
     pathlib.Path(outfile.name).parent.mkdir(parents=True, exist_ok=True)
     writer = PdfWriter(outfile)
 
@@ -58,4 +58,4 @@ def two_up(infiles, outfile, width=612, height=792):
     writer.write()
 
 
-_Rectangle = namedtuple('_Rectangle', ['x', 'y', 'w', 'h'])
+_Rectangle = namedtuple("_Rectangle", ["x", "y", "w", "h"])

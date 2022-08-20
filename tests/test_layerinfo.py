@@ -3,13 +3,11 @@ from itertools import islice
 import pytest
 
 from barnhunt import layerinfo
-from barnhunt.layerinfo import (
-    dwim_layer_info,
-    CompatLayerInfo,
-    FlaggedLayerInfo,
-    LayerFlags,
-    )
 from barnhunt.inkscape import svg
+from barnhunt.layerinfo import CompatLayerInfo
+from barnhunt.layerinfo import dwim_layer_info
+from barnhunt.layerinfo import FlaggedLayerInfo
+from barnhunt.layerinfo import LayerFlags
 
 
 def get_by_id(tree, id):
@@ -17,9 +15,9 @@ def get_by_id(tree, id):
     assert len(matches) <= 1
     return matches[0] if matches else None
 
-    getroot = getattr(tree, 'getroot', None)
+    getroot = getattr(tree, "getroot", None)
     root = getroot() if getroot else tree
-    if root.get('id') == id:
+    if root.get("id") == id:
         return root
     return root.find(f'.//*[@id="{id}"]')
 
@@ -75,8 +73,11 @@ class DummySvg:
     @staticmethod
     def copy_etree(tree, omit_elements):
         def copy_elem(elem):
-            children = [copy_elem(child) for child in elem.children
-                        if child not in omit_elements]
+            children = [
+                copy_elem(child)
+                for child in elem.children
+                if child not in omit_elements
+            ]
             return DummyElem(elem.label, children, elem.visible)
 
         return DummyETree(root=copy_elem(tree.getroot()))
@@ -107,7 +108,7 @@ class DummySvg:
 
     @classmethod
     def walk_layers(cls, elem):
-        for node, children in cls.walk_layers2(elem):
+        for node, _children in cls.walk_layers2(elem):
             yield node
 
     @staticmethod
@@ -124,19 +125,22 @@ class DummySvg:
 def dummy_svg(monkeypatch):
     dummy_svg = DummySvg()
     for attr in dir(dummy_svg):
-        if not attr.startswith('_'):
+        if not attr.startswith("_"):
             monkeypatch.setattr(svg, attr, getattr(dummy_svg, attr))
     return dummy_svg
 
 
-@pytest.mark.parametrize('s, flags', [
-    ("", LayerFlags(0)),
-    ("h", LayerFlags.HIDDEN),
-    ("o", LayerFlags.OVERLAY),
-    ("ho", LayerFlags.OVERLAY | LayerFlags.HIDDEN),
-    ("hoo", LayerFlags.OVERLAY | LayerFlags.HIDDEN),
-    ("oh", LayerFlags.OVERLAY | LayerFlags.HIDDEN),
-    ])
+@pytest.mark.parametrize(
+    "s, flags",
+    [
+        ("", LayerFlags(0)),
+        ("h", LayerFlags.HIDDEN),
+        ("o", LayerFlags.OVERLAY),
+        ("ho", LayerFlags.OVERLAY | LayerFlags.HIDDEN),
+        ("hoo", LayerFlags.OVERLAY | LayerFlags.HIDDEN),
+        ("oh", LayerFlags.OVERLAY | LayerFlags.HIDDEN),
+    ],
+)
 def test_layerflags_parse(s, flags):
     assert LayerFlags.parse(s) == flags
 
@@ -146,32 +150,50 @@ def test_layerflags_parse_warns(caplog):
     assert "unknown character" in caplog.text
 
 
-@pytest.mark.parametrize('s, flags', [
-    ("", LayerFlags(0)),
-    ("h", LayerFlags.HIDDEN),
-    ("o", LayerFlags.OVERLAY),
-    ("ho", LayerFlags.OVERLAY | LayerFlags.HIDDEN),
-    ])
+@pytest.mark.parametrize(
+    "s, flags",
+    [
+        ("", LayerFlags(0)),
+        ("h", LayerFlags.HIDDEN),
+        ("o", LayerFlags.OVERLAY),
+        ("ho", LayerFlags.OVERLAY | LayerFlags.HIDDEN),
+    ],
+)
 def test_layerflags_str(s, flags):
     assert set(str(flags)) == set(s)
 
 
-@pytest.mark.parametrize('predicate_name, expected_ids', [
-    ('is_ring', [
-        'ring',
-        ]),
-    ('is_course', [
-        't1novice',
-        't1master',
-        ]),
-    ('is_cruft', [
-        'cruft',
-        ]),
-    ('is_overlay', [
-        'blind1',
-        'build',
-        ]),
-    ])
+@pytest.mark.parametrize(
+    "predicate_name, expected_ids",
+    [
+        (
+            "is_ring",
+            [
+                "ring",
+            ],
+        ),
+        (
+            "is_course",
+            [
+                "t1novice",
+                "t1master",
+            ],
+        ),
+        (
+            "is_cruft",
+            [
+                "cruft",
+            ],
+        ),
+        (
+            "is_overlay",
+            [
+                "blind1",
+                "build",
+            ],
+        ),
+    ],
+)
 def test_predicate(predicate_name, coursemap1, expected_ids):
     predicate = getattr(layerinfo, predicate_name)
     tree = coursemap1.tree
@@ -181,33 +203,26 @@ def test_predicate(predicate_name, coursemap1, expected_ids):
 
 
 @pytest.mark.parametrize(
-    'layer_label, label, flags, output_basenames, exclude_from, include_in',
+    "layer_label, label, flags, output_basenames, exclude_from, include_in",
     [
-        ('[h] Hidden', "Hidden", LayerFlags.HIDDEN, [], set(), set()),
-        ('[o] An Overlay', "An Overlay", LayerFlags.OVERLAY, [], set(), set()),
-        ('Plain Jane', "Plain Jane", LayerFlags(0), [], set(), set()),
+        ("[h] Hidden", "Hidden", LayerFlags.HIDDEN, [], set(), set()),
+        ("[o] An Overlay", "An Overlay", LayerFlags.OVERLAY, [], set(), set()),
+        ("Plain Jane", "Plain Jane", LayerFlags(0), [], set(), set()),
         (
-            '[o|foo] Another Overlay',
+            "[o|foo] Another Overlay",
             "Another Overlay",
             LayerFlags.OVERLAY,
             ["foo"],
             set(),
-            set()
+            set(),
         ),
-        (
-            '[!base]Second Layer',
-            "Second Layer",
-            LayerFlags(0),
-            [],
-            {"base"},
-            set()
-        ),
-        ('[=base]Base desc', "Base desc", LayerFlags(0), [], set(), {"base"}),
-    ]
+        ("[!base]Second Layer", "Second Layer", LayerFlags(0), [], {"base"}, set()),
+        ("[=base]Base desc", "Base desc", LayerFlags(0), [], set(), {"base"}),
+    ],
 )
-@pytest.mark.usefixtures('dummy_svg')
+@pytest.mark.usefixtures("dummy_svg")
 def test_FlaggedLayerInfo(
-        layer_label, label, flags, output_basenames, exclude_from, include_in
+    layer_label, label, flags, output_basenames, exclude_from, include_in
 ):
     elem = DummyElem(layer_label)
     info = FlaggedLayerInfo(elem)
@@ -219,13 +234,16 @@ def test_FlaggedLayerInfo(
     assert info.include_in == include_in
 
 
-@pytest.mark.usefixtures('dummy_svg')
+@pytest.mark.usefixtures("dummy_svg")
 class TestCompatLayerInfo:
-    @pytest.mark.parametrize('label, flags', [
-        ('Prototypes', LayerFlags.HIDDEN),
-        ('Master 1', LayerFlags.OVERLAY),
-        ('Test Ring', LayerFlags(0)),
-        ])
+    @pytest.mark.parametrize(
+        "label, flags",
+        [
+            ("Prototypes", LayerFlags.HIDDEN),
+            ("Master 1", LayerFlags.OVERLAY),
+            ("Test Ring", LayerFlags(0)),
+        ],
+    )
     def test_init(self, label, flags):
         elem = DummyElem(label)
         info = CompatLayerInfo(elem)
@@ -236,12 +254,17 @@ class TestCompatLayerInfo:
     def test_overlay(self):
         overlay = DummyElem("Test ovl")
         not_overlay = DummyElem("Test not ovl")
-        DummyElem(children=[
-            DummyElem("Master 2", [
-                DummyElem("Overlays", [overlay]),
-                DummyElem("Stuff", [not_overlay]),
-                ]),
-            ])
+        DummyElem(
+            children=[
+                DummyElem(
+                    "Master 2",
+                    [
+                        DummyElem("Overlays", [overlay]),
+                        DummyElem("Stuff", [not_overlay]),
+                    ],
+                ),
+            ]
+        )
 
         info = CompatLayerInfo(overlay)
         assert info.flags is LayerFlags.OVERLAY
@@ -250,20 +273,22 @@ class TestCompatLayerInfo:
         assert info.flags is LayerFlags(0)
 
 
-@pytest.mark.usefixtures('dummy_svg')
+@pytest.mark.usefixtures("dummy_svg")
 class Test_dwim_layer_info:
     @pytest.fixture
     def dummy_tree(self, leaf_label_1):
         Elem = DummyElem
-        root = Elem(children=[
-            Elem("Layer", [Elem(leaf_label_1)]),
-            ])
+        root = Elem(
+            children=[
+                Elem("Layer", [Elem(leaf_label_1)]),
+            ]
+        )
         return DummyETree(root)
 
-    @pytest.mark.parametrize('leaf_label_1', ["[h] Hidden"])
+    @pytest.mark.parametrize("leaf_label_1", ["[h] Hidden"])
     def test_flagged_info(self, dummy_tree):
         assert dwim_layer_info(dummy_tree) is FlaggedLayerInfo
 
-    @pytest.mark.parametrize('leaf_label_1', ["Not Flagged"])
+    @pytest.mark.parametrize("leaf_label_1", ["Not Flagged"])
     def test_compat_info(self, dummy_tree):
         assert dwim_layer_info(dummy_tree) is CompatLayerInfo

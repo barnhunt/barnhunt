@@ -5,17 +5,13 @@ import jinja2
 from lxml import etree
 
 from .inkscape import svg
-from .layerinfo import (
-    dwim_layer_info,
-    LayerFlags,
-    )
-from .templating import (
-    FileAdapter,
-    get_element_context,
-    get_output_basenames,
-    is_string_literal,
-    render_template,
-    )
+from .layerinfo import dwim_layer_info
+from .layerinfo import LayerFlags
+from .templating import FileAdapter
+from .templating import get_element_context
+from .templating import get_output_basenames
+from .templating import is_string_literal
+from .templating import render_template
 
 log = logging.getLogger()
 
@@ -33,13 +29,11 @@ class TemplateRenderer:
                     try:
                         elem.text = render_template(elem.text, local_context)
                     except jinja2.TemplateError as ex:
-                        log.error(
-                            f"Error expanding template in SVG file: {ex!s}")
+                        log.error(f"Error expanding template in SVG file: {ex!s}")
         return tree
 
     def _is_hidden(self, elem):
-        return any(self._is_hidden_layer(ancestor)
-                   for ancestor in svg.lineage(elem))
+        return any(self._is_hidden_layer(ancestor) for ancestor in svg.lineage(elem))
 
     def _is_hidden_layer(self, elem):
         if not svg.is_layer(elem):
@@ -55,10 +49,10 @@ class TemplateRenderer:
 
 class CourseMaps:
     default_context = {
-        'overlays': (),
-        'course': None,
-        'overlay': None,
-        }
+        "overlays": (),
+        "course": None,
+        "overlay": None,
+    }
 
     def __init__(self, layer_info, context=None):
         self.layer_info = layer_info
@@ -93,7 +87,7 @@ class CourseMaps:
         if path:
             overlay = path[-1]
             local_context = get_element_context(overlay, self.layer_info)
-            local_context.pop('layer', None)
+            local_context.pop("layer", None)
             context.update(local_context)
         return context
 
@@ -137,23 +131,29 @@ class CourseMaps:
             info = self.layer_info(node)
             exclude = output_basename in info.exclude_from
             if not exclude and output_basename not in info.include_in:
-                exclude = any(output_basename in get_includes(sibling)
-                              for sibling in svg.sibling_layers(node))
+                exclude = any(
+                    output_basename in get_includes(sibling)
+                    for sibling in svg.sibling_layers(node)
+                )
             if exclude:
                 yield node
                 children[:] = []
 
 
-BASENAME_TMPL = ('{% if output_basename -%}'
-                 '  {{ output_basename }}'
-                 '{% else -%}'
-                 '  {{ overlays|map("safepath")|join("/") }}'
-                 '{% endif %}')
+BASENAME_TMPL = (
+    "{% if output_basename -%}"
+    "  {{ output_basename }}"
+    "{% else -%}"
+    '  {{ overlays|map("safepath")|join("/") }}'
+    "{% endif %}"
+)
 
-DESCRIPTION_TMPL = ('{{ svgfile.name }}'
-                    '{% if overlays -%}'
-                    '  :{{ overlays|join("/") }}'
-                    '{% endif %}')
+DESCRIPTION_TMPL = (
+    "{{ svgfile.name }}"
+    "{% if overlays -%}"
+    '  :{{ overlays|join("/") }}'
+    "{% endif %}"
+)
 
 
 def _hash_dev_ino(svgfile):
@@ -162,7 +162,7 @@ def _hash_dev_ino(svgfile):
 
 
 def iter_coursemaps(svgfiles):
-    """ Returns an iterable of (context, tree) pairs for coursemaps in
+    """Returns an iterable of (context, tree) pairs for coursemaps in
     SVGFILES.
 
     """
@@ -177,19 +177,19 @@ def iter_coursemaps(svgfiles):
 
         # Expand jinja templates in text within SVG file
         file_context = {
-            'random_seed': random_seed,
-            'svgfile': FileAdapter(svgfile),
+            "random_seed": random_seed,
+            "svgfile": FileAdapter(svgfile),
         }
 
         render_templates = TemplateRenderer(layer_info_class)
         # FIXME: tree = render_templates(tree, file_context)
 
         coursemapper = CourseMaps(layer_info_class, file_context)
-        for context, tree in coursemapper(tree):
-            tree = render_templates(tree, context)
+        for context, map_tree in coursemapper(tree):
+            rendered_tree = render_templates(map_tree, context)
             yield {
-                'tree': tree,
-                'context': context,
-                'basename': render_template(BASENAME_TMPL, context),
-                'description': render_template(DESCRIPTION_TMPL, context)
-                }
+                "tree": rendered_tree,
+                "context": context,
+                "basename": render_template(BASENAME_TMPL, context),
+                "description": render_template(DESCRIPTION_TMPL, context),
+            }

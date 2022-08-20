@@ -1,5 +1,5 @@
-from multiprocessing import TimeoutError
 import time
+from multiprocessing import TimeoutError
 
 import pytest
 

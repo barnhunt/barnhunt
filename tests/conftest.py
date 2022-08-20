@@ -2,9 +2,8 @@ from io import BytesIO
 from pathlib import Path
 from shutil import copyfile
 
-from lxml import etree
-
 import pytest
+from lxml import etree
 
 TEST_SVG = b"""<?xml version="1.0" encoding="ascii" standalone="no"?>
 <svg id="root"
@@ -155,17 +154,17 @@ def tests_dir():
 
 @pytest.fixture
 def test1_pdf(tests_dir):
-    return tests_dir.joinpath('test1.pdf')
+    return tests_dir.joinpath("test1.pdf")
 
 
 @pytest.fixture
 def test2_pdf(tests_dir):
-    return tests_dir.joinpath('test2.pdf')
+    return tests_dir.joinpath("test2.pdf")
 
 
 @pytest.fixture
 def drawing_svg(tests_dir):
-    return tests_dir.joinpath('drawing.svg')
+    return tests_dir.joinpath("drawing.svg")
 
 
 @pytest.fixture

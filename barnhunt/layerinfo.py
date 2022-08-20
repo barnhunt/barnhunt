@@ -16,8 +16,7 @@ class LayerFlags(enum.Flag):
         return self.name[0].lower()
 
     def __str__(self):
-        return ''.join(
-            flag.flag_char for flag in self.__class__ if self & flag)
+        return "".join(flag.flag_char for flag in self.__class__ if self & flag)
 
     @classmethod
     def parse(cls, s):
@@ -35,8 +34,9 @@ class LayerFlags(enum.Flag):
 class FlaggedLayerInfo:
     def __init__(self, elem):
         label = svg.layer_label(elem)
-        flags, output_basenames, exclude_from, include_in, label \
-            = self._parse_label(label)
+        flags, output_basenames, exclude_from, include_in, label = self._parse_label(
+            label
+        )
         self.elem = elem
         self.flags = flags
         self.output_basenames = output_basenames
@@ -48,17 +48,20 @@ class FlaggedLayerInfo:
     def _parse_label(label):
         exclude_from = set()
         include_in = set()
-        m = re.match(r'\['
-                     r'  (?P<flags>\w*)'
-                     r'  (?:\|*(?P<output_basenames>(?:,*\w[-\w\d]*)*))?'
-                     r'  (?P<exclusions>(?:,*[!=]\w[-\w\d]*)*)'
-                     r'\]\s*',
-                     label, re.X)
+        m = re.match(
+            r"\["
+            r"  (?P<flags>\w*)"
+            r"  (?:\|*(?P<output_basenames>(?:,*\w[-\w\d]*)*))?"
+            r"  (?P<exclusions>(?:,*[!=]\w[-\w\d]*)*)"
+            r"\]\s*",
+            label,
+            re.X,
+        )
         if m:
-            flags = LayerFlags.parse(m.group('flags'))
+            flags = LayerFlags.parse(m.group("flags"))
             output_basenames = [
                 basename
-                for basename in m.group('output_basenames').split(",")
+                for basename in m.group("output_basenames").split(",")
                 if basename
             ]
             for exclusion in m.group("exclusions").split(","):
@@ -68,7 +71,7 @@ class FlaggedLayerInfo:
                     include_in.add(exclusion[1:])
                 else:
                     assert exclusion == ""
-            label = label[m.end():]
+            label = label[m.end() :]
         else:
             flags = LayerFlags(0)
             output_basenames = []
@@ -77,7 +80,7 @@ class FlaggedLayerInfo:
 
 # Regexp which matches the label of the top-level "Ring" layer
 # This layer is always displayed.
-RING_re = re.compile(r'\bring\b', re.I)
+RING_re = re.compile(r"\bring\b", re.I)
 
 
 def is_ring(layer):
@@ -85,14 +88,12 @@ def is_ring(layer):
         return False
     parent = svg.parent_layer(layer)
     label = svg.layer_label(layer)
-    return (parent is None and RING_re.search(label))
+    return parent is None and RING_re.search(label)
 
 
 # Regexp which matches the labels of the top-level "Course" layers
 # This layer are displayed, one per coursemap.
-COURSE_re = re.compile(
-    r'\b(instinct|novice|open|senior|master|crazy ?8s?|c8)\b',
-    re.I)
+COURSE_re = re.compile(r"\b(instinct|novice|open|senior|master|crazy ?8s?|c8)\b", re.I)
 
 
 def is_course(layer):
@@ -107,9 +108,7 @@ def is_cruft(layer):
     if not svg.is_layer(layer):
         return False
     parent = svg.parent_layer(layer)
-    return (parent is None
-            and not is_course(layer)
-            and not is_ring(layer))
+    return parent is None and not is_course(layer) and not is_ring(layer)
 
 
 def is_overlay(layer):
@@ -117,9 +116,7 @@ def is_overlay(layer):
         return False
     parent = svg.parent_layer(layer)
     parent_label = None if parent is None else svg.layer_label(parent)
-    return (
-        parent_label == 'Overlays'
-        and any(is_course(a) for a in svg.lineage(parent)))
+    return parent_label == "Overlays" and any(is_course(a) for a in svg.lineage(parent))
 
 
 class CompatLayerInfo:
@@ -144,8 +141,8 @@ class CompatLayerInfo:
 
 
 def dwim_layer_info(tree):
-    """Deduce layout type.
-    """
+    """Deduce layout type."""
+
     def has_flags(elem):
         return FlaggedLayerInfo(elem).flags
 

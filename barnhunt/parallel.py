@@ -2,8 +2,8 @@ from multiprocessing.pool import ThreadPool
 
 
 class ParallelUnorderedStarmap:
-    """Multi-threaded version of itertools.starmap.
-    """
+    """Multi-threaded version of itertools.starmap."""
+
     def __init__(self, processes=None, timeout=3600):
         self.pool = ThreadPool(processes)
         self.timeout = timeout
@@ -12,7 +12,8 @@ class ParallelUnorderedStarmap:
         # Iterating without a timeout make things fairly unresponsive
         # to SIGINT.
         return self._iter_with_timeout(
-            self.pool.imap_unordered(lambda args: f(*args), args))
+            self.pool.imap_unordered(lambda args: f(*args), args)
+        )
 
     def _iter_with_timeout(self, imap_iter):
         try:

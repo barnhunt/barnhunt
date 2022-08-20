@@ -1,52 +1,52 @@
-from collections import OrderedDict
-from itertools import (
-    chain,
-    starmap,
-    )
 import logging
 import os
 import pathlib
 import random
+from collections import OrderedDict
+from itertools import chain
+from itertools import starmap
 from tempfile import mkstemp
 
-from atomicwrites import atomic_write
 import click
+from atomicwrites import atomic_write
 
 from .coursemaps import iter_coursemaps
+from .inkscape.runner import Inkscape
 from .pager import get_pager
 from .parallel import ParallelUnorderedStarmap
-from .pdfutil import concat_pdfs, two_up
-from .inkscape.runner import Inkscape
+from .pdfutil import concat_pdfs
+from .pdfutil import two_up
 
-log = logging.getLogger('')
+log = logging.getLogger("")
 
 POSITIVE_INT = click.IntRange(1, None)
 
 
 @click.group()
-@click.option('-v', '--verbose', count=True)
+@click.option("-v", "--verbose", count=True)
 @click.version_option()
 def main(verbose):
-    """ Utilities for creating Barn Hunt course maps.
-
-    """
+    """Utilities for creating Barn Hunt course maps."""
     log_level = logging.WARNING
-    if verbose:                 # pragma: NO COVER
+    if verbose:  # pragma: NO COVER
         log_level = logging.DEBUG if verbose > 1 else logging.INFO
     logging.basicConfig(
-        level=log_level,
-        format="(%(levelname)1.1s) [%(threadName)s] %(message)s")
+        level=log_level, format="(%(levelname)1.1s) [%(threadName)s] %(message)s"
+    )
 
 
 @main.command()
 @click.argument(
-    'svgfiles', type=click.Path(exists=True,
-                                dir_okay=False,
-                                writable=True),
-    nargs=-1, required=True)
+    "svgfiles",
+    type=click.Path(exists=True, dir_okay=False, writable=True),
+    nargs=-1,
+    required=True,
+)
 @click.option(
-    '--force-reseed/--no-force-reseed', '-f',
-    help="Force reseeding, even if a seed has been previously set.")
+    "--force-reseed/--no-force-reseed",
+    "-f",
+    help="Force reseeding, even if a seed has been previously set.",
+)
 def random_seed(svgfiles, force_reseed):
     """Set random-seem for SVG file.
 
@@ -77,30 +77,29 @@ def random_seed(svgfiles, force_reseed):
 
 
 @main.command()
-@click.argument('svgfiles', type=click.File('rb'), nargs=-1, required=True)
-@click.option('-o', '--output-directory', type=click.Path(file_okay=False),
-              default='.')
-@click.option('--processes', '-p', type=POSITIVE_INT, default=None)
+@click.argument("svgfiles", type=click.File("rb"), nargs=-1, required=True)
+@click.option("-o", "--output-directory", type=click.Path(file_okay=False), default=".")
+@click.option("--processes", "-p", type=POSITIVE_INT, default=None)
 @click.option(
-    '--shell-mode-inkscape/--no-shell-mode-inkscape', default=True,
-    help="Run inkscape in shell-mode for efficiency.  Default is true.")
+    "--shell-mode-inkscape/--no-shell-mode-inkscape",
+    default=True,
+    help="Run inkscape in shell-mode for efficiency.  Default is true.",
+)
 def pdfs(svgfiles, output_directory, shell_mode_inkscape, processes=None):
-    """ Export PDFs from inkscape SVG coursemaps.
-
-    """
+    """Export PDFs from inkscape SVG coursemaps."""
     coursemaps = iter_coursemaps(svgfiles)
 
     pages = OrderedDict()
     descriptions = dict()
 
     def render_info(coursemap):
-        basename = coursemap['basename']
-        pdf_fn = os.path.join(output_directory, basename + '.pdf')
-        fd, temp_fn = mkstemp(prefix='barnhunt-', suffix='.pdf')
+        basename = coursemap["basename"]
+        pdf_fn = os.path.join(output_directory, basename + ".pdf")
+        fd, temp_fn = mkstemp(prefix="barnhunt-", suffix=".pdf")
         pages.setdefault(pdf_fn, []).append(temp_fn)
         os.close(fd)
-        descriptions[temp_fn] = coursemap.get('description')
-        return coursemap['tree'], temp_fn
+        descriptions[temp_fn] = coursemap.get("description")
+        return coursemap["tree"], temp_fn
 
     inkscape = Inkscape(shell_mode=shell_mode_inkscape)
 
@@ -121,52 +120,62 @@ def pdfs(svgfiles, output_directory, shell_mode_inkscape, processes=None):
             concat_pdfs(temp_fns, output_fn)
 
             n_pages = len(temp_fns)
-            log.warning("Wrote %d page%s to %r",
-                        n_pages, 's' if n_pages != 1 else '', output_fn)
+            log.warning(
+                "Wrote %d page%s to %r", n_pages, "s" if n_pages != 1 else "", output_fn
+            )
     finally:
         for temp_fn in chain.from_iterable(pages.values()):
             os.unlink(temp_fn)
 
 
-@main.command('rats')
+@main.command("rats")
 @click.option(
-    '-n', '--number-of-rows', type=POSITIVE_INT,
+    "-n",
+    "--number-of-rows",
+    type=POSITIVE_INT,
     metavar="<n>",
     help="Number of rows of rat numbers to generate.  (Default: 5).",
-    default=5
-    )
+    default=5,
+)
 def rats_(number_of_rows):
-    """ Generate random rat counts.
+    """Generate random rat counts.
 
     Prints rows of five random numbers in the range [1, 5].
     """
-    for row in range(number_of_rows):
+    for _ in range(number_of_rows):
         rats = tuple(random.randint(1, 5) for n in range(5))
         print("%d %d %d %d %d" % rats)
 
 
 @main.command()
 @click.option(
-    '-n', '--number-of-rows', type=POSITIVE_INT, default=1000,
+    "-n",
+    "--number-of-rows",
+    type=POSITIVE_INT,
+    default=1000,
     metavar="<n>",
     help="Number of coordinates to generate. "
     "(Default: 1000 or the number of points in the grid, "
     "whichever is fewer).",
-    )
+)
 @click.option(
-    '-g', '--group-size', type=POSITIVE_INT,
+    "-g",
+    "--group-size",
+    type=POSITIVE_INT,
     metavar="<n>",
     help="Group output in chunks of this size. "
     "Blank lines will be printed between groups. "
     "(Default: 10).",
-    default=10
-    )
+    default=10,
+)
 @click.argument(
-    'dimensions', nargs=2, type=POSITIVE_INT,
+    "dimensions",
+    nargs=2,
+    type=POSITIVE_INT,
     metavar="[<x-max> <y-max>]",
     envvar="BARNHUNT_DIMENSIONS",
-    default=(25, 30)
-    )
+    default=(25, 30),
+)
 def coords(dimensions, number_of_rows, group_size):
     """Generate random coordinates.
 
@@ -191,36 +200,39 @@ def coords(dimensions, number_of_rows, group_size):
         return x, y
 
     pager = get_pager(group_size)
-    pager([
-        "{0[0]:3d},{0[1]:3d}".format(coord(pt))
-        for pt in random.sample(range(n_pts), number_of_rows)
-        ])
+    pager(
+        [
+            "{0[0]:3d},{0[1]:3d}".format(coord(pt))
+            for pt in random.sample(range(n_pts), number_of_rows)
+        ]
+    )
 
 
 def default_2up_output_file():
-    """Compute default output filename.
-    """
+    """Compute default output filename."""
     ctx = click.get_current_context()
-    input_paths = {pathlib.Path(infp.name)
-                   for infp in ctx.params.get('pdffiles', ())}
+    input_paths = {pathlib.Path(infp.name) for infp in ctx.params.get("pdffiles", ())}
     if len(input_paths) != 1:
         raise click.UsageError(
             "Can not deduce default output filename when multiple input "
             "files are specified.",
-            ctx=ctx)
+            ctx=ctx,
+        )
     input_path = input_paths.pop()
-    output_path = input_path.with_name(
-        input_path.stem + "-2up" + input_path.suffix)
+    output_path = input_path.with_name(input_path.stem + "-2up" + input_path.suffix)
     click.echo(f"Writing output to {output_path!s}")
     return output_path
 
 
 @main.command(name="2up")
-@click.argument('pdffiles', type=click.File('rb'), nargs=-1, required=True)
-@click.option('-o', '--output-file', type=click.File('wb', atomic=True),
-              default=default_2up_output_file,
-              help="Output file name. "
-              "(Default input filename with '-2up' appended to stem.)")
+@click.argument("pdffiles", type=click.File("rb"), nargs=-1, required=True)
+@click.option(
+    "-o",
+    "--output-file",
+    type=click.File("wb", atomic=True),
+    default=default_2up_output_file,
+    help="Output file name. " "(Default input filename with '-2up' appended to stem.)",
+)
 def pdf_2up(pdffiles, output_file):
     """Format PDF(s) for 2-up printing.
 

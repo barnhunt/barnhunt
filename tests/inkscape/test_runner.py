@@ -1,44 +1,42 @@
 import errno
 import logging
 import os
-from subprocess import CalledProcessError
 import sys
 import threading
 import time
+from subprocess import CalledProcessError
 
 import pytest
 
-from barnhunt.inkscape.runner import (
-    Inkscape,
-    RunInkscape,
-    ShellModeInkscape,
-    logging_output,
-    )
+from barnhunt.inkscape.runner import Inkscape
+from barnhunt.inkscape.runner import logging_output
+from barnhunt.inkscape.runner import RunInkscape
+from barnhunt.inkscape.runner import ShellModeInkscape
 
 
 class TestRunInkscape:
     def test_success(self):
-        RunInkscape(executable='/bin/true')([])
+        RunInkscape(executable="/bin/true")([])
 
     def test_failure(self, caplog):
         with pytest.raises(CalledProcessError):
-            RunInkscape(executable='/bin/false')([])
+            RunInkscape(executable="/bin/false")([])
         assert len(caplog.records) == 0
 
     def test_logs_output(self, caplog):
-        RunInkscape(executable='/bin/echo')(['foo'])
-        assert 'foo' in caplog.text
+        RunInkscape(executable="/bin/echo")(["foo"])
+        assert "foo" in caplog.text
 
     def test_close(self):
         RunInkscape().close()
 
 
 def test_logging_output(caplog):
-    with logging_output('foo') as logfile:
-        logfile.write(b'bar')
+    with logging_output("foo") as logfile:
+        logfile.write(b"bar")
     assert len(caplog.records) == 1
-    assert 'foo' in caplog.text
-    assert 'bar' in caplog.text
+    assert "foo" in caplog.text
+    assert "bar" in caplog.text
 
 
 class TestShellModeInkscape:
@@ -48,22 +46,22 @@ class TestShellModeInkscape:
 
     def _make_dummy(self):
         here = os.path.dirname(os.path.abspath(__file__))
-        dummy = os.path.join(here, 'dummy_inkscape.py')
-        return ShellModeInkscape(executable=sys.executable,
-                                 inkscape_args=[dummy],
-                                 timeout=3)
+        dummy = os.path.join(here, "dummy_inkscape.py")
+        return ShellModeInkscape(
+            executable=sys.executable, inkscape_args=[dummy], timeout=3
+        )
 
     def test_success(self, inkscape, caplog):
-        inkscape(['true'])
+        inkscape(["true"])
         assert not any(r.levelno >= logging.INFO for r in caplog.records)
 
     def test_logs_output(self, inkscape, caplog):
-        inkscape(['echo', 'foo'])
+        inkscape(["echo", "foo"])
         assert any(r.levelno >= logging.INFO for r in caplog.records)
-        assert 'foo' in caplog.text
+        assert "foo" in caplog.text
 
     def test_close(self, inkscape):
-        inkscape(['true'])
+        inkscape(["true"])
         pid = inkscape.pid
         assert pid is not None
         os.kill(pid, 0)
@@ -84,7 +82,7 @@ class TestShellModeInkscape:
         pids = set()
 
         def target():
-            inkscape(['true'])
+            inkscape(["true"])
             pids.add(inkscape.pid)
 
         run_in_threads(target, nthreads=nthreads)
@@ -93,8 +91,7 @@ class TestShellModeInkscape:
 
 
 def run_in_threads(target, args=(), nthreads=16):
-    threads = [threading.Thread(target=target, args=args)
-               for _ in range(16)]
+    threads = [threading.Thread(target=target, args=args) for _ in range(16)]
     for t in threads:
         t.start()
     for t in threads:
@@ -111,6 +108,7 @@ class TestInkscape:
         class DummyTree:
             def write(self, outfp, xml_declaration=False):
                 pass
+
         return DummyTree()
 
     @pytest.fixture
@@ -120,13 +118,13 @@ class TestInkscape:
         return rv
 
     def test_export_pdf(self, inkscape, runner, tree, tmp_path):
-        output_path = tmp_path.joinpath('foo/bar.pdf').__fspath__()
+        output_path = tmp_path.joinpath("foo/bar.pdf").__fspath__()
         inkscape.export_pdf(tree, output_path)
         assert len(runner.commands) == 1
         args = runner.commands[0]
-        assert args[1] == '--export-area-page'
-        assert args[2] == f'--export-pdf={output_path}'
-        assert tmp_path.joinpath('foo').is_dir()
+        assert args[1] == "--export-area-page"
+        assert args[2] == f"--export-pdf={output_path}"
+        assert tmp_path.joinpath("foo").is_dir()
 
     def test_contextmanager(self, inkscape, runner):
         with inkscape as rv:

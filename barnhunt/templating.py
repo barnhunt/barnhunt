@@ -1,20 +1,21 @@
-from functools import partial
 import hashlib
-import jinja2
 import logging
 import os
 import random
 import re
+from functools import partial
 
-from .layerinfo import FlaggedLayerInfo, LayerFlags
+import jinja2
+
 from .inkscape import svg
+from .layerinfo import FlaggedLayerInfo
+from .layerinfo import LayerFlags
 
 log = logging.getLogger()
 
 
 class LayerAdapter:
-    """Adapt an Inkscape SVG layer element for ease of use in templates
-    """
+    """Adapt an Inkscape SVG layer element for ease of use in templates"""
 
     def __init__(self, elem, layer_info_class=FlaggedLayerInfo):
         self.elem = elem
@@ -23,7 +24,7 @@ class LayerAdapter:
 
     @property
     def id(self):
-        return self.elem.get('id')
+        return self.elem.get("id")
 
     @property
     def label(self):
@@ -62,9 +63,11 @@ class LayerAdapter:
         return _hash_string(self.id)
 
     def __eq__(self, other):
-        return type(other) is type(self) \
-            and other.elem == self.elem \
+        return (
+            type(other) is type(self)
+            and other.elem == self.elem
             and other._layer_info_class == self._layer_info_class
+        )
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -81,7 +84,7 @@ def _hash_string(s):
 
     (Python's hash() can depend on the setting of PYTHONHASHSEED.)
     """
-    bytes_ = s.encode('utf8')
+    bytes_ = s.encode("utf8")
     return hash(int(hashlib.sha1(bytes_).hexdigest(), 16))
 
 
@@ -99,16 +102,16 @@ def get_element_context(elem, layer_info_class=FlaggedLayerInfo):
             overlays.insert(0, ancestor)
 
     context = {
-        'layer': layer,
-        'overlays': tuple(overlays),
-        }
+        "layer": layer,
+        "overlays": tuple(overlays),
+    }
     if overlays:
         # Course is the outermost containing overlay
-        context['course'] = overlays[0]
+        context["course"] = overlays[0]
     if len(overlays) > 1:
         # Overlay is the innermost containing overlay, but only if is
         # distinct from course.
-        context['overlay'] = overlays[-1]
+        context["overlay"] = overlays[-1]
     return context
 
 
@@ -121,8 +124,8 @@ def get_output_basenames(elem, layer_info_class=FlaggedLayerInfo):
 
 
 class FileAdapter:
-    """Adapt a file object for ease of use in templates
-    """
+    """Adapt a file object for ease of use in templates"""
+
     def __init__(self, fp):
         self._fp = fp
 
@@ -154,8 +157,8 @@ global_rng = random.Random()
 
 
 def default_random_seed(context):
-    random_seed = context.get('random_seed')
-    layer = context.get('layer')
+    random_seed = context.get("random_seed")
+    layer = context.get("layer")
     return hash((random_seed, layer))
 
 
@@ -206,19 +209,17 @@ def random_rats(context, n=5, min=1, max=5, seed=None, skip=0):
 
 
 def safepath(path_comp):
-    """A jinja filter to replace shell-unfriendly characters with underscore.
-    """
-    return re.sub(r"[\000-\040/\\\177\s]", '_', str(path_comp),
-                  flags=re.UNICODE)
+    """A jinja filter to replace shell-unfriendly characters with underscore."""
+    return re.sub(r"[\000-\040/\\\177\s]", "_", str(path_comp), flags=re.UNICODE)
 
 
 GLOBALS = {
-    'rats': random_rats,
-    }
+    "rats": random_rats,
+}
 
 FILTERS = {
-    'safepath': safepath,
-    }
+    "safepath": safepath,
+}
 
 
 def make_jinja2_environment(undefined=jinja2.Undefined):
@@ -233,8 +234,7 @@ strict_env = make_jinja2_environment(undefined=jinja2.StrictUndefined)
 
 
 def render_template(tmpl_string, context, strict_undefined=False):
-    """Render string template.
-    """
+    """Render string template."""
     env = strict_env if strict_undefined else default_env
     tmpl = env.from_string(tmpl_string)
     return tmpl.render(context)
@@ -253,5 +253,4 @@ def is_string_literal(tmpl_string):
     if len(ast.body) != 1 or not isinstance(ast.body[0], nodes.Output):
         return False
     output = ast.body[0]
-    return (len(output.nodes) == 1
-            and isinstance(output.nodes[0], nodes.TemplateData))
+    return len(output.nodes) == 1 and isinstance(output.nodes[0], nodes.TemplateData)

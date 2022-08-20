@@ -9,23 +9,23 @@ from lxml import etree
 from .css import InlineCSS
 
 NSMAP = {
-    'svg': "http://www.w3.org/2000/svg",
-    'inkscape': "http://www.inkscape.org/namespaces/inkscape",
-    'bh': 'http://dairiki.org/barnhunt/inkscape-extensions',
-    }
+    "svg": "http://www.w3.org/2000/svg",
+    "inkscape": "http://www.inkscape.org/namespaces/inkscape",
+    "bh": "http://dairiki.org/barnhunt/inkscape-extensions",
+}
 
-etree.register_namespace('bh', NSMAP['bh'])
+etree.register_namespace("bh", NSMAP["bh"])
 
-SVG_SVG_TAG = etree.QName(NSMAP['svg'], 'svg')
-SVG_G_TAG = etree.QName(NSMAP['svg'], 'g')
-SVG_TSPAN_TAG = etree.QName(NSMAP['svg'], 'tspan')
+SVG_SVG_TAG = etree.QName(NSMAP["svg"], "svg")
+SVG_G_TAG = etree.QName(NSMAP["svg"], "g")
+SVG_TSPAN_TAG = etree.QName(NSMAP["svg"], "tspan")
 
-INKSCAPE_GROUPMODE = etree.QName(NSMAP['inkscape'], 'groupmode')
-INKSCAPE_LABEL = etree.QName(NSMAP['inkscape'], 'label')
+INKSCAPE_GROUPMODE = etree.QName(NSMAP["inkscape"], "groupmode")
+INKSCAPE_LABEL = etree.QName(NSMAP["inkscape"], "label")
 
 LAYER_XP = f'{SVG_G_TAG}[@{INKSCAPE_GROUPMODE}="layer"]'
 
-BH_RANDOM_SEED = etree.QName(NSMAP['bh'], 'random-seed')
+BH_RANDOM_SEED = etree.QName(NSMAP["bh"], "random-seed")
 
 
 def walk_layers(elem):
@@ -37,8 +37,8 @@ def walk_layers(elem):
     from top to bottom.)
 
     """
-    for elem, children in walk_layers2(elem):
-        yield elem
+    for layer, _children in walk_layers2(elem):
+        yield layer
 
 
 def walk_layers2(elem):
@@ -50,19 +50,18 @@ def walk_layers2(elem):
     to "prune" the traversal of the layer tree.
 
     """
-    nodes = elem.findall('./' + LAYER_XP)
+    nodes = elem.findall("./" + LAYER_XP)
     while nodes:
         elem = nodes.pop()
-        children = elem.findall('./' + LAYER_XP)
+        children = elem.findall("./" + LAYER_XP)
         children.reverse()
         yield elem, children
         nodes.extend(reversed(children))
 
 
 def is_layer(elem):
-    """Is elem an Inkscape layer element?
-    """
-    return elem.tag == SVG_G_TAG and elem.get(INKSCAPE_GROUPMODE) == 'layer'
+    """Is elem an Inkscape layer element?"""
+    return elem.tag == SVG_G_TAG and elem.get(INKSCAPE_GROUPMODE) == "layer"
 
 
 def lineage(elem):
@@ -99,17 +98,16 @@ def sibling_layers(elem):
 
 
 def ensure_visible(elem):
-    style = InlineCSS(elem.get('style'))
-    if style.get('display', '').strip() == 'none':
-        style['display'] = 'inline'
-        elem.set('style', style.serialize())
+    style = InlineCSS(elem.get("style"))
+    if style.get("display", "").strip() == "none":
+        style["display"] = "inline"
+        elem.set("style", style.serialize())
     return elem
 
 
 def layer_label(layer):
-    """Get the label of on Inkscape layer
-    """
-    return layer.get(INKSCAPE_LABEL) or ''
+    """Get the label of on Inkscape layer"""
+    return layer.get(INKSCAPE_LABEL) or ""
 
 
 def copy_etree(tree, omit_elements=None, update_nsmap=None):
@@ -132,8 +130,7 @@ def copy_etree(tree, omit_elements=None, update_nsmap=None):
         rv = etree.Element(elem.tag, attrib=elem.attrib, **kwargs)
         rv.text = elem.text
         rv.tail = elem.tail
-        rv.extend(copy_elem(child) for child in elem
-                  if child not in omit_elements)
+        rv.extend(copy_elem(child) for child in elem if child not in omit_elements)
         return rv
 
     root = tree.getroot()
@@ -149,8 +146,7 @@ def copy_etree(tree, omit_elements=None, update_nsmap=None):
 def _svg_attrib(tree):
     svg_elem = tree.getroot()
     if svg_elem.tag != SVG_SVG_TAG:
-        raise ValueError(
-            f"Expected XML root to be an <svg> tag, not <{svg_elem.tag}>")
+        raise ValueError(f"Expected XML root to be an <svg> tag, not <{svg_elem.tag}>")
     return svg_elem.attrib
 
 

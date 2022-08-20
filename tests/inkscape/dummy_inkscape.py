@@ -4,10 +4,10 @@ import shlex
 
 class DummyShellmodeInkscape(cmd.Cmd):
     intro = "DummyShellmodeInkscape"
-    prompt = '>'
+    prompt = ">"
 
     def precmd(self, line):
-        return ' '.join(shlex.split(line))
+        return " ".join(shlex.split(line))
 
     def do_true(self, line):
         return False
@@ -20,5 +20,5 @@ class DummyShellmodeInkscape(cmd.Cmd):
         return True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     DummyShellmodeInkscape().cmdloop()

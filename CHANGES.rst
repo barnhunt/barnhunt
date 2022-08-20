@@ -7,7 +7,7 @@ Release 1.1.0a2 (unreleased)
 
 - Dropped support for python 3.6
 - Changed license to GPL version 3
-  
+
 Bit Rot
 -------
 
@@ -216,7 +216,7 @@ Bugs
   problem seems to be in `pexpect.expect.py`__, and is triggered when
   multiple chunks of output are read before a match is found.
 
-__ https://github.com/pexpect/pexpect/blob/master/pexpect/expect.py#L22
+__ https://github.com/pexpect/pexpect/blob/606f368b4a0dc442e2523d439d722a389b6e54c6/pexpect/expect.py#L22
 
 Bit-Rot
 -------

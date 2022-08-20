@@ -55,3 +55,6 @@ norecursedirs = [
     ".tox",
     "build",
 ]
+
+[tool.mypy]
+ignore_errors = true

@@ -1,10 +1,12 @@
-from contextlib import contextmanager
 import locale
 import logging
 import pathlib
-from subprocess import check_call, STDOUT
-from tempfile import NamedTemporaryFile, TemporaryFile
 import threading
+from contextlib import contextmanager
+from subprocess import check_call
+from subprocess import STDOUT
+from tempfile import NamedTemporaryFile
+from tempfile import TemporaryFile
 
 import pexpect
 import shellescape
@@ -14,9 +16,9 @@ log = logging.getLogger()
 
 
 class RunInkscape:
-    """ Run inkscape with specific arguments.
-    """
-    def __init__(self, executable='inkscape'):
+    """Run inkscape with specific arguments."""
+
+    def __init__(self, executable="inkscape"):
         self.executable = executable
 
     def __call__(self, args):
@@ -41,8 +43,7 @@ def logging_output(cmd):
             logfile.flush()
             if logfile.tell() > 0:
                 logfile.seek(0)
-                log.warning("Unexpected output from %r:\n%s",
-                            cmd, logfile.read())
+                log.warning("Unexpected output from %r:\n%s", cmd, logfile.read())
 
 
 class ShellModeInkscape:
@@ -55,9 +56,10 @@ class ShellModeInkscape:
     inkscape process will be run for each thread.
 
     """
-    def __init__(self, executable='inkscape',
-                 inkscape_args=['--shell'],
-                 timeout=30):
+
+    def __init__(self, executable="inkscape", inkscape_args=None, timeout=30):
+        if inkscape_args is None:
+            inkscape_args = ["--shell"]
         self._threadlocal = threading.local()
         self.executable = executable
         self.inkscape_args = inkscape_args
@@ -65,7 +67,7 @@ class ShellModeInkscape:
 
     @property
     def child(self):
-        return getattr(self._threadlocal, 'child', None)
+        return getattr(self._threadlocal, "child", None)
 
     @child.setter
     def child(self, value):
@@ -74,7 +76,7 @@ class ShellModeInkscape:
     _lock = threading.Lock()
 
     def __call__(self, args):
-        cmdline = ' '.join(shellescape.quote(arg) for arg in args)
+        cmdline = " ".join(shellescape.quote(arg) for arg in args)
         if self.child is None:
             self._start_child()
         log.debug("Sending to shell-mode inkscape: %r", cmdline)
@@ -92,12 +94,12 @@ class ShellModeInkscape:
     def _start_child(self):
         log.debug("Starting shell-mode inkscape subprocess")
         encoding = locale.getpreferredencoding()
-        self.child = pexpect.spawn(self.executable, self.inkscape_args,
-                                   encoding=encoding,
-                                   timeout=self.timeout)
+        self.child = pexpect.spawn(
+            self.executable, self.inkscape_args, encoding=encoding, timeout=self.timeout
+        )
         self._wait_for_prompt()
 
-    def _wait_for_prompt(self, prompt='\n>', expect_lines=1):
+    def _wait_for_prompt(self, prompt="\n>", expect_lines=1):
         """Wait for prompt."""
         # NB: pexpect (==4.4.0) appears to be broken when
         # searchwindowsize is set to something other than None.
@@ -106,31 +108,35 @@ class ShellModeInkscape:
         # triggered when multiple chunks of output are read before a
         # match is found.
         #
-        # __ https://github.com/pexpect/pexpect/blob/master/pexpect/expect.py#L22  # noqa
-        self.child.expect_exact('\n>')  # , searchwindowsize=len(prompt))
+        # __ https://github.com/pexpect/pexpect/blob/
+        #    606f368b4a0dc442e2523d439d722a389b6e54c6/pexpect/expect.py#L22
+        #
+        self.child.expect_exact("\n>")  # , searchwindowsize=len(prompt))
         self._log_output(expect_lines)
 
     def _log_output(self, expect_lines=0):
         before = self.child.before
-        if before and before.count('\n') + 1 != expect_lines:
-            log.warning("Unexpected output from shell-mode inkscape:\n%s",
-                        before.replace('\r\n', '\n'))
+        if before and before.count("\n") + 1 != expect_lines:
+            log.warning(
+                "Unexpected output from shell-mode inkscape:\n%s",
+                before.replace("\r\n", "\n"),
+            )
 
 
 class Inkscape:
-    def __init__(self, executable='inkscape', shell_mode=True):
+    def __init__(self, executable="inkscape", shell_mode=True):
         runner_class = ShellModeInkscape if shell_mode else RunInkscape
         self.run_inkscape = runner_class(executable)
 
     def export_pdf(self, tree, filename):
         log.debug("Writing %r", filename)
         pathlib.Path(filename).parent.mkdir(parents=True, exist_ok=True)
-        with NamedTemporaryFile(suffix='.svg') as svg:
+        with NamedTemporaryFile(suffix=".svg") as svg:
             tree.write(svg, xml_declaration=True)
             svg.flush()
-            self.run_inkscape([svg.name,
-                               '--export-area-page',
-                               f'--export-pdf={filename!s}'])
+            self.run_inkscape(
+                [svg.name, "--export-area-page", f"--export-pdf={filename!s}"]
+            )
         return filename
 
     def close(self):
