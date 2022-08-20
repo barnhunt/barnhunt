@@ -1,146 +1,203 @@
-import errno
 import logging
 import os
+import re
 import sys
 import threading
-import time
+from dataclasses import dataclass
 from subprocess import CalledProcessError
+from typing import Any
+from typing import Callable
+from typing import Sequence
+from typing import Type
 
 import pytest
 
-from barnhunt.inkscape.runner import Inkscape
-from barnhunt.inkscape.runner import logging_output
-from barnhunt.inkscape.runner import RunInkscape
-from barnhunt.inkscape.runner import ShellModeInkscape
+from barnhunt.inkscape.runner import CliRunner
+from barnhunt.inkscape.runner import dwim_old_inkscape
+from barnhunt.inkscape.runner import ExportPdfCommand
+from barnhunt.inkscape.runner import ExportPdfCommand_0_9x
+from barnhunt.inkscape.runner import ExportPdfCommand_1_0
+from barnhunt.inkscape.runner import inkscape_runner
+from barnhunt.inkscape.runner import InkscapeApi
+from barnhunt.inkscape.runner import log_output
+from barnhunt.inkscape.runner import Runner
+from barnhunt.inkscape.runner import ShellModeRunner
 
 
-class TestRunInkscape:
-    def test_success(self):
-        RunInkscape(executable="/bin/true")([])
+class TestExportPdfCommand:
+    @pytest.fixture(params=[ExportPdfCommand_0_9x, ExportPdfCommand_1_0])
+    def command_class(self, request: pytest.FixtureRequest) -> ExportPdfCommand:
+        return request.param  # type: ignore[no-any-return,attr-defined]
 
-    def test_failure(self, caplog):
+    def test_no_pdf_version(self, command_class: Type[ExportPdfCommand]) -> None:
+        command = command_class("in.svg", "out.pdf")
+        assert all("export-pdf-version" not in arg for arg in command.cli_args)
+        assert "export-pdf-version" not in command.shell_mode_cmdline
+
+    def test_pdf_version(self, command_class: Type[ExportPdfCommand]) -> None:
+        command = command_class("in.svg", "out.pdf", "1.23")
+        assert "--export-pdf-version=1.23" in command.cli_args
+        if command_class is ExportPdfCommand_0_9x:
+            assert " --export-pdf-version=1.23 " in command.shell_mode_cmdline
+        else:
+            assert "; export-pdf-version:1.23;" in command.shell_mode_cmdline
+
+
+@dataclass
+class DummyInkscapeCommand:
+    cli_args: Sequence[str] = ()
+    shell_mode_cmdline: str = ""
+
+
+class TestCliRunner:
+    @pytest.fixture
+    def runner(self) -> CliRunner:
+        api = InkscapeApi(
+            export_pdf_command=lambda *_args: DummyInkscapeCommand(),
+        )
+        return CliRunner(api=api, executable=sys.executable)
+
+    def test_success(self, runner: Runner) -> None:
+        command = DummyInkscapeCommand(cli_args=("-c", ""))
+        runner.run(command)
+
+    def test_failure(self, runner: Runner) -> None:
+        command = DummyInkscapeCommand(cli_args=("-c", "import sys; sys.exit(1)"))
         with pytest.raises(CalledProcessError):
-            RunInkscape(executable="/bin/false")([])
-        assert len(caplog.records) == 0
+            runner.run(command)
 
-    def test_logs_output(self, caplog):
-        RunInkscape(executable="/bin/echo")(["foo"])
+    def test_logs_output(
+        self, runner: Runner, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        command = DummyInkscapeCommand(cli_args=("-c", "print('foo')"))
+        runner.run(command)
         assert "foo" in caplog.text
 
-    def test_close(self):
-        RunInkscape().close()
+    def test_export_pdf(self, caplog: pytest.LogCaptureFixture) -> None:
+        # mostly here for coverage
+        command = DummyInkscapeCommand(cli_args=("-c", "print('foo')"))
+        api = InkscapeApi(export_pdf_command=lambda *_args: command)
+        runner = CliRunner(api=api, executable=sys.executable)
+        runner.export_pdf("ignored", "ignored")
+        assert "foo" in caplog.text
+
+    def test_close(self, runner: Runner) -> None:
+        # vanity test for coverage
+        runner.close()
 
 
-def test_logging_output(caplog):
-    with logging_output("foo") as logfile:
-        logfile.write(b"bar")
-    assert len(caplog.records) == 1
-    assert "foo" in caplog.text
-    assert "bar" in caplog.text
-
-
-class TestShellModeInkscape:
+class TestShellModeRunner:
     @pytest.fixture
-    def inkscape(self):
-        return self._make_dummy()
-
-    def _make_dummy(self):
+    def runner(self) -> ShellModeRunner:
         here = os.path.dirname(os.path.abspath(__file__))
-        dummy = os.path.join(here, "dummy_inkscape.py")
-        return ShellModeInkscape(
-            executable=sys.executable, inkscape_args=[dummy], timeout=3
+        dummy_inkscape_py = os.path.join(here, "dummy_inkscape.py")
+        api = InkscapeApi(
+            export_pdf_command=lambda *_args: DummyInkscapeCommand(),
+            shell_mode_cruft_patterns=(r"^DummyShellmodeInkscape$",),
+        )
+        return ShellModeRunner(
+            api=api,
+            executable=sys.executable,
+            inkscape_args=(dummy_inkscape_py,),
+            timeout=3,
         )
 
-    def test_success(self, inkscape, caplog):
-        inkscape(["true"])
-        assert not any(r.levelno >= logging.INFO for r in caplog.records)
+    def test_success(self, runner: Runner, caplog: pytest.LogCaptureFixture) -> None:
+        caplog.set_level(logging.INFO)
+        command = DummyInkscapeCommand(shell_mode_cmdline="true")
+        runner.run(command)
+        assert len(caplog.messages) == 0
 
-    def test_logs_output(self, inkscape, caplog):
-        inkscape(["echo", "foo"])
-        assert any(r.levelno >= logging.INFO for r in caplog.records)
-        assert "foo" in caplog.text
+    def test_logs_output(
+        self, runner: Runner, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        caplog.set_level(logging.INFO)
+        command = DummyInkscapeCommand(shell_mode_cmdline="echo foo")
+        runner.run(command)
+        assert len(caplog.messages) == 1
+        assert "foo" in caplog.messages[0]
 
-    def test_close(self, inkscape):
-        inkscape(["true"])
-        pid = inkscape.pid
-        assert pid is not None
-        os.kill(pid, 0)
-
-        inkscape.close()
-        assert inkscape.child is None
+    def test_close(self, runner: ShellModeRunner) -> None:
+        command = DummyInkscapeCommand(shell_mode_cmdline="true")
+        with runner:
+            runner.run(command)
+            proc = runner._proc
+            assert proc is not None
+            assert proc.poll() is None, "child process is alive"
 
         # check that child is killed within a reasonable time
-        with pytest.raises(OSError) as excinfo:
-            os.kill(pid, 0)
-            for _ in range(10):
-                time.sleep(0.05)
-                os.kill(pid, 0)
-        assert excinfo.value.errno == errno.ESRCH
+        proc.wait(1.0)
 
-    def test_thread_safe(self, inkscape, caplog):
+    def test_thread_safe(
+        self, runner: ShellModeRunner, caplog: pytest.LogCaptureFixture
+    ) -> None:
         nthreads = 16
-        pids = set()
+        procs = set()
+        command = DummyInkscapeCommand(shell_mode_cmdline="true")
 
-        def target():
-            inkscape(["true"])
-            pids.add(inkscape.pid)
+        def target() -> None:
+            runner.run(command)
+            procs.add(runner._proc)
 
+        caplog.set_level(logging.INFO)
         run_in_threads(target, nthreads=nthreads)
-        assert not any(r.levelno >= logging.INFO for r in caplog.records)
-        assert len(pids) == nthreads
+        assert len(caplog.messages) == 0
+        assert len(procs) == nthreads
+        for proc in procs:
+            # Check that all subprocesses have exited
+            assert proc is not None
+            assert proc.wait(1.0) == 0
+
+    def test_proc_is_none_if_not_started(self, runner: ShellModeRunner) -> None:
+        assert runner._proc is None
 
 
-def run_in_threads(target, args=(), nthreads=16):
-    threads = [threading.Thread(target=target, args=args) for _ in range(16)]
+def run_in_threads(target: Callable[[], Any], nthreads: int) -> None:
+    threads = [threading.Thread(target=target) for _ in range(nthreads)]
     for t in threads:
         t.start()
     for t in threads:
         t.join()
 
 
-class TestInkscape:
-    @pytest.fixture
-    def runner(self):
-        return DummyInkscapeRunner()
-
-    @pytest.fixture
-    def tree(self):
-        class DummyTree:
-            def write(self, outfp, xml_declaration=False):
-                pass
-
-        return DummyTree()
-
-    @pytest.fixture
-    def inkscape(self, runner):
-        rv = Inkscape()
-        rv.run_inkscape = runner
-        return rv
-
-    def test_export_pdf(self, inkscape, runner, tree, tmp_path):
-        output_path = tmp_path.joinpath("foo/bar.pdf").__fspath__()
-        inkscape.export_pdf(tree, output_path)
-        assert len(runner.commands) == 1
-        args = runner.commands[0]
-        assert args[1] == "--export-area-page"
-        assert args[2] == f"--export-pdf={output_path}"
-        assert tmp_path.joinpath("foo").is_dir()
-
-    def test_contextmanager(self, inkscape, runner):
-        with inkscape as rv:
-            assert rv is inkscape
-            assert not runner.closed
-        assert runner.closed
+def test_log_output(caplog: pytest.LogCaptureFixture) -> None:
+    log_output("foo")
+    assert len(caplog.messages) == 1
+    assert re.search(r"(?m)^!! => foo", caplog.text)
 
 
-class DummyInkscapeRunner:
-    def __init__(self):
-        self.commands = []
-        self.closed = False
+def test_log_output_squelches_cruft(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.INFO)
+    log_output("foo", cruft_patterns=(r"^foo$",))
+    assert len(caplog.messages) == 0
 
-    def __call__(self, args):
-        assert not self.closed
-        self.commands.append(args)
 
-    def close(self):
-        self.closed = True
+@pytest.mark.parametrize(
+    ("shell_mode", "old_inkscape", "runner_class", "export_pdf_command"),
+    [
+        (False, False, CliRunner, ExportPdfCommand_1_0),
+        (False, True, CliRunner, ExportPdfCommand_0_9x),
+        (True, False, ShellModeRunner, ExportPdfCommand_1_0),
+        (True, True, ShellModeRunner, ExportPdfCommand_0_9x),
+    ],
+)
+def test_inkscape_runner(
+    shell_mode: bool,
+    old_inkscape: bool,
+    runner_class: Type[Runner],
+    export_pdf_command: Any,
+) -> None:
+    runner = inkscape_runner(shell_mode, old_inkscape=old_inkscape)
+    assert isinstance(runner, runner_class)
+    assert runner.api.export_pdf_command is export_pdf_command
+
+
+def test_dwim_old_inkscape(inkscape_executable: str) -> None:
+    assert isinstance(dwim_old_inkscape(inkscape_executable), bool)
+
+
+def test_dwim_old_inkscape_warns_on_garbage(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.WARNING)
+    python = sys.executable
+    assert dwim_old_inkscape(python) is False
+    assert "Can not determine Inkscape version" in caplog.text

@@ -1,8 +1,25 @@
 import click
+import os
 import pytest
 
 from barnhunt.cli import default_2up_output_file
+from barnhunt.cli import default_inkscape_command
 from barnhunt.cli import pdf_2up
+
+
+@pytest.mark.parametrize(
+    "platform, expect",
+    [
+        ("linux", "inkscape"),
+        ("win32", "inkscape.exe"),
+    ],
+)
+def test_default_inkscape_command(
+    platform: str, expect: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delitem(os.environ, "INKSCAPE_COMMAND", raising=False)
+    monkeypatch.setattr("sys.platform", platform)
+    assert default_inkscape_command() == expect
 
 
 class Test_default_2up_output_file:

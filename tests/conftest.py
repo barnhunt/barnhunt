@@ -1,9 +1,16 @@
+from __future__ import annotations
+
+import os
+import shutil
 from io import BytesIO
 from pathlib import Path
 from shutil import copyfile
 
 import pytest
 from lxml import etree
+
+from barnhunt.cli import default_inkscape_command
+
 
 TEST_SVG = b"""<?xml version="1.0" encoding="ascii" standalone="no"?>
 <svg id="root"
@@ -172,3 +179,16 @@ def tmp_drawing_svg(tmp_path, drawing_svg):
     tmp_drawing_svg = tmp_path.joinpath(drawing_svg.name)
     copyfile(drawing_svg, tmp_drawing_svg)
     return tmp_drawing_svg
+
+
+_inkscape_executable = shutil.which(
+    os.environ.get("INKSCAPE_COMMAND", default_inkscape_command())
+)
+
+
+@pytest.fixture
+def inkscape_executable() -> str:
+    """Path to inkscape executable."""
+    if _inkscape_executable is None:
+        pytest.skip("test requires inkscape")
+    return _inkscape_executable

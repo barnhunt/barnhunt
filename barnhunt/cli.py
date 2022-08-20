@@ -2,18 +2,18 @@ import logging
 import os
 import pathlib
 import random
-from collections import OrderedDict
-from itertools import chain
-from itertools import starmap
-from tempfile import mkstemp
+import sys
+from collections import defaultdict
+from contextlib import ExitStack
+from multiprocessing.pool import ThreadPool
+from tempfile import TemporaryDirectory
 
 import click
 from atomicwrites import atomic_write
 
 from .coursemaps import iter_coursemaps
-from .inkscape.runner import Inkscape
+from .inkscape.runner import inkscape_runner
 from .pager import get_pager
-from .parallel import ParallelUnorderedStarmap
 from .pdfutil import concat_pdfs
 from .pdfutil import two_up
 
@@ -76,56 +76,106 @@ def random_seed(svgfiles, force_reseed):
             tree.write(f)
 
 
+def default_inkscape_command() -> str:
+    # This is what inkex.command does to find Inkscape (after first
+    # checking $INKSCAPE_COMMAND).
+    #
+    # https://gitlab.com/inkscape/extensions/-/blob/cb74374e46894030775cf947e97ca341b6ed85d8/inkex/command.py#L45
+    if sys.platform == "win32":
+        # prefer inkscape.exe over inkscape.com which spawns a command window
+        return "inkscape.exe"
+    return "inkscape"
+
+
 @main.command()
 @click.argument("svgfiles", type=click.File("rb"), nargs=-1, required=True)
-@click.option("-o", "--output-directory", type=click.Path(file_okay=False), default=".")
-@click.option("--processes", "-p", type=POSITIVE_INT, default=None)
+@click.option(
+    "--output-directory",
+    "-o",
+    type=click.Path(file_okay=False),
+    default="pdfs",
+    help="""
+    Directory into which to write output PDF files.
+    The default is './pdfs'.
+    """,
+)
+@click.option(
+    "--processes",
+    "-p",
+    metavar="N",
+    type=POSITIVE_INT,
+    default=os.cpu_count,
+    help="""
+    Number of inkscape processes to run in parallel.
+    Set to one to disable parallel processing.
+    The default is {os.cpu_count()} (the number of CPUs detected on this platform).
+    """,
+)
+@click.option(
+    "--inkscape-command",
+    "--inkscape",
+    metavar="COMMAND",
+    envvar="INKSCAPE_COMMAND",  # NB: this is what inkex uses
+    default=default_inkscape_command,
+    help=f"""
+    Name of (or path to) inkscape executable to use for exporting PDFs.
+    (Equivalently, you may set the $INKSCAPE_COMMAND environment variable.)
+    The default is {default_inkscape_command()!r}.
+    """,
+)
 @click.option(
     "--shell-mode-inkscape/--no-shell-mode-inkscape",
+    "shell_mode",
     default=True,
-    help="Run inkscape in shell-mode for efficiency.  Default is true.",
+    help="""
+    Enable/disable running inkscape in shell-mode for efficiency.
+    The default is enabled.
+    """,
 )
-def pdfs(svgfiles, output_directory, shell_mode_inkscape, processes=None):
+def pdfs(svgfiles, output_directory, shell_mode, inkscape_command, processes=None):
     """Export PDFs from inkscape SVG coursemaps."""
-    coursemaps = iter_coursemaps(svgfiles)
 
-    pages = OrderedDict()
-    descriptions = dict()
+    with ExitStack() as stack:
+        tmpdir = stack.enter_context(TemporaryDirectory())
+        inkscape = stack.enter_context(
+            inkscape_runner(shell_mode=shell_mode, executable=inkscape_command)
+        )
 
-    def render_info(coursemap):
-        basename = coursemap["basename"]
-        pdf_fn = os.path.join(output_directory, basename + ".pdf")
-        fd, temp_fn = mkstemp(prefix="barnhunt-", suffix=".pdf")
-        pages.setdefault(pdf_fn, []).append(temp_fn)
-        os.close(fd)
-        descriptions[temp_fn] = coursemap.get("description")
-        return coursemap["tree"], temp_fn
+        def write_pdf(n_coursemap):
+            """Write coursemap to SVG, render to PDF in tmpdir"""
+            n, coursemap = n_coursemap
+            svg_fn = os.path.join(tmpdir, f"in{n}.svg")
+            out_fn = os.path.join(tmpdir, f"out{n}.pdf")
+            with open(svg_fn, "wb") as fp:
+                coursemap["tree"].write(fp)
 
-    inkscape = Inkscape(shell_mode=shell_mode_inkscape)
+            inkscape.export_pdf(svg_fn, out_fn)
+            os.unlink(svg_fn)
+            coursemap["sort_order"] = n
+            return coursemap, out_fn
 
-    if processes == 1:
-        starmap_ = starmap
-    else:
-        starmap_ = ParallelUnorderedStarmap(processes)
+        if processes == 1:
+            map_ = map
+        else:
+            pool = stack.enter_context(ThreadPool(processes))
+            map_ = pool.imap_unordered
 
-    try:
-        for fn in starmap_(inkscape.export_pdf, map(render_info, coursemaps)):
-            log.info("Rendered %s", descriptions.get(fn, fn))
+        pages = defaultdict(list)
+        for coursemap, temp_fn in map_(write_pdf, enumerate(iter_coursemaps(svgfiles))):
+            log.info("Rendered %s", coursemap["description"])
+            output_fn = os.path.join(output_directory, f"{coursemap['basename']}.pdf")
+            pages[output_fn].append((coursemap, temp_fn))
 
-        for output_fn, temp_fns in pages.items():
+        for output_fn, render_info in pages.items():
+            coursemaps, temp_fns = zip(
+                *sorted(render_info, key=lambda pair: pair[0]["sort_order"])
+            )
             if log.isEnabledFor(logging.INFO):
-                for fn in temp_fns:
-                    log.info("Reading %s", descriptions.get(fn, fn))
+                for coursemap in coursemaps:
+                    log.info("Reading %s", coursemap["description"])
 
             concat_pdfs(temp_fns, output_fn)
-
-            n_pages = len(temp_fns)
-            log.warning(
-                "Wrote %d page%s to %r", n_pages, "s" if n_pages != 1 else "", output_fn
-            )
-    finally:
-        for temp_fn in chain.from_iterable(pages.values()):
-            os.unlink(temp_fn)
+            log.warning("Wrote %d pages to %r", len(temp_fns), str(output_fn))
 
 
 @main.command("rats")

@@ -5,10 +5,31 @@
 - Dropped support for python 3.6
 - Changed license to GPL version 3
 
+#### Compatibility
+
+- Refactor `barnhunt.inkscape.runner` to support running
+  Inkscape >= 1.0 (as well as continuing to support Inkscape 0.9x).
+
+- Add `--inkscape-command` parameter to the `barnhunt pdfs` command
+  to specify the name/path of the Inkscape binary to run to export PDFs.
+  This also supports setting the Inkscape executable via the `$INKSCAPE_COMMAND`
+  environment variable.  Default executable is not `inkscape.exe` on Windows
+  (and `inkscape` everywhere else).
+
+- Use `pexpect.popen_spawn.PopenSpawn` instead of `pexpect.spawn` to
+  run Inkscape in shell-mode. Due to `pexpect.spawn`'s use of ptys, it
+  [will not
+  work](https://pexpect.readthedocs.io/en/stable/overview.html#windows)
+  on Windows.
+
 #### Packaging
 
 - Added a stub `barnhunt.__main__` module to allow running via `python
   -m barnhunt`.
+
+#### Testing
+
+- Start work on type annotations.
 
 #### Bit Rot
 

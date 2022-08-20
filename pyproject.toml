@@ -17,12 +17,11 @@ classifiers = [
 dynamic = ["version", "readme"]
 dependencies = [
     "atomicwrites",
-    "click",
+    "click >= 8.1",
     "jinja2 >= 3",
     "lxml",
     "pdfrw",
-    "pexpect",
-    "shellescape",
+    "pexpect >= 4.8",
     "tinycss2",
     "webencodings",
 ]
@@ -56,6 +55,7 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     'if __name__ == "__main__"',
     '^\s*\.\.\.\s*$',
+    '^\s*raise NotImplementedError()',
 ]
 
 [tool.pytest.ini_options]
@@ -63,6 +63,51 @@ norecursedirs = [
     ".tox",
     "build",
 ]
+filterwarnings = [
+    # pexpect (as of 4.8) still supports py27, so uses setDaemon
+    "ignore:setDaemon.*deprecated:DeprecationWarning:pexpect",
+]
 
+################################################################
+#
+# mypy
+#
 [tool.mypy]
+mypy_path = [
+    "$MYPY_CONFIG_FILE_DIR/stubs",
+]
+files = [
+    "$MYPY_CONFIG_FILE_DIR/barnhunt",
+    #"$MYPY_CONFIG_FILE_DIR/tests",
+]
+exclude = [
+    'conftest\.py$',
+]
+
+show_error_codes = true
+error_summary = true
+
+strict = true
+
+[[tool.mypy.overrides]]
+module = [
+    "barnhunt.*",
+]
 ignore_errors = true
+
+
+[[tool.mypy.overrides]]
+module = [
+    "barnhunt.inkscape.runner",
+]
+ignore_errors = false
+
+
+[[tool.mypy.overrides]]
+module = [
+    # FIXME: should replace most of these
+    "pdfrw",
+    "tinycss2",
+    "webencodings",
+]
+ignore_missing_imports = true

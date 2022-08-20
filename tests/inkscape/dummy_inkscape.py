@@ -6,17 +6,20 @@ class DummyShellmodeInkscape(cmd.Cmd):
     intro = "DummyShellmodeInkscape"
     prompt = ">"
 
-    def precmd(self, line):
+    def precmd(self, line: str) -> str:
         return " ".join(shlex.split(line))
 
-    def do_true(self, line):
+    def do_true(self, line: str) -> bool:
         return False
 
-    def do_echo(self, line):
+    def do_echo(self, line: str) -> bool:
         print(f"warning: {line}")
         return False
 
-    def do_quit(self, line):
+    def do_quit(self, line: str) -> bool:
+        return True
+
+    def do_EOF(self, line: str) -> bool:
         return True
 
 
