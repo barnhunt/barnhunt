@@ -5,6 +5,9 @@ Changes
 Release 1.1.0a2 (unreleased)
 ============================
 
+- Dropped support for python 3.6
+- Changed license to GPL version 3
+  
 Bit Rot
 -------
 
