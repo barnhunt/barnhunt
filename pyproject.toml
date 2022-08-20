@@ -28,7 +28,7 @@ dependencies = [
 ]
 
 [project.entry-points.console_scripts]
-barnhunt = "barnhunt:main"
+barnhunt = "barnhunt.cli:main"
 
 [project.urls]
 Homepage = "https://gitlab.com/dairiki/barnhunt"

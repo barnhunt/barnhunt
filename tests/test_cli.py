@@ -1,8 +1,8 @@
 import click
 import pytest
 
-from barnhunt import default_2up_output_file
-from barnhunt import pdf_2up
+from barnhunt.cli import default_2up_output_file
+from barnhunt.cli import pdf_2up
 
 
 class Test_default_2up_output_file:

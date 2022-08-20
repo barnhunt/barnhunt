@@ -8,7 +8,7 @@ from click.testing import CliRunner
 from lxml import etree
 from PyPDF2 import PdfReader
 
-from barnhunt import main
+from barnhunt.cli import main
 
 
 def test_random_seed(tmp_drawing_svg, caplog):
