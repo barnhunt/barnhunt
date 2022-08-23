@@ -5,6 +5,7 @@ from lxml import etree
 
 from barnhunt.inkscape import svg
 from testlib import get_by_id
+from testlib import get_by_ids
 from testlib import svg_maker
 
 XML1 = b"""<root xmlns:foo="urn:example:foo">
@@ -44,7 +45,12 @@ def coursemap1() -> svg.ElementTree:
                     "Overlays",
                     children=[
                         layer("Blind 1"),
-                        layer("Build Notes"),
+                        layer(
+                            "Build Notes",
+                            children=[
+                                text("Build Text"),
+                            ],
+                        ),
                     ],
                 )
             ],
@@ -67,8 +73,7 @@ def test_is_layer(coursemap1: svg.ElementTree) -> None:
 
 
 def test_lineage(coursemap1: svg.ElementTree) -> None:
-    overlays = get_by_id(coursemap1, "overlays")
-    t1master = get_by_id(coursemap1, "t1master")
+    overlays, t1master = get_by_ids(coursemap1, ("overlays", "t1master"))
     root = coursemap1.getroot()
     assert list(svg.lineage(overlays)) == [overlays, t1master, root]
 
@@ -102,14 +107,32 @@ def test_walk_layers2(coursemap1: svg.ElementTree) -> None:
 
 
 def test_parent_layer(coursemap1: svg.ElementTree) -> None:
-    overlays = get_by_id(coursemap1, "overlays")
-    t1master = get_by_id(coursemap1, "t1master")
-    ring = get_by_id(coursemap1, "ring")
-    ring_leaf = get_by_id(coursemap1, "ring_leaf")
-
+    overlays, t1master, ring, ring_leaf = get_by_ids(
+        coursemap1, ("overlays", "t1master", "ring", "ring_leaf")
+    )
     assert svg.parent_layer(t1master) is None
     assert svg.parent_layer(overlays) is t1master
     assert svg.parent_layer(ring_leaf) is ring
+
+
+def test_ancestor_layers(coursemap1: svg.ElementTree) -> None:
+    buildtext, buildnotes, overlays, t1master = get_by_ids(
+        coursemap1, ("buildtext", "buildnotes", "overlays", "t1master")
+    )
+    assert list(svg.ancestor_layers(buildtext)) == [buildnotes, overlays, t1master]
+    assert list(svg.ancestor_layers(buildnotes)) == [overlays, t1master]
+
+
+def test_sibling_layers(coursemap1: svg.ElementTree) -> None:
+    cruft, ring, t1master, t1novice = get_by_ids(
+        coursemap1, ("cruft", "ring", "t1master", "t1novice")
+    )
+    assert list(svg.sibling_layers(ring)) == [cruft, t1master, t1novice]
+
+
+def test_sibling_layers_no_parent(coursemap1: svg.ElementTree) -> None:
+    root = coursemap1.getroot()
+    assert list(svg.sibling_layers(root)) == []
 
 
 @pytest.mark.parametrize(

@@ -112,22 +112,29 @@ def parent_layer(elem: Element) -> LayerElement | None:
     Returns the element for the Inkscape layer which contains ``elem``.
 
     """
+    return next(ancestor_layers(elem), None)
+
+
+def ancestor_layers(elem: Element) -> Iterator[LayerElement]:
+    """Iterate the ancestor layers of element.
+
+    Yields, first, the layer that contains ``elem``, then the layer that
+    contains that layer, and so on.
+
+    """
     for parent in islice(lineage(elem), 1, None):
         if is_layer(parent):
-            return parent
-    return None
+            yield parent
 
 
 def sibling_layers(elem: Element) -> Iterator[LayerElement]:
-    """Iterate over sibling layers, possibly including self.
-
-    Self is only included if self is a layer.
-    """
+    """Iterate over sibling layers, *not* including self."""
     parent = elem.getparent()
-    if parent is not None:
-        for sibling in parent:
-            if is_layer(sibling):
-                yield sibling
+    if parent is None:
+        return
+    for sibling in parent:
+        if sibling is not elem and is_layer(sibling):
+            yield sibling
 
 
 def ensure_visible(elem: Element) -> None:

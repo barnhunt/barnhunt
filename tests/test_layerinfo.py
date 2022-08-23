@@ -104,8 +104,12 @@ def test_predicate(
     predicate_name: str, tree1: svg.ElementTree, expected_ids: Collection[str]
 ) -> None:
     predicate = getattr(layerinfo, predicate_name)
+
+    def match(elem: svg.Element) -> bool:
+        return svg.is_layer(elem) and predicate(elem)
+
     print(list(elem.get("id") for elem in svg.walk_layers(tree1.getroot())))
-    matches = {elem.get("id") for elem in tree1.iter() if predicate(elem)}
+    matches = {elem.get("id") for elem in tree1.iter() if match(elem)}
     assert matches == set(expected_ids)
 
 

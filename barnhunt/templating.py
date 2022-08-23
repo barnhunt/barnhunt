@@ -133,18 +133,6 @@ def get_element_context(
     return context
 
 
-# FIXME: move to coursemaps?
-def get_output_basenames(
-    elem: svg.Element, layer_info_func: LayerInfoParser = parse_flagged_layer_info
-) -> Sequence[str] | None:
-    for ancestor in svg.lineage(elem):
-        if svg.is_layer(ancestor):
-            info = layer_info_func(ancestor)
-            if info.output_basenames:
-                return info.output_basenames
-    return None
-
-
 class FileAdapter:
     """Adapt a file object for ease of use in templates"""
 

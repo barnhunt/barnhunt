@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+from itertools import chain
 from itertools import count
 from typing import BinaryIO
 from typing import Collection
@@ -19,7 +20,6 @@ from .layerinfo import LayerFlags
 from .layerinfo import LayerInfoParser
 from .templating import FileAdapter
 from .templating import get_element_context
-from .templating import get_output_basenames
 from .templating import is_string_literal
 from .templating import render_template
 from .templating import TemplateContext
@@ -54,11 +54,12 @@ class TemplateRenderer:
         return tree
 
     def _is_hidden(self, elem: svg.Element) -> bool:
-        return any(self._is_hidden_layer(ancestor) for ancestor in svg.lineage(elem))
+        return any(
+            self._is_hidden_layer(ancestor) for ancestor in svg.ancestor_layers(elem)
+        )
 
-    def _is_hidden_layer(self, elem: svg.Element) -> bool:
-        if not svg.is_layer(elem):
-            return False
+    def _is_hidden_layer(self, elem: svg.LayerElement) -> bool:
+        assert svg.is_layer(elem)
         info = self.parse_layer_info(elem)
         return (info.flags & LayerFlags.HIDDEN) == LayerFlags.HIDDEN
 
@@ -122,12 +123,14 @@ class CourseMaps:
 
     def _get_output_basenames(
         self, path: Sequence[svg.LayerElement]
-    ) -> Iterable[str | None]:
-        basenames = None
+    ) -> Iterable[str] | tuple[None]:
         if path:
             overlay = path[-1]
-            basenames = get_output_basenames(overlay, self.parse_layer_info)
-        return basenames or (None,)
+            for layer in chain((overlay,), svg.ancestor_layers(overlay)):
+                layer_info = self.parse_layer_info(layer)
+                if layer_info.output_basenames:
+                    return layer_info.output_basenames
+        return (None,)
 
     def _iter_overlays(
         self, elem: svg.Element

@@ -57,51 +57,21 @@ def test_render_templates_failure(
 
 
 def test_is_hidden(template_renderer: TemplateRenderer) -> None:
-    layer = etree.Element(
-        svg.SVG_G_TAG,
-        attrib={
-            "id": "layer",
-            svg.INKSCAPE_GROUPMODE: "layer",
-            svg.INKSCAPE_LABEL: "[h] Layer",
-        },
-    )
-    elem = etree.SubElement(layer, svg.SVG_TSPAN_TAG)
-    assert template_renderer._is_hidden(elem)
+    text = svg_maker.text("text")
+    tspan = text[0]
+    svg_maker.layer("[h] Layer", children=[text])
+
+    assert template_renderer._is_hidden(tspan)
+    assert template_renderer._is_hidden(text)
 
 
 def test_is_hidden_layer(template_renderer: TemplateRenderer) -> None:
-    elem = etree.Element(
-        svg.SVG_G_TAG,
-        attrib={
-            "id": "layer",
-            svg.INKSCAPE_GROUPMODE: "layer",
-            svg.INKSCAPE_LABEL: "[h] Layer",
-        },
-    )
+    elem = svg_maker.layer("[h] Layer")
     assert template_renderer._is_hidden_layer(elem)
 
 
-def test_is_hidden_layer_not_layer(template_renderer: TemplateRenderer) -> None:
-    elem = etree.Element(
-        svg.SVG_G_TAG,
-        attrib={
-            "id": "non-layer",
-            svg.INKSCAPE_GROUPMODE: "non-layer",
-            svg.INKSCAPE_LABEL: "[h] Layer",
-        },
-    )
-    assert not template_renderer._is_hidden_layer(elem)
-
-
 def test_is_hidden_layer_not_hidden(template_renderer: TemplateRenderer) -> None:
-    elem = etree.Element(
-        svg.SVG_G_TAG,
-        attrib={
-            "id": "layer",
-            svg.INKSCAPE_GROUPMODE: "layer",
-            svg.INKSCAPE_LABEL: "[o] Layer",
-        },
-    )
+    elem = svg_maker.layer("[o] Layer")
     assert not template_renderer._is_hidden_layer(elem)
 
 

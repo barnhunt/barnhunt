@@ -88,26 +88,23 @@ def _label_matches(layer: svg.LayerElement, pat: str | re.Pattern[str]) -> bool:
     return re.search(pat, svg.layer_label(layer)) is not None
 
 
-def obs_is_ring(layer: svg.Element) -> bool:
+def obs_is_ring(layer: svg.LayerElement) -> bool:
     """Match the top-level "Ring" layer.
 
     This layer is always displayed.
     """
-    return (
-        svg.is_layer(layer)
-        and _is_top_level(layer)
-        and _label_matches(layer, r"(?i)\bring\b")
-    )
+    assert svg.is_layer(layer)
+    return _is_top_level(layer) and _label_matches(layer, r"(?i)\bring\b")
 
 
-def obs_is_course(layer: svg.Element) -> bool:
+def obs_is_course(layer: svg.LayerElement) -> bool:
     """Match the top-level "Course" layers
 
     These layers are displayed, one per coursemap.
     """
+    assert svg.is_layer(layer)
     return (
-        svg.is_layer(layer)
-        and _is_top_level(layer)
+        _is_top_level(layer)
         and not obs_is_ring(layer)
         and _label_matches(
             layer, r"(?i)\b(instinct|novice|open|senior|master|crazy ?8s?|c8)\b"
@@ -115,23 +112,18 @@ def obs_is_course(layer: svg.Element) -> bool:
     )
 
 
-def obs_is_cruft(layer: svg.Element) -> bool:
-    return (
-        svg.is_layer(layer)
-        and _is_top_level(layer)
-        and not obs_is_course(layer)
-        and not obs_is_ring(layer)
-    )
+def obs_is_cruft(layer: svg.LayerElement) -> bool:
+    assert svg.is_layer(layer)
+    return _is_top_level(layer) and not obs_is_course(layer) and not obs_is_ring(layer)
 
 
-def obs_is_overlay(layer: svg.Element) -> bool:
-    if not svg.is_layer(layer):
-        return False
+def obs_is_overlay(layer: svg.LayerElement) -> bool:
+    assert svg.is_layer(layer)
     parent = svg.parent_layer(layer)
     if parent is None:
         return False
     return svg.layer_label(parent) == "Overlays" and any(
-        obs_is_course(ancestor) for ancestor in svg.lineage(parent)
+        obs_is_course(ancestor) for ancestor in svg.ancestor_layers(parent)
     )
 
 

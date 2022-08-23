@@ -37,6 +37,11 @@ def get_by_id(
     return None
 
 
+def get_by_ids(tree: svg.ElementTree, ids: Iterable[str]) -> Iterable[svg.Element]:
+    for id in ids:
+        yield get_by_id(tree, id)
+
+
 _nsmap: dict[str | None, str] = dict(svg.NSMAP.items())
 _nsmap[None] = svg.NSMAP["svg"]
 
@@ -70,8 +75,9 @@ class SvgMaker:
         return layer
 
     @staticmethod
-    def text(label: str, id: str) -> svg.Element:
-        return _e.text(_e.tspan({"id": id}, label))
+    def text(label: str, id: str | None = None) -> svg.Element:
+        attrib = {"id": id or "".join(word.lower() for word in label.split())}
+        return _e.text(_e.tspan(attrib, label))
 
 
 svg_maker = SvgMaker()
