@@ -1,12 +1,12 @@
 import subprocess
 import sys
 
-import pytest
+import barnhunt.__main__  # noqa: F401
 
-from barnhunt.__main__ import main
+# import for coverage
 
 
-def test_execute_package():
+def test_execute_package() -> None:
     proc = subprocess.run(
         [sys.executable, "-m", "barnhunt", "--help"],
         stdout=subprocess.PIPE,
@@ -14,10 +14,3 @@ def test_execute_package():
         check=True,
     )
     assert "export pdfs from inkscape" in proc.stdout.lower()
-
-
-def test_main(capsys):
-    with pytest.raises(SystemExit):
-        main(["--help"])
-    std = capsys.readouterr()
-    assert "export pdfs from inkscape" in std.out.lower()

@@ -1,6 +1,12 @@
+from __future__ import annotations
+
 import enum
 import logging
 import re
+from typing import Callable
+from typing import Collection
+from typing import NamedTuple
+from typing import Sequence
 
 from .inkscape import svg
 
@@ -12,14 +18,15 @@ class LayerFlags(enum.Flag):
     OVERLAY = enum.auto()
 
     @property
-    def flag_char(self):
+    def flag_char(self) -> str:
+        assert self.name
         return self.name[0].lower()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "".join(flag.flag_char for flag in self.__class__ if self & flag)
 
     @classmethod
-    def parse(cls, s):
+    def parse(cls, s: str) -> LayerFlags:
         value = cls(0)
         lookup = {flag.flag_char: flag for flag in cls}
         for c in set(s):
@@ -31,126 +38,134 @@ class LayerFlags(enum.Flag):
         return value
 
 
-class FlaggedLayerInfo:
-    def __init__(self, elem):
-        label = svg.layer_label(elem)
-        flags, output_basenames, exclude_from, include_in, label = self._parse_label(
-            label
+class LayerInfo(NamedTuple):
+    flags: LayerFlags
+    label: str
+    output_basenames: Sequence[str] = ()
+    exclude_from: Collection[str] = ()
+    include_in: Collection[str] = ()
+
+
+def parse_flagged_layer_info(elem: svg.LayerElement) -> LayerInfo:
+    label = svg.layer_label(elem)
+
+    exclude_from = set()
+    include_in = set()
+    m = re.match(
+        r"\["
+        r"  (?P<flags>\w*)"
+        r"  (?:\|*(?P<output_basenames>(?:,*\w[-\w\d]*)*))?"
+        r"  (?P<exclusions>(?:,*[!=]\w[-\w\d]*)*)"
+        r"\]\s*",
+        label,
+        re.X,
+    )
+    if m:
+        flags = LayerFlags.parse(m.group("flags"))
+        output_basenames = [
+            basename for basename in m.group("output_basenames").split(",") if basename
+        ]
+        for exclusion in m.group("exclusions").split(","):
+            if exclusion.startswith("!"):
+                exclude_from.add(exclusion[1:])
+            elif exclusion.startswith("="):
+                include_in.add(exclusion[1:])
+            else:
+                assert exclusion == ""
+        label = label[m.end() :]
+    else:
+        flags = LayerFlags(0)
+        output_basenames = []
+    return LayerInfo(flags, label, output_basenames, exclude_from, include_in)
+
+
+def _is_top_level(layer: svg.LayerElement) -> bool:
+    """Is layer a top-level layer."""
+    return svg.parent_layer(layer) is None
+
+
+def _label_matches(layer: svg.LayerElement, pat: str | re.Pattern[str]) -> bool:
+    return re.search(pat, svg.layer_label(layer)) is not None
+
+
+def obs_is_ring(layer: svg.Element) -> bool:
+    """Match the top-level "Ring" layer.
+
+    This layer is always displayed.
+    """
+    return (
+        svg.is_layer(layer)
+        and _is_top_level(layer)
+        and _label_matches(layer, r"(?i)\bring\b")
+    )
+
+
+def obs_is_course(layer: svg.Element) -> bool:
+    """Match the top-level "Course" layers
+
+    These layers are displayed, one per coursemap.
+    """
+    return (
+        svg.is_layer(layer)
+        and _is_top_level(layer)
+        and not obs_is_ring(layer)
+        and _label_matches(
+            layer, r"(?i)\b(instinct|novice|open|senior|master|crazy ?8s?|c8)\b"
         )
-        self.elem = elem
-        self.flags = flags
-        self.output_basenames = output_basenames
-        self.exclude_from = exclude_from
-        self.include_in = include_in
-        self.label = label
-
-    @staticmethod
-    def _parse_label(label):
-        exclude_from = set()
-        include_in = set()
-        m = re.match(
-            r"\["
-            r"  (?P<flags>\w*)"
-            r"  (?:\|*(?P<output_basenames>(?:,*\w[-\w\d]*)*))?"
-            r"  (?P<exclusions>(?:,*[!=]\w[-\w\d]*)*)"
-            r"\]\s*",
-            label,
-            re.X,
-        )
-        if m:
-            flags = LayerFlags.parse(m.group("flags"))
-            output_basenames = [
-                basename
-                for basename in m.group("output_basenames").split(",")
-                if basename
-            ]
-            for exclusion in m.group("exclusions").split(","):
-                if exclusion.startswith("!"):
-                    exclude_from.add(exclusion[1:])
-                elif exclusion.startswith("="):
-                    include_in.add(exclusion[1:])
-                else:
-                    assert exclusion == ""
-            label = label[m.end() :]
-        else:
-            flags = LayerFlags(0)
-            output_basenames = []
-        return flags, output_basenames, exclude_from, include_in, label
+    )
 
 
-# Regexp which matches the label of the top-level "Ring" layer
-# This layer is always displayed.
-RING_re = re.compile(r"\bring\b", re.I)
+def obs_is_cruft(layer: svg.Element) -> bool:
+    return (
+        svg.is_layer(layer)
+        and _is_top_level(layer)
+        and not obs_is_course(layer)
+        and not obs_is_ring(layer)
+    )
 
 
-def is_ring(layer):
+def obs_is_overlay(layer: svg.Element) -> bool:
     if not svg.is_layer(layer):
         return False
     parent = svg.parent_layer(layer)
-    label = svg.layer_label(layer)
-    return parent is None and RING_re.search(label)
-
-
-# Regexp which matches the labels of the top-level "Course" layers
-# This layer are displayed, one per coursemap.
-COURSE_re = re.compile(r"\b(instinct|novice|open|senior|master|crazy ?8s?|c8)\b", re.I)
-
-
-def is_course(layer):
-    if not svg.is_layer(layer):
+    if parent is None:
         return False
-    parent = svg.parent_layer(layer)
-    label = svg.layer_label(layer)
-    return parent is None and COURSE_re.search(label) and not is_ring(layer)
+    return svg.layer_label(parent) == "Overlays" and any(
+        obs_is_course(ancestor) for ancestor in svg.lineage(parent)
+    )
 
 
-def is_cruft(layer):
-    if not svg.is_layer(layer):
-        return False
-    parent = svg.parent_layer(layer)
-    return parent is None and not is_course(layer) and not is_ring(layer)
+def parse_obs_layer_info(elem: svg.LayerElement) -> LayerInfo:
+    """This is the old "heuristic" scheme of determining which layers are
+    overlays and and cruft.
+
+    This scheme is obsolete. It has not been used for drawing course
+    maps since 2018.
+
+    """
+    if obs_is_cruft(elem):
+        flags = LayerFlags.HIDDEN
+    elif obs_is_course(elem) or obs_is_overlay(elem):
+        flags = LayerFlags.OVERLAY
+    else:
+        flags = LayerFlags(0)
+    return LayerInfo(flags, svg.layer_label(elem))
 
 
-def is_overlay(layer):
-    if not svg.is_layer(layer):
-        return False
-    parent = svg.parent_layer(layer)
-    parent_label = None if parent is None else svg.layer_label(parent)
-    return parent_label == "Overlays" and any(is_course(a) for a in svg.lineage(parent))
+LayerInfoParser = Callable[[svg.LayerElement], LayerInfo]
 
 
-class CompatLayerInfo:
-    is_course = staticmethod(is_course)
-    is_cruft = staticmethod(is_cruft)
-    is_overlay = staticmethod(is_overlay)
-
-    def __init__(self, elem):
-        label = svg.layer_label(elem)
-        if self.is_cruft(elem):
-            flags = LayerFlags.HIDDEN
-        elif self.is_course(elem) or self.is_overlay(elem):
-            flags = LayerFlags.OVERLAY
-        else:
-            flags = LayerFlags(0)
-        self.elem = elem
-        self.flags = flags
-        self.output_basenames = []
-        self.label = label
-        self.exclude_from = set()
-        self.include_in = set()
-
-
-def dwim_layer_info(tree):
+def dwim_layer_info(tree: svg.ElementTree) -> LayerInfoParser:
     """Deduce layout type."""
 
-    def has_flags(elem):
-        return FlaggedLayerInfo(elem).flags
+    def has_flags(elem: svg.LayerElement) -> bool:
+        return parse_flagged_layer_info(elem).flags != LayerFlags(0)
 
     if not any(has_flags(elem) for elem in svg.walk_layers(tree.getroot())):
         # Old style with overlays and hidden layers identified by
         # matching layer labels against various regexps.
-        return CompatLayerInfo
+        return parse_obs_layer_info
     else:
         # New style with flags in layer labels.
         # E.g. "[o] Overlay Layer Label", "[h] Hidden Layer"
-        return FlaggedLayerInfo
+        return parse_flagged_layer_info

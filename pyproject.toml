@@ -23,7 +23,7 @@ dependencies = [
     "pdfrw",
     "pexpect >= 4.8",
     "tinycss2",
-    "webencodings",
+    "typing_extensions; python_version < '3.10'",
 ]
 
 [project.entry-points.console_scripts]
@@ -48,6 +48,12 @@ content-type = "text/markdown"
 include = ["barnhunt"]
 
 [tool.setuptools_scm]
+
+[tool.coverage.paths]
+paths = [
+    "barnhunt",
+    ".tox/py*/*/barnhunt",
+]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -75,10 +81,11 @@ filterwarnings = [
 [tool.mypy]
 mypy_path = [
     "$MYPY_CONFIG_FILE_DIR/stubs",
+    "$MYPY_CONFIG_FILE_DIR/tests",
 ]
 files = [
     "$MYPY_CONFIG_FILE_DIR/barnhunt",
-    #"$MYPY_CONFIG_FILE_DIR/tests",
+    "$MYPY_CONFIG_FILE_DIR/tests",
 ]
 exclude = [
     'conftest\.py$',
@@ -91,23 +98,8 @@ strict = true
 
 [[tool.mypy.overrides]]
 module = [
-    "barnhunt.*",
-]
-ignore_errors = true
-
-
-[[tool.mypy.overrides]]
-module = [
-    "barnhunt.inkscape.runner",
-]
-ignore_errors = false
-
-
-[[tool.mypy.overrides]]
-module = [
     # FIXME: should replace most of these
     "pdfrw",
     "tinycss2",
-    "webencodings",
 ]
 ignore_missing_imports = true

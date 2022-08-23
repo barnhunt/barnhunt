@@ -1,35 +1,37 @@
 import sys
+from typing import Iterable
 
 import pytest
 
 from barnhunt.pager import Command
 from barnhunt.pager import get_pager
 from barnhunt.pager import Grouper
+from barnhunt.pager import Pager
 from barnhunt.pager import TTYPager
 
 
 @pytest.fixture
-def tty_output(monkeypatch):
+def tty_output(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
     monkeypatch.setattr(sys.stdin, "isatty", lambda: True)
 
 
 @pytest.mark.usefixtures("tty_output")
-def test_get_pager_returns_ttypager():
+def test_get_pager_returns_ttypager() -> None:
     pager = get_pager(42)
     assert isinstance(pager, TTYPager)
     assert pager.group_size == 42
 
 
 @pytest.mark.usefixtures("tty_output")
-def test_get_pager_returns_grouper():
-    sys.stdin.isatty = lambda: False
+def test_get_pager_returns_grouper(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
     pager = get_pager(43)
     assert isinstance(pager, Grouper)
     assert pager.group_size == 43
 
 
-def test_Grouper(capsys):
+def test_Grouper(capsys: pytest.CaptureFixture[str]) -> None:
     pager = Grouper(3)
     pager([f"{n:d}" for n in range(5)])
     output = capsys.readouterr().out
@@ -38,15 +40,17 @@ def test_Grouper(capsys):
 
 class TestTTYPager:
     @pytest.fixture
-    def pager(self):
+    def pager(self) -> Pager:
         return TTYPager(2)
 
     @pytest.fixture(autouse=True)
-    def patch_getchar(self, keys, monkeypatch):
-        keys = iter(keys)
+    def patch_getchar(
+        self, keys: Iterable[str], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        keys_iter = iter(keys)
 
-        def getchar():
-            return next(keys)
+        def getchar() -> str:
+            return next(keys_iter)
 
         monkeypatch.setattr("click.getchar", getchar)
 
@@ -56,7 +60,7 @@ class TestTTYPager:
             ("v", "q"),
         ],
     )
-    def test(self, pager, capsys):
+    def test(self, pager: Pager, capsys: pytest.CaptureFixture[str]) -> None:
         lines = ["one", "two", "three"]
         pager(lines)
         output = capsys.readouterr().out
@@ -70,7 +74,7 @@ class TestTTYPager:
             ("q",),
         ],
     )
-    def test_first_page(self, pager, capsys):
+    def test_first_page(self, pager: Pager, capsys: pytest.CaptureFixture[str]) -> None:
         lines = ["one", "two", "three"]
         pager(lines)
         output = capsys.readouterr().out
@@ -84,7 +88,7 @@ class TestTTYPager:
             ("k", "q"),
         ],
     )
-    def test_beep(self, pager, capsys):
+    def test_beep(self, pager: Pager, capsys: pytest.CaptureFixture[str]) -> None:
         lines = ["one", "two", "three"]
         pager(lines)
         output = capsys.readouterr().out
@@ -97,7 +101,7 @@ class TestTTYPager:
             (("\x1b", "v"), Command.PAGE_UP),
         ],
     )
-    def test_get_cmd(self, pager, command):
+    def test_get_cmd(self, pager: TTYPager, command: Command) -> None:
         assert pager._get_cmd() == command
 
     @pytest.mark.parametrize(
@@ -107,7 +111,9 @@ class TestTTYPager:
             (("\x1b", "x", "r"), Command.REDRAW),
         ],
     )
-    def test_get_cmd_unrecognized_key(self, pager, command, capsys):
+    def test_get_cmd_unrecognized_key(
+        self, pager: TTYPager, command: Command, capsys: pytest.CaptureFixture[str]
+    ) -> None:
         assert pager._get_cmd() == command
         assert capsys.readouterr().out == "\a"
 
@@ -119,10 +125,10 @@ class TestTTYPager:
         ("q", Command.QUIT),
     ],
 )
-def test_Command_lookup(key, command):
+def test_Command_lookup(key: str, command: Command) -> None:
     assert Command.lookup(key) == command
 
 
-def test_Command_lookup_raises_KeyError():
+def test_Command_lookup_raises_KeyError() -> None:
     with pytest.raises(KeyError):
         Command.lookup("x")

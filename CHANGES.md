@@ -1,6 +1,6 @@
 ## Changes
 
-### Release 1.1.0a2 (unreleased)
+### Release 1.2.0a1 (unreleased)
 
 - Dropped support for python 3.6
 - Changed license to GPL version 3
@@ -29,7 +29,7 @@
 
 #### Testing
 
-- Start work on type annotations.
+- Add type annotations.
 
 #### Bit Rot
 

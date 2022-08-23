@@ -1,133 +1,17 @@
-from itertools import islice
+from __future__ import annotations
+
+from typing import Collection
+from typing import Sequence
 
 import pytest
 
 from barnhunt import layerinfo
 from barnhunt.inkscape import svg
-from barnhunt.layerinfo import CompatLayerInfo
 from barnhunt.layerinfo import dwim_layer_info
-from barnhunt.layerinfo import FlaggedLayerInfo
 from barnhunt.layerinfo import LayerFlags
-
-
-def get_by_id(tree, id):
-    matches = tree.xpath(f'//*[@id="{id}"]')
-    assert len(matches) <= 1
-    return matches[0] if matches else None
-
-    getroot = getattr(tree, "getroot", None)
-    root = getroot() if getroot else tree
-    if root.get("id") == id:
-        return root
-    return root.find(f'.//*[@id="{id}"]')
-
-
-class DummyElem:
-    parent = None
-
-    def __init__(self, label=None, children=None, visible=None):
-        if children is None:
-            children = []
-        else:
-            for child in children:
-                assert child.parent is None
-                child.parent = self
-        self.label = label
-        self.children = children
-        self.visible = True
-
-    def __eq__(self, other):
-        if isinstance(other, str):
-            # NB: doesn't check children
-            return self.label == other
-        # NB: visible is ignored
-        return self.label == other.label and self.children == other.children
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return hash(self.label)
-
-    def __repr__(self):
-        if self.children:
-            detail = f"{self.label!r} {self.children!r}"
-        else:
-            detail = repr(self.label)
-        return f"<{self.__class__.__name__}: {detail}>"
-
-
-class DummyETree:
-    def __init__(self, root):
-        self.root = root
-
-    def getroot(self):
-        return self.root
-
-
-def dummy_etree(layers):
-    return DummyETree(root=DummyElem(children=layers))
-
-
-class DummySvg:
-    @staticmethod
-    def copy_etree(tree, omit_elements):
-        def copy_elem(elem):
-            children = [
-                copy_elem(child)
-                for child in elem.children
-                if child not in omit_elements
-            ]
-            return DummyElem(elem.label, children, elem.visible)
-
-        return DummyETree(root=copy_elem(tree.getroot()))
-
-    @staticmethod
-    def ensure_visible(elem):
-        elem.visible = True
-
-    @staticmethod
-    def is_layer(elem):
-        return elem.label is not None
-
-    @staticmethod
-    def layer_label(elem):
-        return elem.label
-
-    @classmethod
-    def parent_layer(cls, elem):
-        for parent in islice(cls.lineage(elem), 1, None):
-            if cls.is_layer(parent):
-                return parent
-
-    @staticmethod
-    def lineage(elem):
-        while elem is not None:
-            yield elem
-            elem = elem.parent
-
-    @classmethod
-    def walk_layers(cls, elem):
-        for node, _children in cls.walk_layers2(elem):
-            yield node
-
-    @staticmethod
-    def walk_layers2(elem):
-        nodes = list(elem.children)
-        while nodes:
-            node = nodes.pop(0)
-            children = list(node.children)
-            yield node, children
-            nodes[0:0] = children
-
-
-@pytest.fixture
-def dummy_svg(monkeypatch):
-    dummy_svg = DummySvg()
-    for attr in dir(dummy_svg):
-        if not attr.startswith("_"):
-            monkeypatch.setattr(svg, attr, getattr(dummy_svg, attr))
-    return dummy_svg
+from barnhunt.layerinfo import parse_flagged_layer_info
+from barnhunt.layerinfo import parse_obs_layer_info
+from testlib import svg_maker
 
 
 @pytest.mark.parametrize(
@@ -141,11 +25,11 @@ def dummy_svg(monkeypatch):
         ("oh", LayerFlags.OVERLAY | LayerFlags.HIDDEN),
     ],
 )
-def test_layerflags_parse(s, flags):
+def test_layerflags_parse(s: str, flags: LayerFlags) -> None:
     assert LayerFlags.parse(s) == flags
 
 
-def test_layerflags_parse_warns(caplog):
+def test_layerflags_parse_warns(caplog: pytest.LogCaptureFixture) -> None:
     assert LayerFlags.parse("hx") == LayerFlags.HIDDEN
     assert "unknown character" in caplog.text
 
@@ -159,47 +43,70 @@ def test_layerflags_parse_warns(caplog):
         ("ho", LayerFlags.OVERLAY | LayerFlags.HIDDEN),
     ],
 )
-def test_layerflags_str(s, flags):
+def test_layerflags_str(s: str, flags: LayerFlags) -> None:
     assert set(str(flags)) == set(s)
+
+
+@pytest.fixture
+def tree1() -> svg.ElementTree:
+    layer = svg_maker.layer
+    return svg_maker.tree(
+        layer("Cruft"),
+        layer("Ring", visible=False),
+        layer(
+            "T1 Master",
+            children=[
+                layer(
+                    "Overlays",
+                    children=[
+                        layer("Blind 1"),
+                        layer("Build Notes"),
+                    ],
+                )
+            ],
+        ),
+        layer("T1 Novice"),
+    )
 
 
 @pytest.mark.parametrize(
     "predicate_name, expected_ids",
     [
         (
-            "is_ring",
+            "obs_is_ring",
             [
                 "ring",
             ],
         ),
         (
-            "is_course",
+            "obs_is_course",
             [
                 "t1novice",
                 "t1master",
             ],
         ),
         (
-            "is_cruft",
+            "obs_is_cruft",
             [
                 "cruft",
             ],
         ),
         (
-            "is_overlay",
+            "obs_is_overlay",
             [
                 "blind1",
-                "build",
+                "buildnotes",
             ],
         ),
     ],
 )
-def test_predicate(predicate_name, coursemap1, expected_ids):
+def test_predicate(
+    predicate_name: str, tree1: svg.ElementTree, expected_ids: Collection[str]
+) -> None:
     predicate = getattr(layerinfo, predicate_name)
-    tree = coursemap1.tree
-    matches = {elem for elem in tree.iter() if predicate(elem)}
-    expected = {get_by_id(tree, id) for id in expected_ids}
-    assert matches == expected
+    print(list(elem.get("id") for elem in svg.walk_layers(tree1.getroot())))
+    matches = {elem.get("id") for elem in tree1.iter() if predicate(elem)}
+    assert matches == set(expected_ids)
 
 
 @pytest.mark.parametrize(
@@ -220,13 +127,16 @@ def test_predicate(predicate_name, coursemap1, expected_ids):
         ("[=base]Base desc", "Base desc", LayerFlags(0), [], set(), {"base"}),
     ],
 )
-@pytest.mark.usefixtures("dummy_svg")
 def test_FlaggedLayerInfo(
-    layer_label, label, flags, output_basenames, exclude_from, include_in
-):
-    elem = DummyElem(layer_label)
-    info = FlaggedLayerInfo(elem)
-    assert info.elem is elem
+    layer_label: str,
+    label: str,
+    flags: LayerFlags,
+    output_basenames: Sequence[str],
+    exclude_from: Collection[str],
+    include_in: Collection[str],
+) -> None:
+    info = parse_flagged_layer_info(svg_maker.layer(layer_label))
+    # FIXME: assert info.elem is elem
     assert info.label == label
     assert info.flags is flags
     assert info.output_basenames == output_basenames
@@ -234,8 +144,7 @@ def test_FlaggedLayerInfo(
     assert info.include_in == include_in
 
 
-@pytest.mark.usefixtures("dummy_svg")
-class TestCompatLayerInfo:
+class Test_obs_layer_info:
     @pytest.mark.parametrize(
         "label, flags",
         [
@@ -244,51 +153,47 @@ class TestCompatLayerInfo:
             ("Test Ring", LayerFlags(0)),
         ],
     )
-    def test_init(self, label, flags):
-        elem = DummyElem(label)
-        info = CompatLayerInfo(elem)
-        assert info.elem is elem
+    def test_init(self, label: str, flags: LayerFlags) -> None:
+        info = parse_obs_layer_info(svg_maker.layer(label))
         assert info.label == label
         assert info.flags is flags
+        assert len(info.output_basenames) == 0
+        assert len(info.exclude_from) == 0
+        assert len(info.include_in) == 0
 
-    def test_overlay(self):
-        overlay = DummyElem("Test ovl")
-        not_overlay = DummyElem("Test not ovl")
-        DummyElem(
-            children=[
-                DummyElem(
-                    "Master 2",
-                    [
-                        DummyElem("Overlays", [overlay]),
-                        DummyElem("Stuff", [not_overlay]),
-                    ],
-                ),
-            ]
+    def test_overlay(self) -> None:
+        layer = svg_maker.layer
+        overlay = layer("Test ovl")
+        not_overlay = layer("Test not ovl")
+        svg_maker.tree(
+            layer(
+                "Master 2",
+                children=[
+                    layer("Overlays", children=[overlay]),
+                    layer("Stuff", children=[not_overlay]),
+                ],
+            )
         )
 
-        info = CompatLayerInfo(overlay)
+        info = parse_obs_layer_info(overlay)
         assert info.flags is LayerFlags.OVERLAY
 
-        info = CompatLayerInfo(not_overlay)
+        info = parse_obs_layer_info(not_overlay)
         assert info.flags is LayerFlags(0)
 
 
-@pytest.mark.usefixtures("dummy_svg")
 class Test_dwim_layer_info:
     @pytest.fixture
-    def dummy_tree(self, leaf_label_1):
-        Elem = DummyElem
-        root = Elem(
-            children=[
-                Elem("Layer", [Elem(leaf_label_1)]),
-            ]
+    def dummy_tree(self, leaf_label_1: str) -> svg.ElementTree:
+        layer = svg_maker.layer
+        return svg_maker.tree(
+            layer("Layer", children=[layer(leaf_label_1)]),
         )
-        return DummyETree(root)
 
     @pytest.mark.parametrize("leaf_label_1", ["[h] Hidden"])
-    def test_flagged_info(self, dummy_tree):
-        assert dwim_layer_info(dummy_tree) is FlaggedLayerInfo
+    def test_flagged_info(self, dummy_tree: svg.ElementTree) -> None:
+        assert dwim_layer_info(dummy_tree) is parse_flagged_layer_info
 
     @pytest.mark.parametrize("leaf_label_1", ["Not Flagged"])
-    def test_compat_info(self, dummy_tree):
-        assert dwim_layer_info(dummy_tree) is CompatLayerInfo
+    def test_obs_info(self, dummy_tree: svg.ElementTree) -> None:
+        assert dwim_layer_info(dummy_tree) is parse_obs_layer_info

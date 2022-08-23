@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import os
 from io import BytesIO
-from itertools import islice
+from pathlib import Path
+from typing import Iterable
+from typing import Iterator
 
 import pytest
 from lxml import etree
@@ -10,28 +14,21 @@ from barnhunt.coursemaps import CourseMaps
 from barnhunt.coursemaps import iter_coursemaps
 from barnhunt.coursemaps import TemplateRenderer
 from barnhunt.inkscape import svg
-from barnhunt.layerinfo import FlaggedLayerInfo
+from barnhunt.layerinfo import parse_flagged_layer_info
+from testlib import svg_maker
 
 
-def get_by_id(tree, id):
-    matches = tree.xpath(f'//*[@id="{id}"]')
-    assert len(matches) <= 1
-    return matches[0] if matches else None
-
-    getroot = getattr(tree, "getroot", None)
-    root = getroot() if getroot else tree
-    if root.get("id") == id:
-        return root
-    return root.find(f'.//*[@id="{id}"]')
+def get_labels(layers: Iterable[svg.LayerElement]) -> Iterator[str]:
+    return map(svg.layer_label, layers)
 
 
 @pytest.fixture
-def template_renderer():
-    return TemplateRenderer(FlaggedLayerInfo)
+def template_renderer() -> TemplateRenderer:
+    return TemplateRenderer(parse_flagged_layer_info)
 
 
 @pytest.mark.parametrize("hidden", [True, False])
-def test_render_templates(template_renderer, hidden):
+def test_render_templates(template_renderer: TemplateRenderer, hidden: bool) -> None:
     repls = svg.NSMAP.copy()
     repls["flags"] = "[h] " if hidden else ""
     xml = (
@@ -49,7 +46,9 @@ def test_render_templates(template_renderer, hidden):
     assert tree.getroot()[0].text == "{{ somevar }}"
 
 
-def test_render_templates_failure(template_renderer, caplog):
+def test_render_templates_failure(
+    template_renderer: TemplateRenderer, caplog: pytest.LogCaptureFixture
+) -> None:
     xml = '<tspan xmlns="%(svg)s">{{ foo() }}</tspan>' % svg.NSMAP
     tree = etree.parse(BytesIO(xml.encode("utf-8")))
     result = template_renderer(tree, {})
@@ -57,7 +56,7 @@ def test_render_templates_failure(template_renderer, caplog):
     assert "'foo' is undefined" in caplog.text
 
 
-def test_is_hidden(template_renderer):
+def test_is_hidden(template_renderer: TemplateRenderer) -> None:
     layer = etree.Element(
         svg.SVG_G_TAG,
         attrib={
@@ -70,7 +69,7 @@ def test_is_hidden(template_renderer):
     assert template_renderer._is_hidden(elem)
 
 
-def test_is_hidden_layer(template_renderer):
+def test_is_hidden_layer(template_renderer: TemplateRenderer) -> None:
     elem = etree.Element(
         svg.SVG_G_TAG,
         attrib={
@@ -82,7 +81,7 @@ def test_is_hidden_layer(template_renderer):
     assert template_renderer._is_hidden_layer(elem)
 
 
-def test_is_hidden_layer_not_layer(template_renderer):
+def test_is_hidden_layer_not_layer(template_renderer: TemplateRenderer) -> None:
     elem = etree.Element(
         svg.SVG_G_TAG,
         attrib={
@@ -94,7 +93,7 @@ def test_is_hidden_layer_not_layer(template_renderer):
     assert not template_renderer._is_hidden_layer(elem)
 
 
-def test_is_hidden_layer_not_hidden(template_renderer):
+def test_is_hidden_layer_not_hidden(template_renderer: TemplateRenderer) -> None:
     elem = etree.Element(
         svg.SVG_G_TAG,
         attrib={
@@ -106,7 +105,7 @@ def test_is_hidden_layer_not_hidden(template_renderer):
     assert not template_renderer._is_hidden_layer(elem)
 
 
-def test_get_local_context(template_renderer):
+def test_get_local_context(template_renderer: TemplateRenderer) -> None:
     xml = (
         """<g xmlns="%(svg)s"
                 xmlns:inkscape="%(inkscape)s"
@@ -123,206 +122,98 @@ def test_get_local_context(template_renderer):
     assert context["layer"].label == "The Layer"
 
 
-class DummyElem:
-    parent = None
-
-    def __init__(self, label=None, children=None, visible=None):
-        if children is None:
-            children = []
-        else:
-            for child in children:
-                assert child.parent is None
-                child.parent = self
-        self.label = label
-        self.children = children
-        self.visible = True
-
-    def get(self, attr, dflt=None):
-        if attr == "id":
-            return self.label.lower()
-        return dflt
-
-    def getparent(self):
-        return self.parent
-
-    def __eq__(self, other):
-        if isinstance(other, str):
-            # NB: doesn't check children
-            return self.label == other
-        # NB: visible is ignored
-        return self.label == other.label and self.children == other.children
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return hash(self.label)
-
-    def __iter__(self):
-        return iter(self.children)
-
-    def __repr__(self):
-        if self.children:
-            detail = f"{self.label!r} {self.children!r}"
-        else:
-            detail = repr(self.label)
-        return f"<{self.__class__.__name__}: {detail}>"
-
-
-class DummyETree:
-    def __init__(self, root):
-        self.root = root
-
-    def getroot(self):
-        return self.root
-
-
-def dummy_etree(layers):
-    return DummyETree(root=DummyElem(children=layers))
-
-
-class DummySvg:
-    @staticmethod
-    def copy_etree(tree, omit_elements):
-        def copy_elem(elem):
-            children = [
-                copy_elem(child)
-                for child in elem.children
-                if child not in omit_elements
-            ]
-            return DummyElem(elem.label, children, elem.visible)
-
-        return DummyETree(root=copy_elem(tree.getroot()))
-
-    @staticmethod
-    def ensure_visible(elem):
-        elem.visible = True
-
-    @staticmethod
-    def is_layer(elem):
-        return elem.label is not None
-
-    @staticmethod
-    def layer_label(elem):
-        return elem.label
-
-    @classmethod
-    def parent_layer(cls, elem):
-        for parent in islice(cls.lineage(elem), 1, None):
-            if cls.is_layer(parent):
-                return parent
-
-    @staticmethod
-    def lineage(elem):
-        while elem is not None:
-            yield elem
-            elem = elem.parent
-
-    @classmethod
-    def walk_layers(cls, elem):
-        for node, _children in cls.walk_layers2(elem):
-            yield node
-
-    @staticmethod
-    def walk_layers2(elem):
-        nodes = list(elem.children)
-        while nodes:
-            node = nodes.pop(0)
-            children = list(node.children)
-            yield node, children
-            nodes[0:0] = children
-
-
-@pytest.fixture
-def dummy_svg(monkeypatch):
-    dummy_svg = DummySvg()
-    for attr in dir(dummy_svg):
-        if not attr.startswith("_"):
-            monkeypatch.setattr(svg, attr, getattr(dummy_svg, attr))
-    return dummy_svg
-
-
-@pytest.mark.usefixtures("dummy_svg")
 class TestCourseMaps:
     @pytest.fixture
-    def coursemaps(self):
-        return CourseMaps(layer_info=FlaggedLayerInfo)
+    def coursemaps(self) -> CourseMaps:
+        return CourseMaps(layer_info_parser=parse_flagged_layer_info)
 
     @pytest.fixture
-    def dummy_tree(self):
-        Elem = DummyElem
-        root = Elem(
-            children=[
-                Elem("[h] Hidden", [Elem("Hidden Child")]),
-                Elem(
-                    "Child",
-                    [
-                        Elem(
-                            "[o] Overlay 1",
-                            [
-                                Elem("[o] Overlay 1.1"),
-                                Elem("[h] Hidden 1.2"),
-                                Elem("[o] Overlay 1.3"),
-                            ],
-                        ),
-                    ],
-                ),
-                Elem(
-                    "[o] Overlay 2",
-                    [
-                        Elem("[o] Overlay 2.1"),
-                    ],
-                ),
-                Elem(
-                    "Test",
-                    [
-                        Elem("[!base]Not in base"),
-                    ],
-                ),
-            ]
+    def dummy_tree(self) -> svg.ElementTree:
+        layer = svg_maker.layer
+        return svg_maker.tree(
+            layer(
+                "Test",
+                children=[
+                    layer("[!base] Not in base"),
+                ],
+            ),
+            layer(
+                "[o] Overlay 2",
+                children=[
+                    layer("[o] Overlay 2.1"),
+                ],
+            ),
+            layer(
+                "Child",
+                children=[
+                    layer(
+                        "[o] Overlay 1",
+                        children=[
+                            layer("[o] Overlay 1.3"),
+                            layer("[h] Hidden 1.2"),
+                            layer("[o] Overlay 1.1"),
+                        ],
+                    ),
+                ],
+            ),
+            layer(
+                "[h] Hidden",
+                children=[
+                    layer("Hidden Child"),
+                ],
+            ),
         )
-        return DummyETree(root)
 
-    def test_init_with_context(self):
-        coursemaps = CourseMaps(layer_info=FlaggedLayerInfo, context={"foo": "bar"})
+    def test_init_with_context(self) -> None:
+        coursemaps = CourseMaps(
+            layer_info_parser=parse_flagged_layer_info, context={"foo": "bar"}
+        )
         assert coursemaps.context["foo"] == "bar"
 
-    def test_call(self, coursemaps):
-        Elem = DummyElem
-        tree = DummyETree(
-            root=Elem(
-                children=[
-                    Elem("[h] Hidden", [Elem("Hidden Child")]),
-                    Elem("Layer", [Elem("Child")]),
-                ]
-            )
+    def test_call(self, coursemaps: CourseMaps) -> None:
+        layer = svg_maker.layer
+        tree = svg_maker.tree(
+            layer("[h] Hidden", children=[layer("Hidden Child")]),
+            layer("Layer", children=[layer("Child")]),
         )
+
         result = list(coursemaps(tree))
         assert len(result) == 1
         context, pruned = result[0]
         assert context == {"course": None, "overlay": None, "overlays": ()}
-        assert pruned.root.children == [Elem("Layer", [Elem("Child")])]
+        root = pruned.getroot()
+        assert len(root) == 1 and svg.is_layer(root[0])
+        assert svg.layer_label(root[0]) == "Layer"
+        assert len(root[0]) == 1 and svg.is_layer(root[0][0])
+        assert svg.layer_label(root[0][0]) == "Child"
+        assert len(root[0][0]) == 0
 
-        for layer in svg.walk_layers(pruned.root):
-            assert layer.visible is True
+        for layer_ in svg.walk_layers(root):
+            # FIXME: assert not is_hidden(layer_)
+            assert "display" not in layer_.get("style", "")
 
-    def test_get_context_no_overlays(self, coursemaps):
-        path = []
+    def test_get_context_no_overlays(self, coursemaps: CourseMaps) -> None:
+        path: list[svg.LayerElement] = []
         context = coursemaps._get_context(path)
         assert context["course"] is None
         assert context["overlay"] is None
 
-    def test_get_context_one_overlay(self, coursemaps):
-        path = [DummyElem("[o] Foo")]
+    def test_get_context_one_overlay(self, coursemaps: CourseMaps) -> None:
+        path = [svg_maker.layer("[o] Foo")]
         context = coursemaps._get_context(path)
         assert len(context["overlays"]) == 1
         assert context["course"].label == "Foo"
         assert context["overlay"] is None
 
-    def test_iter_overlays(self, coursemaps, dummy_tree):
+    def test_iter_overlays(
+        self, coursemaps: CourseMaps, dummy_tree: svg.ElementTree
+    ) -> None:
         root = dummy_tree.getroot()
         result = list(coursemaps._iter_overlays(root))
-        assert result == [
+        labels = [
+            (list(get_labels(path)), set(get_labels(cruft))) for path, cruft in result
+        ]
+        assert labels == [
             (
                 ["[o] Overlay 1", "[o] Overlay 1.1"],
                 {"[h] Hidden", "[h] Hidden 1.2", "[o] Overlay 1.3", "[o] Overlay 2"},
@@ -337,24 +228,31 @@ class TestCourseMaps:
     @pytest.mark.parametrize(
         "output_basename, exclusions",
         [
-            ("base", {"[!base]Not in base"}),
+            ("base", {"[!base] Not in base"}),
             ("notbase", set()),
         ],
     )
-    def test_find_exclusions(self, coursemaps, dummy_tree, output_basename, exclusions):
+    def test_find_exclusions(
+        self,
+        coursemaps: CourseMaps,
+        dummy_tree: svg.ElementTree,
+        output_basename: str,
+        exclusions: set[str],
+    ) -> None:
         root = dummy_tree.getroot()
-        result = set(coursemaps._find_exclusions(output_basename, root))
-        assert result == exclusions
+        result = coursemaps._find_exclusions(output_basename, root)
+        assert set(get_labels(result)) == exclusions
 
-    @pytest.mark.usefixtures("dummy_svg")
-    def test_find_overlays(self, coursemaps, dummy_tree):
+    def test_find_overlays(
+        self, coursemaps: CourseMaps, dummy_tree: svg.ElementTree
+    ) -> None:
         root = dummy_tree.getroot()
         overlays, cruft = coursemaps._find_overlays(root)
-        assert overlays == ["[o] Overlay 1", "[o] Overlay 2"]
-        assert cruft == {"[h] Hidden"}
+        assert list(get_labels(overlays)) == ["[o] Overlay 1", "[o] Overlay 2"]
+        assert set(get_labels(cruft)) == {"[h] Hidden"}
 
 
-def test_hash_dev_ino():
+def test_hash_dev_ino() -> None:
     with open(__file__, "rb") as srcfile:
         st = os.stat(__file__)
         dev_ino = st.st_dev, st.st_ino
@@ -362,7 +260,9 @@ def test_hash_dev_ino():
 
 
 # XXX: more unit tests for iter_coursemaps are probably in order
-def test_iter_coursemaps_warns_if_no_random_seed(caplog, drawing_svg):
+def test_iter_coursemaps_warns_if_no_random_seed(
+    drawing_svg: Path, caplog: pytest.LogCaptureFixture
+) -> None:
     svgfiles = [drawing_svg.open("rb")]
     for _ in iter_coursemaps(svgfiles):
         pass

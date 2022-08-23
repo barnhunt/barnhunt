@@ -2,16 +2,23 @@
 """
 import enum
 import sys
+from typing import Dict
+from typing import Sequence
 
 import click
 
+from ._compat import Protocol
 
-def get_pager(group_size):
+
+class Pager(Protocol):
+    def __call__(self, lines: Sequence[str]) -> None:
+        ...
+
+
+def get_pager(group_size: int) -> Pager:
     if sys.stdout.isatty() and sys.stdin.isatty():
-        pager_class = TTYPager
-    else:
-        pager_class = Grouper
-    return pager_class(group_size)
+        return TTYPager(group_size)
+    return Grouper(group_size)
 
 
 class Grouper:
@@ -20,10 +27,10 @@ class Grouper:
 
     """
 
-    def __init__(self, group_size):
+    def __init__(self, group_size: int):
         self.group_size = group_size
 
-    def __call__(self, lines):
+    def __call__(self, lines: Sequence[str]) -> None:
         group_size = self.group_size
         for i in range(0, len(lines), group_size):
             for line in lines[i : i + group_size]:
@@ -40,10 +47,10 @@ class TTYPager:
 
     """
 
-    def __init__(self, group_size):
+    def __init__(self, group_size: int):
         self.group_size = group_size
 
-    def __call__(self, lines):
+    def __call__(self, lines: Sequence[str]) -> None:
         group_size = self.group_size
         increments = {
             Command.DOWN: 1,
@@ -73,7 +80,7 @@ class TTYPager:
                 click.echo("\a", nl=False)
         click.echo()
 
-    def _get_cmd(self):
+    def _get_cmd(self) -> "Command":
         while True:
             key = click.getchar()
             if key == "\x1b":
@@ -84,19 +91,19 @@ class TTYPager:
                 click.echo("\a", nl=False)
 
 
-def CTL(c):
+def CTL(c: str) -> str:
     return chr(ord(c) & 0x1F)
 
 
-def ESC(c):
+def ESC(c: str) -> str:
     return "\x1b" + c
 
 
-def ALT(c):
+def ALT(c: str) -> str:
     return chr(0x100 | ord(c))
 
 
-def ANSI_CSI(s):
+def ANSI_CSI(s: str) -> str:
     return "\x1b[" + s
 
 
@@ -106,6 +113,9 @@ K_Up = ANSI_CSI("A")  # Up arrow
 K_Down = ANSI_CSI("B")  # Up arrow
 K_Return = "\r"
 K_Escape = "\x1b"
+
+
+_Command_lookup: Dict[str, "Command"] = {}
 
 
 class Command(enum.Enum):
@@ -159,16 +169,17 @@ class Command(enum.Enum):
     )
     QUIT = ("q",)
 
-    def __init__(self, *keys):
+    def __init__(self, *keys: str):
         _lookup = getattr(self.__class__, "_lookup", None)
         if _lookup is None:
-            self.__class__._lookup = _lookup = {}
+            self.__class__._lookup = _lookup = {}  # type: ignore[attr-defined]
 
         for key in keys:
             assert key not in _lookup, f"redefinition of key {key!r}"
             _lookup[key] = self
 
     @classmethod
-    def lookup(cls, key):
+    def lookup(cls, key: str) -> "Command":
         """Look up comand for ``key``."""
-        return cls._lookup[key]
+        _lookup: Dict[str, "Command"] = cls._lookup  # type: ignore[attr-defined]
+        return _lookup[key]

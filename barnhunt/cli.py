@@ -1,21 +1,32 @@
+from __future__ import annotations
+
 import logging
 import os
-import pathlib
 import random
 import sys
 from collections import defaultdict
 from contextlib import ExitStack
+from itertools import count
 from multiprocessing.pool import ThreadPool
+from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import BinaryIO
+from typing import Callable
+from typing import Iterable
+from typing import TypeVar
 
 import click
 from atomicwrites import atomic_write
 
+from .coursemaps import Coursemap
 from .coursemaps import iter_coursemaps
 from .inkscape.runner import inkscape_runner
 from .pager import get_pager
 from .pdfutil import concat_pdfs
 from .pdfutil import two_up
+
+_T = TypeVar("_T")
+_U = TypeVar("_U")
 
 log = logging.getLogger("")
 
@@ -25,7 +36,7 @@ POSITIVE_INT = click.IntRange(1, None)
 @click.group()
 @click.option("-v", "--verbose", count=True)
 @click.version_option()
-def main(verbose):
+def main(verbose: int) -> None:
     """Utilities for creating Barn Hunt course maps."""
     log_level = logging.WARNING
     if verbose:  # pragma: NO COVER
@@ -47,7 +58,7 @@ def main(verbose):
     "-f",
     help="Force reseeding, even if a seed has been previously set.",
 )
-def random_seed(svgfiles, force_reseed):
+def random_seed(svgfiles: Iterable[str], force_reseed: bool) -> None:
     """Set random-seem for SVG file.
 
     This command sets a random random seed in the named SVG files.
@@ -132,8 +143,15 @@ def default_inkscape_command() -> str:
     The default is enabled.
     """,
 )
-def pdfs(svgfiles, output_directory, shell_mode, inkscape_command, processes=None):
+def pdfs(
+    svgfiles: Iterable[BinaryIO],
+    output_directory: str,
+    shell_mode: bool,
+    inkscape_command: str,
+    processes: int,
+) -> None:
     """Export PDFs from inkscape SVG coursemaps."""
+    counter = count(1)
 
     with ExitStack() as stack:
         tmpdir = stack.enter_context(TemporaryDirectory())
@@ -141,41 +159,38 @@ def pdfs(svgfiles, output_directory, shell_mode, inkscape_command, processes=Non
             inkscape_runner(shell_mode=shell_mode, executable=inkscape_command)
         )
 
-        def write_pdf(n_coursemap):
+        def write_pdf(coursemap: Coursemap) -> tuple[Coursemap, str]:
             """Write coursemap to SVG, render to PDF in tmpdir"""
-            n, coursemap = n_coursemap
+            n = next(counter)
             svg_fn = os.path.join(tmpdir, f"in{n}.svg")
             out_fn = os.path.join(tmpdir, f"out{n}.pdf")
             with open(svg_fn, "wb") as fp:
-                coursemap["tree"].write(fp)
+                coursemap.tree.write(fp)
 
             inkscape.export_pdf(svg_fn, out_fn)
             os.unlink(svg_fn)
-            coursemap["sort_order"] = n
             return coursemap, out_fn
 
         if processes == 1:
-            map_ = map
+            map_: Callable[[Callable[[_T], _U], Iterable[_T]], Iterable[_U]] = map
         else:
             pool = stack.enter_context(ThreadPool(processes))
             map_ = pool.imap_unordered
 
         pages = defaultdict(list)
-        for coursemap, temp_fn in map_(write_pdf, enumerate(iter_coursemaps(svgfiles))):
-            log.info("Rendered %s", coursemap["description"])
-            output_fn = os.path.join(output_directory, f"{coursemap['basename']}.pdf")
+        for coursemap, temp_fn in map_(write_pdf, iter_coursemaps(svgfiles)):
+            log.info("Rendered %s", coursemap.description)
+            output_fn = os.path.join(output_directory, f"{coursemap.basename}.pdf")
             pages[output_fn].append((coursemap, temp_fn))
 
         for output_fn, render_info in pages.items():
-            coursemaps, temp_fns = zip(
-                *sorted(render_info, key=lambda pair: pair[0]["sort_order"])
-            )
+            coursemaps, temp_fns = zip(*sorted(render_info))
             if log.isEnabledFor(logging.INFO):
                 for coursemap in coursemaps:
-                    log.info("Reading %s", coursemap["description"])
+                    log.info("Reading %s", coursemap.description)
 
             concat_pdfs(temp_fns, output_fn)
-            log.warning("Wrote %d pages to %r", len(temp_fns), str(output_fn))
+            log.warning("Wrote %d pages to %r", len(temp_fns), os.fspath(output_fn))
 
 
 @main.command("rats")
@@ -187,7 +202,7 @@ def pdfs(svgfiles, output_directory, shell_mode, inkscape_command, processes=Non
     help="Number of rows of rat numbers to generate.  (Default: 5).",
     default=5,
 )
-def rats_(number_of_rows):
+def rats_(number_of_rows: int) -> None:
     """Generate random rat counts.
 
     Prints rows of five random numbers in the range [1, 5].
@@ -226,7 +241,7 @@ def rats_(number_of_rows):
     envvar="BARNHUNT_DIMENSIONS",
     default=(25, 30),
 )
-def coords(dimensions, number_of_rows, group_size):
+def coords(dimensions: tuple[int, int], number_of_rows: int, group_size: int) -> None:
     """Generate random coordinates.
 
     Generates random coordinates.  The coordinates will range between (0, 0)
@@ -245,7 +260,7 @@ def coords(dimensions, number_of_rows, group_size):
     n_pts = dim_x * dim_y
     number_of_rows = min(number_of_rows, n_pts)
 
-    def coord(pt):
+    def coord(pt: int) -> tuple[int, int]:
         y, x = divmod(pt, dim_x)
         return x, y
 
@@ -258,10 +273,10 @@ def coords(dimensions, number_of_rows, group_size):
     )
 
 
-def default_2up_output_file():
+def default_2up_output_file() -> Path:
     """Compute default output filename."""
     ctx = click.get_current_context()
-    input_paths = {pathlib.Path(infp.name) for infp in ctx.params.get("pdffiles", ())}
+    input_paths = {Path(infp.name) for infp in ctx.params.get("pdffiles", ())}
     if len(input_paths) != 1:
         raise click.UsageError(
             "Can not deduce default output filename when multiple input "
@@ -283,7 +298,7 @@ def default_2up_output_file():
     default=default_2up_output_file,
     help="Output file name. " "(Default input filename with '-2up' appended to stem.)",
 )
-def pdf_2up(pdffiles, output_file):
+def pdf_2up(pdffiles: Iterable[BinaryIO], output_file: BinaryIO) -> None:
     """Format PDF(s) for 2-up printing.
 
     Pages printed "pre-shuffled".  The first half of the input pages

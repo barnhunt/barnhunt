@@ -1,15 +1,26 @@
+from __future__ import annotations
+
 import hashlib
 import logging
 import os
 import random
 import re
 from functools import partial
+from typing import Any
+from typing import BinaryIO
+from typing import Dict
+from typing import Iterator
+from typing import Sequence
 
 import jinja2
 
 from .inkscape import svg
-from .layerinfo import FlaggedLayerInfo
 from .layerinfo import LayerFlags
+from .layerinfo import LayerInfoParser
+from .layerinfo import parse_flagged_layer_info
+
+TemplateContext = Dict[str, Any]
+
 
 log = logging.getLogger()
 
@@ -17,69 +28,74 @@ log = logging.getLogger()
 class LayerAdapter:
     """Adapt an Inkscape SVG layer element for ease of use in templates"""
 
-    def __init__(self, elem, layer_info_class=FlaggedLayerInfo):
+    def __init__(
+        self,
+        elem: svg.LayerElement,
+        layer_info_parser: LayerInfoParser = parse_flagged_layer_info,
+    ):
         self.elem = elem
-        self._layer_info_class = layer_info_class
-        self._info = layer_info_class(elem)
+        self._parse_layer_info = layer_info_parser
+        self._info = layer_info_parser(elem)
 
     @property
-    def id(self):
+    def id(self) -> str | None:
         return self.elem.get("id")
 
     @property
-    def label(self):
+    def label(self) -> str:
         return self._info.label
 
     @property
-    def output_basenames(self):
+    def output_basenames(self) -> Sequence[str] | None:
         return self._info.output_basenames or None
 
     @property
-    def is_overlay(self):
+    def is_overlay(self) -> bool:
         return bool(self._info.flags & LayerFlags.OVERLAY)
 
     @property
-    def parent(self):
+    def parent(self) -> LayerAdapter | None:
         parent = svg.parent_layer(self.elem)
         if parent is None:
             return None
-        return LayerAdapter(parent, self._layer_info_class)
+        return LayerAdapter(parent, self._parse_layer_info)
 
     @property
-    def lineage(self):
-        layer = self
-        while layer:
-            yield layer
-            layer = layer.parent
+    def lineage(self) -> Iterator[LayerAdapter]:
+        ancestor: LayerAdapter | None = self
+        while ancestor:
+            yield ancestor
+            ancestor = ancestor.parent
 
     @property
-    def overlay(self):
+    def overlay(self) -> LayerAdapter | None:
         for layer in self.lineage:
             if layer.is_overlay:
                 return layer
+        return None
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         assert self.id
         return _hash_string(self.id)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return (
             type(other) is type(self)
             and other.elem == self.elem
-            and other._layer_info_class == self._layer_info_class
+            and other._parse_layer_info is self._parse_layer_info
         )
 
-    def __ne__(self, other):
+    def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__} id={self.id}>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.label
 
 
-def _hash_string(s):
+def _hash_string(s: str) -> int:
     """A deterministic string hashing function.
 
     (Python's hash() can depend on the setting of PYTHONHASHSEED.)
@@ -88,21 +104,23 @@ def _hash_string(s):
     return hash(int(hashlib.sha1(bytes_).hexdigest(), 16))
 
 
-def get_element_context(elem, layer_info_class=FlaggedLayerInfo):
+def get_element_context(
+    elem: svg.Element, layer_info_parser: LayerInfoParser = parse_flagged_layer_info
+) -> TemplateContext:
     for layer in svg.lineage(elem):
         if svg.is_layer(layer):
             break
     else:
         return {}
 
-    layer = LayerAdapter(layer, layer_info_class)
-    overlays = []
-    for ancestor in layer.lineage:
+    layer_adapter = LayerAdapter(layer, layer_info_parser)
+    overlays: list[LayerAdapter] = []
+    for ancestor in layer_adapter.lineage:
         if ancestor.is_overlay:
             overlays.insert(0, ancestor)
 
     context = {
-        "layer": layer,
+        "layer": layer_adapter,
         "overlays": tuple(overlays),
     }
     if overlays:
@@ -115,55 +133,66 @@ def get_element_context(elem, layer_info_class=FlaggedLayerInfo):
     return context
 
 
-def get_output_basenames(elem, layer_info_class=FlaggedLayerInfo):
+# FIXME: move to coursemaps?
+def get_output_basenames(
+    elem: svg.Element, layer_info_func: LayerInfoParser = parse_flagged_layer_info
+) -> Sequence[str] | None:
     for ancestor in svg.lineage(elem):
         if svg.is_layer(ancestor):
-            info = layer_info_class(ancestor)
+            info = layer_info_func(ancestor)
             if info.output_basenames:
                 return info.output_basenames
+    return None
 
 
 class FileAdapter:
     """Adapt a file object for ease of use in templates"""
 
-    def __init__(self, fp):
+    def __init__(self, fp: BinaryIO):
         self._fp = fp
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._fp.name
 
     @property
-    def basename(self):
+    def basename(self) -> str:
         return os.path.basename(self.name)
 
     @property
-    def stat(self):
+    def stat(self) -> os.stat_result:
         fd = self._fp.fileno()
         return os.fstat(fd)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         st = self.stat
         return hash((st.st_dev, st.st_ino))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__} {self.name!r}>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
 global_rng = random.Random()
 
 
-def default_random_seed(context):
+def default_random_seed(context: jinja2.runtime.Context) -> int:
     random_seed = context.get("random_seed")
     layer = context.get("layer")
     return hash((random_seed, layer))
 
 
 @jinja2.pass_context
-def random_rats(context, n=5, min=1, max=5, seed=None, skip=0):
+def random_rats(
+    context: jinja2.runtime.Context,
+    n: int = 5,
+    min: int = 1,
+    max: int = 5,
+    seed: int | None = None,
+    skip: int = 0,
+) -> tuple[int, ...]:
     """Generate random rat numbers.
 
     Returns a tuple of ``n`` random integers in the range [``min``,
@@ -208,7 +237,7 @@ def random_rats(context, n=5, min=1, max=5, seed=None, skip=0):
     return tuple(rand() for _ in range(n))
 
 
-def safepath(path_comp):
+def safepath(path_comp: Any) -> str:
     """A jinja filter to replace shell-unfriendly characters with underscore."""
     return re.sub(r"[\000-\040/\\\177\s]", "_", str(path_comp), flags=re.UNICODE)
 
@@ -222,7 +251,9 @@ FILTERS = {
 }
 
 
-def make_jinja2_environment(undefined=jinja2.Undefined):
+def make_jinja2_environment(
+    undefined: type[jinja2.Undefined] = jinja2.Undefined,
+) -> jinja2.Environment:
     env = jinja2.Environment(autoescape=False, undefined=undefined)
     env.globals.update(GLOBALS)
     env.filters.update(FILTERS)
@@ -233,14 +264,16 @@ default_env = make_jinja2_environment()
 strict_env = make_jinja2_environment(undefined=jinja2.StrictUndefined)
 
 
-def render_template(tmpl_string, context, strict_undefined=False):
+def render_template(
+    tmpl_string: str, context: TemplateContext, strict_undefined: bool = False
+) -> str:
     """Render string template."""
     env = strict_env if strict_undefined else default_env
     tmpl = env.from_string(tmpl_string)
     return tmpl.render(context)
 
 
-def is_string_literal(tmpl_string):
+def is_string_literal(tmpl_string: str) -> bool:
     """Is ``tmpl_string`` a simple string literal.
 
     Returns ``False`` if ``tmpl_string`` contains any Jinja2

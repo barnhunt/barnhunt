@@ -1,5 +1,14 @@
+from __future__ import annotations
+
 import logging
 import os
+from itertools import count
+from typing import BinaryIO
+from typing import Collection
+from typing import Iterable
+from typing import Iterator
+from typing import NamedTuple
+from typing import Sequence
 
 import jinja2
 from lxml import etree
@@ -7,20 +16,32 @@ from lxml import etree
 from .inkscape import svg
 from .layerinfo import dwim_layer_info
 from .layerinfo import LayerFlags
+from .layerinfo import LayerInfoParser
 from .templating import FileAdapter
 from .templating import get_element_context
 from .templating import get_output_basenames
 from .templating import is_string_literal
 from .templating import render_template
+from .templating import TemplateContext
 
 log = logging.getLogger()
 
 
-class TemplateRenderer:
-    def __init__(self, layer_info):
-        self.layer_info = layer_info
+class Coursemap(NamedTuple):
+    sort_order: int
+    tree: svg.ElementTree
+    context: TemplateContext
+    basename: str
+    description: str
 
-    def __call__(self, tree, context):
+
+class TemplateRenderer:
+    def __init__(self, layer_info_parser: LayerInfoParser):
+        self.parse_layer_info = layer_info_parser
+
+    def __call__(
+        self, tree: svg.ElementTree, context: TemplateContext
+    ) -> svg.ElementTree:
         tree = svg.copy_etree(tree)
         for elem in tree.iter(svg.SVG_TSPAN_TAG):
             if elem.text and not is_string_literal(elem.text):
@@ -32,18 +53,20 @@ class TemplateRenderer:
                         log.error(f"Error expanding template in SVG file: {ex!s}")
         return tree
 
-    def _is_hidden(self, elem):
+    def _is_hidden(self, elem: svg.Element) -> bool:
         return any(self._is_hidden_layer(ancestor) for ancestor in svg.lineage(elem))
 
-    def _is_hidden_layer(self, elem):
+    def _is_hidden_layer(self, elem: svg.Element) -> bool:
         if not svg.is_layer(elem):
             return False
-        info = self.layer_info(elem)
+        info = self.parse_layer_info(elem)
         return (info.flags & LayerFlags.HIDDEN) == LayerFlags.HIDDEN
 
-    def _get_local_context(self, elem, parent_context):
+    def _get_local_context(
+        self, elem: svg.Element, parent_context: TemplateContext
+    ) -> TemplateContext:
         context = parent_context.copy()
-        context.update(get_element_context(elem, self.layer_info))
+        context.update(get_element_context(elem, self.parse_layer_info))
         return context
 
 
@@ -54,14 +77,20 @@ class CourseMaps:
         "overlay": None,
     }
 
-    def __init__(self, layer_info, context=None):
-        self.layer_info = layer_info
+    def __init__(
+        self,
+        layer_info_parser: LayerInfoParser,
+        context: TemplateContext | None = None,
+    ):
+        self.parse_layer_info = layer_info_parser
         self.context = dict()
         if context is not None:
             self.context.update(context)
         self.context.update(self.default_context)
 
-    def __call__(self, tree):
+    def __call__(
+        self, tree: svg.ElementTree
+    ) -> Iterator[tuple[TemplateContext, svg.ElementTree]]:
         for path, hidden_layers in self._iter_overlays(tree.getroot()):
             base_context = self._get_context(path)
             for basename in self._get_output_basenames(path):
@@ -82,23 +111,27 @@ class CourseMaps:
                     context = base_context
                 yield context, pruned
 
-    def _get_context(self, path):
+    def _get_context(self, path: Sequence[svg.LayerElement]) -> TemplateContext:
         context = self.context.copy()
         if path:
             overlay = path[-1]
-            local_context = get_element_context(overlay, self.layer_info)
+            local_context = get_element_context(overlay, self.parse_layer_info)
             local_context.pop("layer", None)
             context.update(local_context)
         return context
 
-    def _get_output_basenames(self, path):
+    def _get_output_basenames(
+        self, path: Sequence[svg.LayerElement]
+    ) -> Iterable[str | None]:
         basenames = None
         if path:
             overlay = path[-1]
-            basenames = get_output_basenames(overlay, self.layer_info)
-        return basenames or [None]
+            basenames = get_output_basenames(overlay, self.parse_layer_info)
+        return basenames or (None,)
 
-    def _iter_overlays(self, elem):
+    def _iter_overlays(
+        self, elem: svg.Element
+    ) -> Iterator[tuple[list[svg.LayerElement], set[svg.LayerElement]]]:
         overlays, cruft = self._find_overlays(elem)
 
         if len(overlays) == 0:
@@ -110,11 +143,13 @@ class CourseMaps:
             for path, hidden in self._iter_overlays(overlay):
                 yield [overlay] + path, hidden | cruft | other_overlays
 
-    def _find_overlays(self, elem):
+    def _find_overlays(
+        self, elem: svg.Element
+    ) -> tuple[list[svg.LayerElement], set[svg.LayerElement]]:
         overlays = []
         cruft = set()
         for node, children in svg.walk_layers2(elem):
-            info = self.layer_info(node)
+            info = self.parse_layer_info(node)
             if info.flags & LayerFlags.HIDDEN:
                 cruft.add(node)
                 children[:] = []
@@ -123,12 +158,14 @@ class CourseMaps:
                 children[:] = []
         return overlays, cruft
 
-    def _find_exclusions(self, output_basename, elem):
-        def get_includes(node):
-            return self.layer_info(node).include_in
+    def _find_exclusions(
+        self, output_basename: str, elem: svg.Element
+    ) -> Iterator[svg.LayerElement]:
+        def get_includes(node: svg.LayerElement) -> Collection[str]:
+            return self.parse_layer_info(node).include_in
 
         for node, children in svg.walk_layers2(elem):
-            info = self.layer_info(node)
+            info = self.parse_layer_info(node)
             exclude = output_basename in info.exclude_from
             if not exclude and output_basename not in info.include_in:
                 exclude = any(
@@ -156,19 +193,21 @@ DESCRIPTION_TMPL = (
 )
 
 
-def _hash_dev_ino(svgfile):
+def _hash_dev_ino(svgfile: BinaryIO) -> int:
     st = os.fstat(svgfile.fileno())
     return hash((st.st_dev, st.st_ino))
 
 
-def iter_coursemaps(svgfiles):
-    """Returns an iterable of (context, tree) pairs for coursemaps in
-    SVGFILES.
+def iter_coursemaps(svgfiles: Iterable[BinaryIO]) -> Iterator[Coursemap]:
+    """Iterate over all coursemaps in svgfiles.
 
+    Returns an iterable of (tree, context, basename, description) tuples,
+    one for each map to be exported, for coursemaps in svgfiles.
     """
+    counter = count()
     for svgfile in svgfiles:
         tree = etree.parse(svgfile)
-        layer_info_class = dwim_layer_info(tree)
+        layer_info_parser = dwim_layer_info(tree)
 
         random_seed = svg.get_random_seed(tree)
         if random_seed is None:
@@ -181,15 +220,16 @@ def iter_coursemaps(svgfiles):
             "svgfile": FileAdapter(svgfile),
         }
 
-        render_templates = TemplateRenderer(layer_info_class)
+        render_templates = TemplateRenderer(layer_info_parser)
         # FIXME: tree = render_templates(tree, file_context)
 
-        coursemapper = CourseMaps(layer_info_class, file_context)
+        coursemapper = CourseMaps(layer_info_parser, file_context)
         for context, map_tree in coursemapper(tree):
             rendered_tree = render_templates(map_tree, context)
-            yield {
-                "tree": rendered_tree,
-                "context": context,
-                "basename": render_template(BASENAME_TMPL, context),
-                "description": render_template(DESCRIPTION_TMPL, context),
-            }
+            yield Coursemap(
+                sort_order=next(counter),
+                tree=rendered_tree,
+                context=context,
+                basename=render_template(BASENAME_TMPL, context),
+                description=render_template(DESCRIPTION_TMPL, context),
+            )

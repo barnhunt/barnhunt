@@ -5,13 +5,22 @@ import shutil
 from collections import namedtuple
 from itertools import chain
 from itertools import zip_longest
+from typing import BinaryIO
+from typing import Iterable
+from typing import Sequence
+from typing import TYPE_CHECKING
 
 from pdfrw import PageMerge
 from pdfrw import PdfReader
 from pdfrw import PdfWriter
 
+if TYPE_CHECKING:
+    from _typeshed import StrPath
+else:
+    StrPath = object
 
-def concat_pdfs(in_fns, out_fn):
+
+def concat_pdfs(in_fns: Sequence[StrPath], out_fn: StrPath) -> None:
     """Concatenate named PDF files to a single output file."""
     if len(in_fns) == 0:
         raise ValueError("No PDFs to concatenate")
@@ -30,7 +39,9 @@ def concat_pdfs(in_fns, out_fn):
         writer.write(out_fn)
 
 
-def two_up(infiles, outfile, width=612, height=792):
+def two_up(
+    infiles: Iterable[BinaryIO], outfile: BinaryIO, width: int = 612, height: int = 792
+) -> None:
     """Generate 2-up version of PDF file(s)."""
     pages = list(chain.from_iterable(PdfReader(fp).pages for fp in infiles))
     n_out = (len(pages) + 1) // 2

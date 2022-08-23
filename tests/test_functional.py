@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 import re
@@ -11,11 +13,11 @@ from PyPDF2 import PdfReader
 from barnhunt.cli import main
 
 
-def test_random_seed(tmp_drawing_svg, caplog):
+def test_random_seed(tmp_drawing_svg: Path, caplog: pytest.LogCaptureFixture) -> None:
     caplog.set_level(logging.INFO)
     svgfile = tmp_drawing_svg.__fspath__()
 
-    def get_random_seed():
+    def get_random_seed() -> int:
         tree = etree.parse(svgfile)
         root = tree.getroot()
         assert root.tag == "{http://www.w3.org/2000/svg}svg"
@@ -24,7 +26,7 @@ def test_random_seed(tmp_drawing_svg, caplog):
         ]
         return int(value)
 
-    def run_it(*args):
+    def run_it(*args: str) -> None:
         cmd = ["random-seed"]
         cmd.extend(args)
         cmd.append(svgfile)
@@ -51,11 +53,13 @@ def test_random_seed(tmp_drawing_svg, caplog):
 
 
 @pytest.mark.parametrize("processes", [None, "1"])
-def test_pdfs(tmp_path, caplog, processes):
+def test_pdfs(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, processes: str | None
+) -> None:
     caplog.set_level(logging.INFO)
     here = os.path.dirname(__file__)
     drawing_svg = os.path.join(here, "drawing.svg")
-    cmd = ["pdfs", "-o", str(tmp_path), drawing_svg]
+    cmd = ["pdfs", "-o", os.fspath(tmp_path), drawing_svg]
     if processes is not None:
         cmd[1:1] = ["-p", processes]
     runner = CliRunner()
@@ -77,14 +81,14 @@ def test_pdfs(tmp_path, caplog, processes):
     assert "Novice 1" in pdf.pages[0].extract_text()
 
 
-def test_rats():
+def test_rats() -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["rats"])
     assert result.exit_code == 0
     assert re.sub(r"[1-5]", "X", result.output) == ("X X X X X\n" * 5)
 
 
-def test_coords():
+def test_coords() -> None:
     runner = CliRunner()
     result = runner.invoke(main, ["coords", "-n", "50"])
     assert result.exit_code == 0
@@ -96,9 +100,12 @@ def test_coords():
         assert 0 <= y <= 30
 
 
-def test_2up(tmp_path, test1_pdf):
-    outfile = tmp_path.joinpath("output.pdf")
+def test_2up(tmp_path: Path, test1_pdf: Path) -> None:
+    outfile = tmp_path / "output.pdf"
     runner = CliRunner()
-    result = runner.invoke(main, ["2up", "-o", str(outfile), str(test1_pdf)])
+    result = runner.invoke(
+        main,
+        ["2up", "-o", os.fspath(outfile), os.fspath(test1_pdf)],
+    )
     assert result.exit_code == 0
     assert outfile.exists()
