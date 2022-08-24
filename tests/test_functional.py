@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 from lxml import etree
-from PyPDF2 import PdfReader
+from pdfminer.high_level import extract_text
 
 from barnhunt.cli import main
 
@@ -77,8 +77,7 @@ def test_pdfs(
     assert outputs == {tmp_path.joinpath(pdf) for pdf in expected_pdfs}
 
     # Check that template was expanded
-    pdf = PdfReader(open(tmp_path.joinpath("novice.pdf"), "rb"))
-    assert "Novice 1" in pdf.pages[0].extract_text()
+    assert "Novice 1" in extract_text(tmp_path / "novice.pdf", page_numbers=[0])
 
 
 def test_rats() -> None:

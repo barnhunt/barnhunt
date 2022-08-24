@@ -5,6 +5,23 @@
 - Dropped support for python 3.6
 - Changed license to GPL version 3
 
+#### Dependencies
+
+- Use [pikepdf](https://pypi.org/project/pikepdf/) instead of
+  [pdfrw](https://pypi.org/project/pdfrw/) to manipulate PDFs.  (Pdfrw
+  seems not to be very actively maintained.) The only possible
+  downside of this is that `pikepdf` is not pure-python. It claims to
+  be easily installble on Windows and _x86_64_ Macs, but is not
+  (easily) installable on Macs with Apple silicon.
+
+- Generated PDFs are now [linearized][qpdf-linearize] and
+  [compressed][qpdf-object-streams].
+
+- Add test dependency on
+  [pdfminer.six](https://pypi.org/project/pdfminer.six/) (but drop
+  dependency on [PyPDF2](https://pypi.org/project/PyPDF2/)).
+
+
 #### Compatibility
 
 - Refactor `barnhunt.inkscape.runner` to support running
@@ -18,9 +35,7 @@
 
 - Use `pexpect.popen_spawn.PopenSpawn` instead of `pexpect.spawn` to
   run Inkscape in shell-mode. Due to `pexpect.spawn`'s use of ptys, it
-  [will not
-  work](https://pexpect.readthedocs.io/en/stable/overview.html#windows)
-  on Windows.
+  [will not work][pexpect-windows] on Windows.
 
 #### Packaging
 
@@ -34,6 +49,10 @@
 #### Bit Rot
 
 - Fixup tests to address deprecations in PyPDF2.
+
+[qpdf-linearize]: https://qpdf.readthedocs.io/en/latest/cli.html?highlight=linearize#option-linearize
+[qpdf-object-streams]: https://qpdf.readthedocs.io/en/latest/cli.html?highlight=object-streams#option-object-streams
+[pexpect-windows]: https://pexpect.readthedocs.io/en/stable/overview.html#windows
 
 ### Release 1.1.0a1 (2022-03-08)
 

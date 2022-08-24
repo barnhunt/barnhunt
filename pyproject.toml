@@ -18,10 +18,11 @@ dynamic = ["version", "readme"]
 dependencies = [
     "atomicwrites",
     "click >= 8.1",
+    "importlib_metadata; python_version < '3.8'",
     "jinja2 >= 3",
     "lxml",
-    "pdfrw",
     "pexpect >= 4.8",
+    "pikepdf",
     "tinycss2",
     "typing_extensions; python_version < '3.10'",
 ]
@@ -98,8 +99,14 @@ strict = true
 
 [[tool.mypy.overrides]]
 module = [
+    # Mypy doesn't like that pikepdf dynamically generates it's __all__ list
+    "pikepdf",
+]
+implicit_reexport = true
+
+[[tool.mypy.overrides]]
+module = [
     # FIXME: should replace most of these
-    "pdfrw",
     "tinycss2",
 ]
 ignore_missing_imports = true
