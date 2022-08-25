@@ -1,5 +1,8 @@
-include LICENSE README.rst CHANGES.rst
-include tox.ini
-exclude .gitignore
-recursive-include tests *.py
-include tests/drawing.svg tests/test?.pdf
+# stuff we need to include into the sdist is handled automatically by
+# setuptools_scm - it includes all git-committed files.
+# but we want to exclude some committed files/dirs not needed in the sdist:
+
+exclude .editorconfig
+exclude .gitignore .pre-commit-config.yaml .git-blame-ignore-revs
+exclude TODO.md
+prune .github
