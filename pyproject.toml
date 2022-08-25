@@ -53,8 +53,8 @@ include = ["barnhunt"]
 [tool.coverage.paths]
 paths = [
     "barnhunt",
-    ".tox/py*/*/barnhunt",
-    # Attempt to match source files on GitHub Window runner
+    "*/.tox/*/site-packages/barnhunt",
+    # Attempt to match source files on GitHub Windows runner
     '*:*\barnhunt\barnhunt\barnhunt',
 ]
 
