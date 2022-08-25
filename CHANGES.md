@@ -4,6 +4,7 @@
 
 - Dropped support for python 3.6
 - Changed license to GPL version 3
+- We now do rudimentary testing under Windows and macOS.
 
 #### Dependencies
 
@@ -36,6 +37,9 @@
 - Use `pexpect.popen_spawn.PopenSpawn` instead of `pexpect.spawn` to
   run Inkscape in shell-mode. Due to `pexpect.spawn`'s use of ptys, it
   [will not work][pexpect-windows] on Windows.
+
+- **MacOS**: our code for running Inkscape in shell-mode appears to be broken.
+  For now, on _macOS_ we default to not using shell-mode.
 
 #### Packaging
 

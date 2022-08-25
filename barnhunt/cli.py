@@ -98,6 +98,13 @@ def default_inkscape_command() -> str:
     return "inkscape"
 
 
+def default_shell_mode() -> bool:
+    """Whether to use Inkscape's shell-mode by default."""
+    if sys.platform == "darwin":
+        return False  # ShellModeRunner current borked
+    return True
+
+
 @main.command()
 @click.argument("svgfiles", type=click.File("rb"), nargs=-1, required=True)
 @click.option(
@@ -137,10 +144,11 @@ def default_inkscape_command() -> str:
 @click.option(
     "--shell-mode-inkscape/--no-shell-mode-inkscape",
     "shell_mode",
-    default=True,
+    default=default_shell_mode,
     help="""
     Enable/disable running inkscape in shell-mode for efficiency.
-    The default is enabled.
+    The default is enabled (except on macOS, where shell-mode currently
+    seems to be broken).
     """,
 )
 def pdfs(

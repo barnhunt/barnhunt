@@ -8,6 +8,7 @@ import pytest
 
 from barnhunt.cli import default_2up_output_file
 from barnhunt.cli import default_inkscape_command
+from barnhunt.cli import default_shell_mode
 from barnhunt.cli import main
 from barnhunt.cli import pdf_2up
 
@@ -25,6 +26,20 @@ def test_default_inkscape_command(
     monkeypatch.delitem(os.environ, "INKSCAPE_COMMAND", raising=False)
     monkeypatch.setattr("sys.platform", platform)
     assert default_inkscape_command() == expect
+
+
+@pytest.mark.parametrize(
+    "platform, expect",
+    [
+        ("linux", True),
+        ("darwin", False),
+    ],
+)
+def test_default_shell_mode(
+    platform: str, expect: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("sys.platform", platform)
+    assert default_shell_mode() is expect
 
 
 class Test_default_2up_output_file:

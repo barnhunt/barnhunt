@@ -128,6 +128,7 @@ class TestShellModeRunner:
         # check that child is killed within a reasonable time
         proc.wait(1.0)
 
+    @pytest.mark.xfail(sys.platform == "darwin", reason="broken on macOS")
     def test_thread_safe(
         self, runner: ShellModeRunner, caplog: pytest.LogCaptureFixture
     ) -> None:
