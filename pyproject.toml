@@ -54,6 +54,8 @@ include = ["barnhunt"]
 paths = [
     "barnhunt",
     ".tox/py*/*/barnhunt",
+    # Attempt to match source files on GitHub Window runner
+    '*:*\barnhunt\barnhunt\barnhunt',
 ]
 
 [tool.coverage.report]

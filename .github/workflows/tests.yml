@@ -9,15 +9,23 @@ env:
 
 jobs:
   tests:
-    name: Tox tests
-    runs-on: ubuntu-latest
+    name: ${{ matrix.os }} py${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: ['ubuntu-latest']
         python-version: ['3.7', '3.8', '3.9', '3.10']
         include:
+          - os: 'windows-latest'
+            python-version: '3.10'
+            install-inkscape: true
+          - os: 'macos-latest'
+            python-version: '3.10'
+            install-inkscape: true
           - python-version: '3.10'
             install-inkscape: true
+
     steps:
     - uses: actions/checkout@v3
 
@@ -26,9 +34,17 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install inkscape
-      if: matrix.install-inkscape
+    - name: Install inkscape (apt)
+      if: runner.os == 'Linux' && matrix.install-inkscape
       run: sudo apt install -y inkscape
+
+    - name: Install inkscape (chocolatey)
+      if: runner.os == 'Windows' && matrix.install-inkscape
+      run: choco install --no-progress --timeout 600 inkscape
+
+    - name: Install inkscape (homebrew)
+      if: runner.os == 'macOS' && matrix.install-inkscape
+      run: brew install inkscape
 
     - name: Install tox
       run: |
