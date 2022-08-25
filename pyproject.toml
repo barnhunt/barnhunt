@@ -53,9 +53,18 @@ include = ["barnhunt"]
 [tool.coverage.paths]
 paths = [
     "barnhunt",
-    "*/.tox/*/site-packages/barnhunt",
-    # Attempt to match source files on GitHub Windows runner
+    ".tox/*/site-packages/barnhunt",
+    # Attempt to match source files on various GitHub Windows/macOS runners
     '*:*\barnhunt\barnhunt\barnhunt',
+    '*/barnhunt/barnhunt/barnhunt',
+    "*/.tox/*/site-packages/barnhunt",
+]
+
+[tool.coverage.run]
+# Generate unique names for .coverage.* file
+parallel = true
+source_pkgs = [
+    "barnhunt",
 ]
 
 [tool.coverage.report]
