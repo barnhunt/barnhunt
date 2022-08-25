@@ -53,6 +53,7 @@ def test_random_seed(tmp_drawing_svg: Path, caplog: pytest.LogCaptureFixture) ->
 
 
 @pytest.mark.parametrize("processes", [None, "1"])
+@pytest.mark.usefixtures("inkscape_executable")  # skip if no inkscape
 def test_pdfs(
     tmp_path: Path, caplog: pytest.LogCaptureFixture, processes: str | None
 ) -> None:
