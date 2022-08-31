@@ -1,4 +1,4 @@
-# Barnhunt Map Helper
+# Barn Hunt Map Helper
 
 
 This is a helper script Jeff uses for drafting Barn Hunt course maps.
@@ -21,6 +21,6 @@ Kick me for more!
 
 ## Author
 
-This package was written by Jeff Dairiki, <dairiki@dairiki.org>.
+This package was written by Jeff Dairiki, BHAJ-221A, <dairiki@dairiki.org>.
 
 ----

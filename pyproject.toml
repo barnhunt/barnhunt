@@ -31,7 +31,7 @@ dependencies = [
 barnhunt = "barnhunt.cli:main"
 
 [project.urls]
-Homepage = "https://gitlab.com/dairiki/barnhunt"
+Homepage = "https://github.com/barnhunt/barnhunt"
 
 [[project.authors]]
 name = "Jeff Dairiki"

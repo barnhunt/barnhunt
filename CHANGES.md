@@ -1,6 +1,9 @@
 ## Changes
 
-### Release 1.2.0a1 (unreleased)
+### Release 1.2.0a1 (2022-08-31)
+
+First public release to PyPI. Moved project to
+[GitHub](https://github.com/barnhunt/barnhunt).
 
 - Dropped support for python 3.6
 - Changed license to GPL version 3
@@ -12,7 +15,7 @@
   [pdfrw](https://pypi.org/project/pdfrw/) to manipulate PDFs.  (Pdfrw
   seems not to be very actively maintained.) The only possible
   downside of this is that `pikepdf` is not pure-python. It claims to
-  be easily installble on Windows and _x86_64_ Macs, but is not
+  be easily installable on Windows and _x86_64_ Macs, but is not
   (easily) installable on Macs with Apple silicon.
 
 - Generated PDFs are now [linearized][qpdf-linearize] and
@@ -52,7 +55,7 @@
 
 #### Bit Rot
 
-- Fixup tests to address deprecations in PyPDF2.
+- Fix up tests to address deprecations in PyPDF2.
 
 [qpdf-linearize]: https://qpdf.readthedocs.io/en/latest/cli.html?highlight=linearize#option-linearize
 [qpdf-object-streams]: https://qpdf.readthedocs.io/en/latest/cli.html?highlight=object-streams#option-object-streams
@@ -89,7 +92,7 @@ file which does not have an explicit random-seed set.
 
 #### Bugs Fixed
 
-Open SVG files in binary mode in order to let the XMl parser figure
+Open SVG files in binary mode in order to let the XML parser figure
 out the encoding from the XML declaration.
 
 ### Release 1.0 (2021-11-10)
@@ -113,13 +116,13 @@ The layer-level seed is formed by hashing the file-level random seed
 with the XML *id* of the layer.
 
 (Formerly, the layer-level seed was form by hashing a triple of the
-file-level seeed (which was always zero), the hash of the SVG files
+file-level seed (which was always zero), the hash of the SVG files
 device and inode, and the id of the layer.)
 
 A new `barnhunt random-seed` sub-command has been implemented to help
 with setting the random seed for SVG source files.
 
-#### Bitrot
+#### Bit-rot
 
 Address `DeprecationWarning: 'contextfunction' is renamed to
 'pass_context'` from Jinja2. Require `Jinja2>3`.
@@ -131,15 +134,15 @@ Run `pyupgrade --py36-plus` on source.
 
 ### Release 0.5 (2021-05-04)
 
-Make `-o` option to `2up` subcommand optional.
+Make `-o` option to `2up` sub-command optional.
 
 Remove support for python < 3.6.
 
 ### Release 0.4 (2019-02-25)
 
-#### New Subcommand: 2up
+#### New Sub-Command: 2up
 
-New `2up` subcommand to format PDFs for 2-up printing.  Pages are
+New `2up` sub-command to format PDFs for 2-up printing.  Pages are
 pre-shuffled so that the 2-up pages do not need to be shuffled after
 cutting.
 
@@ -154,7 +157,7 @@ cutting.
   Multiple overlays which specify the same output file will all be saved to
   the same file.
 
-- It is now possible to render coursemaps from multiple SVG files in a
+- It is now possible to render course maps from multiple SVG files in a
   single invocation.  (Just list all the files to be rendered on the
   command line.)
 
@@ -169,7 +172,7 @@ cutting.
 
 - Do not expand text within hidden layers.  This avoids generating
   error messages (e.g. "'overlay' is undefined") due to template
-  expansion of usused text.
+  expansion of unused text.
 
 - Add optional `skip` argument to the `random_rats` function.
   This allows the generation of more than one set of stable random rat
@@ -257,7 +260,7 @@ cutting.
 #### Pager for `coords`
 
 - A fancy pager (poor man's `less`) has been added for viewing the
-  output of the `barnhunt coords` subcommand.  If any of `sys.stdin`
+  output of the `barnhunt coords` sub-command.  If any of `sys.stdin`
   or `sys.stdout` is not a tty, then the pager will be disabled.
 
 - Since there is now a fancy pager, the default for `--number-of-rows`
@@ -281,7 +284,7 @@ beginning of the layer label.  I.e. a label like `"[o] Master Trial
 marks a hidden layer.
 
 If no layers have any flags, `barnhunt pdfs` will fall back to the
-old name-based heuristics for determing hidden and overlay layers.
+old name-based heuristics for determining hidden and overlay layers.
 
 
 ### Release 0.1a9 (2017-01-03)
@@ -297,7 +300,7 @@ old name-based heuristics for determing hidden and overlay layers.
 ### Release 0.1a8 (2018-01-03)
 
 * Ignore *ring* layers when identifying *course* layers.  (Now a layer
-  labelled “C8 Ring” will not be treated as a course layer.)
+  labeled “C8 Ring” will not be treated as a course layer.)
 
 * `pdfs`: default `--output-directory` to `.` (avoiding exception when no
   explicit output directory is specified.)
@@ -305,8 +308,8 @@ old name-based heuristics for determing hidden and overlay layers.
 ### Release 0.1a7 (2017-11-18)
 
 * Change `barnhunt coords` so that it omits duplicate coordinates in its output.
-  Also inrease the default for `--number-of-rows` to 50 and
-  add the `--group-size` paramter to separate output into groups.
+  Also increase the default for `--number-of-rows` to 50 and
+  add the `--group-size` parameter to separate output into groups.
 
 ### Release 0.1a6 (2017-11-15)
 
@@ -346,7 +349,7 @@ in output file names.
 
 ### Release 0.1a2 (2017-11-09)
 
-Add subcommands for generating random numbers.
+Add sub-commands for generating random numbers.
 
 ### Release 0.1a1 (2017-11-07)
 
