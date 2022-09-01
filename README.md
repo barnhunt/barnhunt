@@ -6,11 +6,11 @@
 [![Inkscape Versions](https://img.shields.io/badge/Inkscape-0.9x%E2%80%931.2-blue.svg?logo=inkscape)](https://inkscape.org/)
 [![PyPI Status](https://img.shields.io/pypi/status/barnhunt.svg)](https://pypi.org/project/barnhunt/)
 
-
-This is a helper script Jeff uses for drafting Barn Hunt course maps.
+This is a helper script Jeff uses for drafting [Barn Hunt][] course
+maps.
 
 It does a bunch of stuff, but the important bit is that it exports PDF
-versions of maps from Inkscape SVG files.
+versions of maps from [Inkscape][] SVG files.
 
 I draw all the maps for a given ring (for a day or weekend) in a
 single Inkscape drawing.  Various maps (for different trials/classes,
@@ -19,14 +19,78 @@ unhiding appropriate layers in the drawing and exporting to PDF.
 
 This program automates that process.
 
+## Requirements
+
+This program requires Python, version 3.7 or higher to run.
+
+It "should" work with all versions of Inkscape, 0.9x through 1.2.1.
+
+I use this program on Linux, however the package now includes a GitHub
+CI workflow that performs rudimentary testing on Windows and macOS, so
+there’s a moderate chance it might "just work" on those platforms.
+(Due to a dependency on the [pikepdf][] package, it should work on
+x86_64-based Macs, but may not work on Macs that use Apple silicon. If
+pikepdf compatibility is an issue for you, let me know — it’s probably
+fixable.)
+
+## Installation
+
+As this package is published to
+[PyPI](https://pypi.org/project/barnhunt/) in may be installed into a
+[_virtualenv_][venv] using [`pip`][pip]. It is suggested that you use
+[`pipx`][pipx] to combine those two steps.
+
+A basic outline of how to proceed:
+
+1. Install [python][] if it is not already installed.  (Version 3.7 or
+   greater is required.)
+
+2. Install [pipx][].  This might look like:
+
+   ```sh
+   python3 -m pip install --user pipx
+   python3 -m pipx ensurepath
+   ```
+
+3. Install `barnhunt`.
+
+   ```sh
+   pipx install barnhunt
+   ```
+
 ## How to Use
 
-Sadly, this program is currently undocumented. :-/
+Sadly, this program is currently quite under-documented.
 
-Kick me for more!
+The functions of the basic sub-commands and command-line options are
+tersely documented via the `--help` option.  Try:
+
+```sh
+barnhunt --help
+```
+
+and
+
+```sh
+barnhunt pdf --help
+```
+
+for starters.
+
+If you get stuck, kick me!
 
 ## Author
 
 This package was written by Jeff Dairiki, BHAJ-221A, <dairiki@dairiki.org>.
 
 ----
+
+[Inkscape]: https://inkscape.org/ (The Inkscape home page)
+[Barn Hunt]: https://www.barnhunt.com/ (Barn Hunt — a fabulous sport for dogs)
+[python]: https://www.python.org/ (The Python home page)
+[venv]: https://docs.python.org/3/library/venv.html
+(Python venv module documentation)
+[pipx]: https://pypa.github.io/pipx/ (The pipx home page)
+[pip]: https://pip.pypa.io/en/stable/ (Documentation for pip)
+[pikepdf]: https://pikepdf.readthedocs.io/en/latest/installation.html
+(The Installation section of the pikepdf documentation)
