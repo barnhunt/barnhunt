@@ -1,5 +1,11 @@
 # Barn Hunt Map Helper
 
+[![Tests](https://github.com/barnhunt/barnhunt/actions/workflows/tests.yml/badge.svg)](https://github.com/barnhunt/barnhunt/actions/workflows/tests.yml)
+[![PyPI Version](https://img.shields.io/pypi/v/barnhunt.svg)](https://pypi.org/project/barnhunt/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/barnhunt.svg)](https://pypi.org/project/barnhunt/)
+[![Inkscape Versions](https://img.shields.io/badge/Inkscape-0.9x%E2%80%931.2-blue.svg?logo=inkscape)](https://inkscape.org/)
+[![PyPI Status](https://img.shields.io/pypi/status/barnhunt.svg)](https://pypi.org/project/barnhunt/)
+
 
 This is a helper script Jeff uses for drafting Barn Hunt course maps.
 
