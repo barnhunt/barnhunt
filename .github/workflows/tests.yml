@@ -34,9 +34,11 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install inkscape (apt)
+    - name: Install inkscape (apt-get)
       if: runner.os == 'Linux' && matrix.install-inkscape
-      run: sudo apt install -y inkscape
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y inkscape
 
     - name: Install inkscape (chocolatey)
       if: runner.os == 'Windows' && matrix.install-inkscape
