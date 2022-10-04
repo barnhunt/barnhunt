@@ -72,7 +72,7 @@ barnhunt --help
 and
 
 ```sh
-barnhunt pdf --help
+barnhunt pdfs --help
 ```
 
 for starters.
