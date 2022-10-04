@@ -27,7 +27,7 @@ from barnhunt.inkscape.runner import ShellModeRunner
 class TestExportPdfCommand:
     @pytest.fixture(params=[ExportPdfCommand_0_9x, ExportPdfCommand_1_0])
     def command_class(self, request: pytest.FixtureRequest) -> ExportPdfCommand:
-        return request.param  # type: ignore[no-any-return,attr-defined]
+        return request.param  # type: ignore[no-any-return]
 
     def test_no_pdf_version(self, command_class: Type[ExportPdfCommand]) -> None:
         command = command_class("in.svg", "out.pdf")

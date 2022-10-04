@@ -1,6 +1,12 @@
 ## Changes
 
-### Release 1.2.0a1 (2022-08-31)
+### Next Release (unreleased)
+
+#### Testing
+
+- Update to `mypy==0.982` for testing. Fix spurious mypy errors.
+
+### Release 1.2.0rc1 (2022-08-31)
 
 First public release to PyPI. Moved project to
 [GitHub](https://github.com/barnhunt/barnhunt).
