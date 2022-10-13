@@ -5,12 +5,16 @@ from typing import Iterator
 
 import click
 import pytest
+from click.testing import CliRunner
+from pytest_mock import MockerFixture
 
 from barnhunt.cli import default_2up_output_file
 from barnhunt.cli import default_inkscape_command
 from barnhunt.cli import default_shell_mode
+from barnhunt.cli import InkexRequirementType
 from barnhunt.cli import main
 from barnhunt.cli import pdf_2up
+from barnhunt.installer import DEFAULT_REQUIREMENTS
 
 
 @pytest.mark.parametrize(
@@ -88,3 +92,34 @@ def test_main(capsys: pytest.CaptureFixture[str]) -> None:
         main(["--help"])
     std = capsys.readouterr()
     assert "export pdfs from inkscape" in std.out.lower()
+
+
+class Test_InkexRequirementType:
+    @pytest.fixture
+    def req_type(self) -> InkexRequirementType:
+        return InkexRequirementType()
+
+    def test_from_requirement(self, req_type: InkexRequirementType) -> None:
+        req = DEFAULT_REQUIREMENTS[0]
+        assert req_type.convert(req, None, None) is req
+
+    def test_from_string(self, req_type: InkexRequirementType) -> None:
+        req = req_type.convert("inkex_bh", None, None)
+        assert req.name == "inkex_bh"
+
+    def test_unknown_name(self, req_type: InkexRequirementType) -> None:
+        with pytest.raises(click.BadParameter):
+            req_type.convert("unknown", None, None)
+
+
+def test_install_target_from_inkscape(mocker: MockerFixture, tmp_path: Path) -> None:
+    target = tmp_path
+    get_user_data_directory = mocker.patch(
+        "barnhunt.cli.get_user_data_directory", return_value=target
+    )
+    Installer = mocker.patch("barnhunt.cli.Installer")
+    runner = CliRunner()
+    result = runner.invoke(main, ("install", "--inkscape", "myinkscape"))
+    assert result.exit_code == 0
+    get_user_data_directory.assert_called_once_with("myinkscape")
+    Installer.assert_called_once_with(target)

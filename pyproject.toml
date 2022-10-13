@@ -21,8 +21,12 @@ dependencies = [
     "importlib_metadata; python_version < '3.8'",
     "jinja2 >= 3",
     "lxml",
+    "marshmallow",
+    "marshmallow_dataclass",
+    "packaging",
     "pexpect >= 4.8",
     "pikepdf",
+    "requests",
     "tinycss2",
     "typing_extensions; python_version < '3.10'",
 ]
@@ -50,6 +54,11 @@ include = ["barnhunt"]
 
 [tool.setuptools_scm]
 
+
+################################################################
+#
+# coverage
+#
 [tool.coverage.paths]
 paths = [
     "barnhunt",
@@ -76,14 +85,22 @@ exclude_lines = [
     '^\s*raise NotImplementedError()',
 ]
 
+################################################################
+#
+# pytest
+#
 [tool.pytest.ini_options]
 norecursedirs = [
     ".tox",
     "build",
 ]
+addopts = "--strict-markers"
 filterwarnings = [
     # pexpect (as of 4.8) still supports py27, so uses setDaemon
     "ignore:setDaemon.*deprecated:DeprecationWarning:pexpect",
+]
+markers = [
+    "requiresinternet: marks tests requiring an internet connection",
 ]
 
 ################################################################

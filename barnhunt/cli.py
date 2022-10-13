@@ -6,13 +6,16 @@ import random
 import sys
 from collections import defaultdict
 from contextlib import ExitStack
+from functools import partial
 from itertools import count
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any
 from typing import BinaryIO
 from typing import Callable
 from typing import Iterable
+from typing import Sequence
 from typing import TypeVar
 
 import click
@@ -21,6 +24,10 @@ from atomicwrites import atomic_write
 from .coursemaps import Coursemap
 from .coursemaps import iter_coursemaps
 from .inkscape.runner import inkscape_runner
+from .inkscape.utils import get_user_data_directory
+from .installer import DEFAULT_REQUIREMENTS
+from .installer import InkexRequirement
+from .installer import Installer
 from .pager import get_pager
 from .pdfutil import concat_pdfs
 from .pdfutil import two_up
@@ -98,6 +105,22 @@ def default_inkscape_command() -> str:
     return "inkscape"
 
 
+def inkscape_command_option(**kwargs: Any) -> Callable[..., Any]:
+    return click.option(
+        "--inkscape-command",
+        "--inkscape",
+        metavar="COMMAND",
+        envvar="INKSCAPE_COMMAND",  # NB: this is what inkex uses
+        default=default_inkscape_command,
+        help=f"""
+        Name of (or path to) inkscape executable to use for exporting PDFs.
+        (Equivalently, you may set the $INKSCAPE_COMMAND environment variable.)
+        The default is {default_inkscape_command()!r}.
+        """,
+        **kwargs,
+    )
+
+
 def default_shell_mode() -> bool:
     """Whether to use Inkscape's shell-mode by default."""
     if sys.platform == "darwin":
@@ -129,18 +152,7 @@ def default_shell_mode() -> bool:
     The default is {os.cpu_count()} (the number of CPUs detected on this platform).
     """,
 )
-@click.option(
-    "--inkscape-command",
-    "--inkscape",
-    metavar="COMMAND",
-    envvar="INKSCAPE_COMMAND",  # NB: this is what inkex uses
-    default=default_inkscape_command,
-    help=f"""
-    Name of (or path to) inkscape executable to use for exporting PDFs.
-    (Equivalently, you may set the $INKSCAPE_COMMAND environment variable.)
-    The default is {default_inkscape_command()!r}.
-    """,
-)
+@inkscape_command_option()
 @click.option(
     "--shell-mode-inkscape/--no-shell-mode-inkscape",
     "shell_mode",
@@ -317,3 +329,64 @@ def pdf_2up(pdffiles: Iterable[BinaryIO], output_file: BinaryIO) -> None:
 
     """
     two_up(pdffiles, output_file)
+
+
+class InkexRequirementType(click.ParamType):
+    name = "requirement"
+
+    def convert(
+        self,
+        value: str | InkexRequirement | None,
+        param: click.Parameter | None,
+        ctx: click.Context | None,
+    ) -> InkexRequirement:
+        if isinstance(value, InkexRequirement):
+            return value
+        try:
+            return InkexRequirement(value or "")
+        except ValueError as exc:
+            self.fail(str(exc), param, ctx)
+
+
+def set_default_target(
+    ctx: click.Context, param: click.Parameter, inkscape_command: str
+) -> str:
+    if ctx.default_map is None:
+        ctx.default_map = {}
+    ctx.default_map["target"] = partial(get_user_data_directory, inkscape_command)
+    return inkscape_command
+
+
+@main.command()
+@click.argument(
+    "requirements",
+    type=InkexRequirementType(),
+    nargs=-1,
+)
+@click.option(
+    "--upgrade/--no-upgrade", "-U", help="Upgrade to the newest available versions."
+)
+@click.option("--pre/--no-pre", help="Include pre-release and development versions.")
+@click.option("-n", "--dry-run/--no-dry-run", help="Just show what would be done.")
+@click.option(
+    "--target",
+    type=click.Path(exists=True, file_okay=False, writable=True, path_type=Path),
+    help="""Where to install distributions.
+    Defaults to inkscape’s user data directory (e.g. $XDG_CONFIG_HOME/inkscape).""",
+)
+@inkscape_command_option(
+    is_eager=True,
+    expose_value=False,
+    callback=set_default_target,
+)
+def install(
+    target: Path,
+    upgrade: bool,
+    pre: bool,
+    dry_run: bool,
+    requirements: Sequence[InkexRequirement],
+) -> None:
+    """Install extensions and/or symbol sets."""
+    installer = Installer(target)
+    for requirement in requirements or DEFAULT_REQUIREMENTS:
+        installer.install(requirement, pre_flag=pre, upgrade=upgrade, dry_run=dry_run)
