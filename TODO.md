@@ -1,5 +1,11 @@
 # To-Dos and Ideas
 
+## Installer
+
+- Need better logging/diagnostics.
+
+- ... and documentation
+
 ## Templating
 
 - Add a `metadata` jinja global (or some such) to provide access to document metadata.

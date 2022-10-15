@@ -2,6 +2,14 @@
 
 ### Next Release (unreleased)
 
+### Extension and Symbol Set Installation
+
+- This release add a `barnhunt install` (and `uninstall`) sub-command
+  to simplify installation of the
+  [inkex-bh](https://github.com/barnhunt/inkex-bh) Inkscape extensions
+  and [bh-symbols](https://github.com/barnhunt/bh-symbols) symbol
+  sets.
+
 #### Testing
 
 - Update to `mypy==0.982` for testing. Fix spurious mypy errors.
