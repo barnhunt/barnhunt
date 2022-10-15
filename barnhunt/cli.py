@@ -334,18 +334,26 @@ def pdf_2up(pdffiles: Iterable[BinaryIO], output_file: BinaryIO) -> None:
 class InkexRequirementType(click.ParamType):
     name = "requirement"
 
+    def __init__(self, allow_specifiers: bool = True):
+        self.allow_specifiers = allow_specifiers
+
     def convert(
         self,
         value: str | InkexRequirement | None,
         param: click.Parameter | None,
         ctx: click.Context | None,
     ) -> InkexRequirement:
-        if isinstance(value, InkexRequirement):
-            return value
-        try:
-            return InkexRequirement(value or "")
-        except ValueError as exc:
-            self.fail(str(exc), param, ctx)
+        if not isinstance(value, InkexRequirement):
+            try:
+                value = InkexRequirement(value or "")
+            except ValueError as exc:
+                self.fail(str(exc), param, ctx)
+        if not self.allow_specifiers:
+            if value.specifier:
+                self.fail("specifiers not allowed in requirement")
+            if value.url:
+                self.fail("direct reference (URL) not allowed in requirement")
+        return value
 
 
 def set_default_target(
@@ -387,6 +395,35 @@ def install(
     requirements: Sequence[InkexRequirement],
 ) -> None:
     """Install extensions and/or symbol sets."""
-    installer = Installer(target)
+    installer = Installer(target, dry_run=dry_run)
     for requirement in requirements or DEFAULT_REQUIREMENTS:
-        installer.install(requirement, pre_flag=pre, upgrade=upgrade, dry_run=dry_run)
+        installer.install(requirement, pre_flag=pre, upgrade=upgrade)
+
+
+@main.command()
+@click.argument(
+    "requirements",
+    type=InkexRequirementType(allow_specifiers=False),
+    nargs=-1,
+)
+@click.option("-n", "--dry-run/--no-dry-run", help="Just show what would be done.")
+@click.option(
+    "--target",
+    type=click.Path(exists=True, file_okay=False, writable=True, path_type=Path),
+    help="""Where to install distributions.
+    Defaults to inkscape’s user data directory (e.g. $XDG_CONFIG_HOME/inkscape).""",
+)
+@inkscape_command_option(
+    is_eager=True,
+    expose_value=False,
+    callback=set_default_target,
+)
+def uninstall(
+    target: Path,
+    dry_run: bool,
+    requirements: Sequence[InkexRequirement],
+) -> None:
+    """Uninstall extensions and/or symbol sets."""
+    installer = Installer(target, dry_run=dry_run)
+    for requirement in requirements or DEFAULT_REQUIREMENTS:
+        installer.uninstall(requirement)

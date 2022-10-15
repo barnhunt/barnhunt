@@ -215,7 +215,9 @@ def make_distzip(tmp_path: Path) -> ZipMaker:
 
 
 @pytest.mark.requiresinternet
-def test_Installer_from_gh(target: Path, caplog: pytest.LogCaptureFixture) -> None:
+def test_Installer_install_from_gh(
+    target: Path, caplog: pytest.LogCaptureFixture
+) -> None:
     caplog.set_level(logging.DEBUG)
     installer = Installer(target)
     installer.install(InkexRequirement("inkex-bh==1.0.0rc3"))
@@ -228,7 +230,7 @@ def test_Installer_from_gh(target: Path, caplog: pytest.LogCaptureFixture) -> No
     assert "installing inkex-bh==1.0.0rc3" in caplog.text
 
 
-def test_Installer_from_file(
+def test_Installer_install_from_file(
     target: Path, make_distzip: ZipMaker, caplog: pytest.LogCaptureFixture
 ) -> None:
     caplog.set_level(logging.DEBUG)
@@ -242,13 +244,13 @@ def test_Installer_from_file(
     assert "installing bh-symbols==0.1a1+test" in caplog.text
 
 
-def test_Installer_dry_run(
+def test_Installer_install_dry_run(
     target: Path, make_distzip: ZipMaker, caplog: pytest.LogCaptureFixture
 ) -> None:
     caplog.set_level(logging.DEBUG)
-    installer = Installer(target)
+    installer = Installer(target, dry_run=True)
     download_url = make_distzip("bh_symbols", "0.1a1+test", "new")
-    installer.install(InkexRequirement(f"bh-symbols @ {download_url}"), dry_run=True)
+    installer.install(InkexRequirement(f"bh-symbols @ {download_url}"))
     assert {p.name for p in Path(target, "symbols").iterdir()} == {
         "old",
     }
@@ -256,7 +258,7 @@ def test_Installer_dry_run(
     assert "installing bh-symbols==0.1a1+test" in caplog.text
 
 
-def test_Installer_already_installed(
+def test_Installer_install_already_installed(
     target: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
     caplog.set_level(logging.DEBUG)
@@ -266,7 +268,7 @@ def test_Installer_already_installed(
     assert "bh.symbols==0.1rc1 is already installed" in caplog.text
 
 
-def test_Installer_no_distribution_found(
+def test_Installer_install_no_distribution_found(
     target: Path, caplog: pytest.LogCaptureFixture, mocker: MockerFixture
 ) -> None:
     github = mocker.patch("barnhunt.installer.github")
@@ -277,7 +279,7 @@ def test_Installer_no_distribution_found(
         installer.install(InkexRequirement("inkex-bh"))
 
 
-def test_Installer_up_to_date(
+def test_Installer_install_up_to_date(
     target: Path, caplog: pytest.LogCaptureFixture, mocker: MockerFixture
 ) -> None:
     github = mocker.patch("barnhunt.installer.github")
@@ -289,7 +291,7 @@ def test_Installer_up_to_date(
 
 
 @pytest.mark.parametrize("pre_flag", [False, True])
-def test_Installer_pre_flag(
+def test_Installer_install_pre_flag(
     target: Path,
     pre_flag: bool,
     make_distzip: ZipMaker,
@@ -313,3 +315,21 @@ def test_Installer_pre_flag(
     else:
         assert "installing inkex-bh==1.0.1" in caplog.text
         assert "installing inkex-bh==1.1rc1" not in caplog.text
+
+
+def test_Installer_uninstall(
+    target: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.DEBUG)
+    installer = Installer(target)
+    installer.uninstall(InkexRequirement("inkex-bh"))
+    assert {p.name for p in Path(target, "extensions").iterdir()} == {
+        "other",
+        "nondist",
+    }
+    assert len(caplog.records) == 0
+
+    installer.uninstall(InkexRequirement("bh.symbols"))
+    assert {p.name for p in Path(target, "symbols").iterdir()} == set()
+    assert "uninstalling bh.symbols==0.1rc1" in caplog.text

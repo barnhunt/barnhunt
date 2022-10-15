@@ -11,6 +11,7 @@ from pathlib import Path
 from tempfile import TemporaryFile
 from typing import IO
 from typing import Iterator
+from typing import Mapping
 from typing import NamedTuple
 from typing import NewType
 from typing import TYPE_CHECKING
@@ -105,35 +106,35 @@ def open_zipfile(url: DownloadUrl) -> Iterator[zipfile.ZipFile]:
 
 
 class Installer:
-    def __init__(self, target: StrPath):
+    def __init__(self, target: StrPath, dry_run: bool = False):
         self.target = Path(target)
+        self.dry_run = dry_run
 
     def install(
         self,
         requirement: InkexRequirement,
         pre_flag: bool = False,
         upgrade: bool = False,
-        dry_run: bool = False,
     ) -> None:
         display_name = requirement.name
         canonical_name = canonicalize_name(requirement.name)
         specifiers = requirement.specifier
         project = requirement.project
-        prereleases = True if pre_flag else None
 
         install_path = self.target / project.install_dir
         installed = find_installed(install_path, canonical_name)
         # FIXME: warn if len(installed) > 1
         versions = installed.keys()
-        # XXX: should pass prereleases=True?  If we have matching pre-release installed
-        # it's okay?
-        matching_version = max(specifiers.filter(versions, prereleases), default=None)
+        matching_version = max(
+            specifiers.filter(versions, prereleases=True), default=None
+        )
         if matching_version and not upgrade and requirement.url is None:
             log.info("%s==%s is already installed", display_name, matching_version)
             return
 
         if requirement.url is None:
             dist_urls = find_distributions(project)
+            prereleases = True if pre_flag else None
             try:
                 version = max(specifiers.filter(dist_urls.keys(), prereleases))
             except ValueError as exc:
@@ -157,16 +158,25 @@ class Installer:
                 assert metadata.version == version
             assert metadata.canonical_name == canonical_name
 
-            for version_, distdir in installed.items():
-                log.info("uninstalling %s==%s at %s", display_name, version_, distdir)
-                if not dry_run:
-                    shutil.rmtree(distdir)
+            self._do_uninstall(display_name, installed)
 
             log.info(
                 "installing %s==%s to %s", display_name, metadata.version, install_path
             )
-            if not dry_run:
+            if not self.dry_run:
                 zf.extractall(install_path)
+
+    def uninstall(self, requirement: InkexRequirement) -> None:
+        canonical_name = canonicalize_name(requirement.name)
+        install_path = self.target / requirement.project.install_dir
+        installed = find_installed(install_path, canonical_name)
+        self._do_uninstall(requirement.name, installed)
+
+    def _do_uninstall(self, name: str, installed: Mapping[Version, Path]) -> None:
+        for version, distdir in installed.items():
+            log.info("uninstalling %s==%s at %s", name, version, distdir)
+            if not self.dry_run:
+                shutil.rmtree(distdir)
 
 
 def find_installed(
