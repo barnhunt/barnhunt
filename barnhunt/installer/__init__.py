@@ -135,18 +135,33 @@ class Installer:
         project = requirement.project
 
         install_path = self.target / project.install_dir
+        log.info("install_path is %s", install_path)
         installed = find_installed(install_path, canonical_name)
-        # FIXME: warn if len(installed) > 1
         versions = installed.keys()
+        if len(versions) > 1:
+            log.warning(
+                "found multiple installed versions of %s: %s",
+                display_name,
+                ", ".join(map(str, versions)),
+            )
         matching_version = max(
             specifiers.filter(versions, prereleases=True), default=None
         )
-        if matching_version and not upgrade and requirement.url is None:
-            log.info("%s==%s is already installed", display_name, matching_version)
-            return
+        if matching_version:
+            if not upgrade and requirement.url is None:
+                log.warning(
+                    "%s==%s is already installed", display_name, matching_version
+                )
+                return
+            log.debug("found installed %s==%s", display_name, matching_version)
 
         if requirement.url is None:
             dist_urls = find_distributions(project, self.github_token)
+            log.debug(
+                "found distributions for %s: %s",
+                display_name,
+                ", ".join(map(str, dist_urls.keys())),
+            )
             prereleases = True if pre_flag else None
             try:
                 version = max(specifiers.filter(dist_urls.keys(), prereleases))
@@ -156,7 +171,7 @@ class Installer:
                 ) from exc
 
             if matching_version == version:
-                log.info("%s==%s is up-to-date", display_name, version)
+                log.warning("%s==%s is up-to-date", display_name, version)
                 return
             download_url = dist_urls[version]
         else:
@@ -173,9 +188,7 @@ class Installer:
 
             self._do_uninstall(display_name, installed)
 
-            log.info(
-                "installing %s==%s to %s", display_name, metadata.version, install_path
-            )
+            log.warning("installing %s==%s", display_name, metadata.version)
             if not self.dry_run:
                 zf.extractall(install_path)
 
@@ -187,23 +200,26 @@ class Installer:
 
     def _do_uninstall(self, name: str, installed: Mapping[Version, Path]) -> None:
         for version, distdir in installed.items():
-            log.info("uninstalling %s==%s at %s", name, version, distdir)
+            log.warning("uninstalling %s==%s", name, version)
+            log.info("removing %s", distdir)
             if not self.dry_run:
                 shutil.rmtree(distdir)
 
 
 def find_installed(
-    install_path: Path, canonical_name: NormalizedName
+    install_path: StrPath, canonical_name: NormalizedName
 ) -> dict[Version, Path]:
+    install_path = Path(install_path)
     installed: dict[Version, Path] = {}
-    for distdir in Path(install_path).iterdir():
-        try:
-            metadata = metadata_from_distdir(distdir)
-        except InvalidDistribution:
-            continue
-        if metadata.canonical_name == canonical_name:
-            # FIXME: warn/fix on duplicate version?
-            installed[metadata.version] = distdir
+    if install_path.is_dir():
+        for distdir in install_path.iterdir():
+            try:
+                metadata = metadata_from_distdir(distdir)
+            except InvalidDistribution:
+                continue
+            if metadata.canonical_name == canonical_name:
+                # FIXME: warn/fix on duplicate version?
+                installed[metadata.version] = distdir
     return installed
 
 

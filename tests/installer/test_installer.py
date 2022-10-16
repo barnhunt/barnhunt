@@ -4,13 +4,11 @@ import datetime
 import io
 import itertools
 import json
-import logging
 import os
+import re
 import zipfile
 from pathlib import Path
 from pathlib import PurePosixPath
-from typing import Any
-from typing import Callable
 from typing import Iterable
 from urllib.parse import urlunsplit
 
@@ -92,26 +90,55 @@ def test_functional_download_zipfile() -> None:
         assert "org.dairiki.inkex_bh/METADATA.json" in zf.namelist()
 
 
-def make_distdir(dist_path: Path, metadata: dict[str, Any] | None = None) -> Path:
-    dist_path.mkdir()
-    Path(dist_path, "junk.txt").touch()
-    if metadata is not None:
-        Path(dist_path, "METADATA.json").write_text(json.dumps(metadata))
-    return dist_path
+class DummyTarget:
+    def __init__(self, path: Path):
+        path.mkdir(exist_ok=True)
+        self.path = path
+
+    def add_dist(
+        self,
+        dir_name: str | None = None,
+        **metadata: str,  # name and version, mostly
+    ) -> Path:
+        if dir_name:
+            dist_path = self.path / dir_name
+        else:
+            base_name = re.sub(r"(?i)[^a-z0-9]", "_", metadata.get("name", "distdir"))
+            dist_paths = (self.path / f"{base_name}_{n}" for n in itertools.count(1))
+            for dist_path in dist_paths:
+                if not dist_path.exists():
+                    break
+        dist_path.mkdir(parents=True)
+        Path(dist_path, "junk.txt").touch()
+        if metadata:
+            Path(dist_path, "METADATA.json").write_text(json.dumps(metadata))
+        return dist_path
+
+    def __fspath__(self) -> str:
+        return os.fspath(self.path)
 
 
-def test_find_installed(tmp_path: Path) -> None:
-    make_distdir(tmp_path / "not_a_dist")
-    make_distdir(
-        tmp_path / "wrong_dist", metadata=dict(name="wrong-proj", version="1.0")
-    )
-    dist_path = make_distdir(
-        tmp_path / "distdir", metadata=dict(name="test_proj", version="1.2")
-    )
+@pytest.fixture
+def target(tmp_path: Path) -> DummyTarget:
+    return DummyTarget(tmp_path / "target")
 
-    assert find_installed(tmp_path, canonicalize_name("test.proj")) == {
+
+def test_find_installed(target: DummyTarget) -> None:
+    target.add_dist("not_a_dist")
+    target.add_dist(name="wrong-proj", version="1.0")
+    dist_path = target.add_dist(name="test_proj", version="1.2")
+
+    assert find_installed(target, canonicalize_name("test.proj")) == {
         Version("1.2"): dist_path,
     }
+
+
+@pytest.mark.parametrize("dir_exists", [False, True])
+def test_find_installed_raises(dir_exists: bool, tmp_path: Path) -> None:
+    distdir = tmp_path / "distdir"
+    if dir_exists:
+        distdir.mkdir()
+    assert find_installed(distdir, canonicalize_name("inkex-bh")) == {}
 
 
 datetime_now = datetime.datetime.now(datetime.timezone.utc)
@@ -183,46 +210,38 @@ def test_find_distributions(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def target(tmp_path: Path) -> Path:
-    extensions = tmp_path / "extensions"
-    extensions.mkdir()
-    make_distdir(extensions / "other", metadata=dict(name="other", version="1.0"))
-    make_distdir(extensions / "nondist")
-
-    symbols = tmp_path / "symbols"
-    symbols.mkdir()
-    make_distdir(symbols / "old", metadata=dict(name="bh-symbols", version="0.1rc1"))
-
-    return tmp_path
+def target1(target: DummyTarget) -> Path:
+    target.add_dist("extensions/other", name="other", version="1.0")
+    target.add_dist("extensions/nondist")
+    target.add_dist("symbols/old", name="bh-symbols", version="0.1rc1")
+    return target.path
 
 
-ZipMaker = Callable[..., str]
+class ZipMaker:
+    def __init__(self, zip_dir: Path):
+        zip_dir.mkdir(exist_ok=True)
+        self.zip_dir = zip_dir
+        self._zip_files = (zip_dir / f"test{n}.zip" for n in itertools.count(1))
+
+    def __call__(self, install_dir: str = "new", **metadata: str) -> str:
+        zip_file = next(self._zip_files)
+        with zipfile.ZipFile(zip_file, "w") as zf:
+            zf.writestr(f"{install_dir}/METADATA.json", json.dumps(metadata))
+        return urlunsplit(("file", "", str(PurePosixPath(zip_file.resolve())), "", ""))
 
 
 @pytest.fixture
-def make_distzip(tmp_path: Path) -> ZipMaker:
-    zip_dir = tmp_path / "test-zips"
-    zip_dir.mkdir()
-    zip_files = (zip_dir / f"test{n}.zip" for n in itertools.count(1))
-
-    def maker(name: str, version: str, install_dir: str = "new_install") -> str:
-        zip_file = next(zip_files)
-        with zipfile.ZipFile(zip_file, "w") as zf:
-            zf.writestr(
-                f"{install_dir}/METADATA.json",
-                json.dumps({"name": name, "version": version}),
-            )
-        return urlunsplit(("file", "", str(PurePosixPath(zip_file.resolve())), "", ""))
-
-    return maker
+def zip_maker(tmp_path: Path) -> ZipMaker:
+    return ZipMaker(tmp_path / "test-zips")
 
 
 @pytest.mark.requiresinternet
 @mayberatelimited
 def test_Installer_install_from_gh(
-    target: Path, caplog: pytest.LogCaptureFixture
+    target: DummyTarget, caplog: pytest.LogCaptureFixture
 ) -> None:
-    caplog.set_level(logging.DEBUG)
+    target.add_dist("extensions/other", name="other", version="1.0")
+    target.add_dist("extensions/nondist")
     installer = Installer(target, github_token=os.environ.get("GITHUB_TOKEN"))
     installer.install(InkexRequirement("inkex-bh==1.0.0rc3"))
     assert {p.name for p in Path(target, "extensions").iterdir()} == {
@@ -234,38 +253,28 @@ def test_Installer_install_from_gh(
     assert "installing inkex-bh==1.0.0rc3" in caplog.text
 
 
+@pytest.mark.parametrize("dry_run", [False, True])
 def test_Installer_install_from_file(
-    target: Path, make_distzip: ZipMaker, caplog: pytest.LogCaptureFixture
+    dry_run: bool,
+    target: DummyTarget,
+    zip_maker: ZipMaker,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
-    caplog.set_level(logging.DEBUG)
-    installer = Installer(target)
-    download_url = make_distzip("bh_symbols", "0.1a1+test", "new")
+    target.add_dist("symbols/old", name="bh-symbols", version="0.1rc1")
+    installer = Installer(target, dry_run=dry_run)
+    download_url = zip_maker(name="bh_symbols", version="0.1a1+test")
     installer.install(InkexRequirement(f"bh-symbols @ {download_url}"))
     assert {p.name for p in Path(target, "symbols").iterdir()} == {
-        "new",
-    }
-    assert "uninstalling bh-symbols==0.1rc1" in caplog.text
-    assert "installing bh-symbols==0.1a1+test" in caplog.text
-
-
-def test_Installer_install_dry_run(
-    target: Path, make_distzip: ZipMaker, caplog: pytest.LogCaptureFixture
-) -> None:
-    caplog.set_level(logging.DEBUG)
-    installer = Installer(target, dry_run=True)
-    download_url = make_distzip("bh_symbols", "0.1a1+test", "new")
-    installer.install(InkexRequirement(f"bh-symbols @ {download_url}"))
-    assert {p.name for p in Path(target, "symbols").iterdir()} == {
-        "old",
+        "old" if dry_run else "new"
     }
     assert "uninstalling bh-symbols==0.1rc1" in caplog.text
     assert "installing bh-symbols==0.1a1+test" in caplog.text
 
 
 def test_Installer_install_already_installed(
-    target: Path, caplog: pytest.LogCaptureFixture
+    target: DummyTarget, caplog: pytest.LogCaptureFixture
 ) -> None:
-    caplog.set_level(logging.DEBUG)
+    target.add_dist("symbols/old", name="bh-symbols", version="0.1rc1")
     installer = Installer(target)
     installer.install(InkexRequirement("bh.symbols"))
     assert {p.name for p in Path(target, "symbols").iterdir()} == {"old"}
@@ -273,67 +282,79 @@ def test_Installer_install_already_installed(
 
 
 def test_Installer_install_no_distribution_found(
-    target: Path, caplog: pytest.LogCaptureFixture, mocker: MockerFixture
+    target: DummyTarget, caplog: pytest.LogCaptureFixture, mocker: MockerFixture
 ) -> None:
     github = mocker.patch("barnhunt.installer.github")
     github.iter_releases.return_value = iter([])
-    caplog.set_level(logging.DEBUG)
     installer = Installer(target)
     with pytest.raises(NoSuchDistribution):
         installer.install(InkexRequirement("inkex-bh"))
 
 
 def test_Installer_install_up_to_date(
-    target: Path, caplog: pytest.LogCaptureFixture, mocker: MockerFixture
+    target: DummyTarget, caplog: pytest.LogCaptureFixture, mocker: MockerFixture
 ) -> None:
+    target.add_dist("symbols/old", name="bh-symbols", version="0.1rc1")
     github = mocker.patch("barnhunt.installer.github")
     github.iter_releases.return_value = iter([make_release("0.1rc1", [make_asset()])])
-    caplog.set_level(logging.DEBUG)
     installer = Installer(target)
     installer.install(InkexRequirement("bh_symbols"), upgrade=True)
     assert "bh_symbols==0.1rc1 is up-to-date" in caplog.text
 
 
+def test_Installer_install_multiple_installed(
+    target: DummyTarget, caplog: pytest.LogCaptureFixture
+) -> None:
+    target.add_dist("symbols/dup1", name="bh-symbols", version="0.1rc1")
+    target.add_dist("symbols/dup2", name="bh-symbols", version="0.2")
+    installer = Installer(target)
+    installer.install(InkexRequirement("bh.symbols"))
+    assert {p.name for p in Path(target, "symbols").iterdir()} == {"dup1", "dup2"}
+    assert "found multiple installed versions of bh.symbols" in caplog.text
+    assert "bh.symbols==0.2 is already installed" in caplog.text
+
+
 @pytest.mark.parametrize("pre_flag", [False, True])
 def test_Installer_install_pre_flag(
-    target: Path,
+    target: DummyTarget,
     pre_flag: bool,
-    make_distzip: ZipMaker,
+    zip_maker: ZipMaker,
     caplog: pytest.LogCaptureFixture,
     mocker: MockerFixture,
 ) -> None:
     github = mocker.patch("barnhunt.installer.github")
-    github.iter_releases.return_value = iter(
-        [
-            make_release("1.0.1", [make_asset(make_distzip("inkex-bh", "1.0.1"))]),
-            make_release("1.1rc1", [make_asset(make_distzip("inkex-bh", "1.1rc1"))]),
-        ]
+    github.iter_releases.return_value = (
+        make_release(version, [make_asset(zip_maker(name="inkex-bh", version=version))])
+        for version in ("1.0.1", "1.1rc1")
     )
-    caplog.set_level(logging.DEBUG)
+
     installer = Installer(target)
     installer.install(InkexRequirement("inkex-bh"), pre_flag=pre_flag)
-    assert any(p.name == "new_install" for p in Path(target, "extensions").iterdir())
-    if pre_flag:
-        assert "installing inkex-bh==1.0.1" not in caplog.text
-        assert "installing inkex-bh==1.1rc1" in caplog.text
-    else:
-        assert "installing inkex-bh==1.0.1" in caplog.text
-        assert "installing inkex-bh==1.1rc1" not in caplog.text
+
+    assert {p.name for p in Path(target, "extensions").iterdir()} == {"new"}
+
+    selected, unselected = ("1.1rc1", "1.0.1") if pre_flag else ("1.0.1", "1.1rc1")
+    assert f"installing inkex-bh=={selected}" in caplog.text
+    assert f"installing inkex-bh=={unselected}" not in caplog.text
 
 
+@pytest.mark.parametrize("was_installed", [False, True])
 def test_Installer_uninstall(
-    target: Path,
+    was_installed: bool,
+    target: DummyTarget,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    caplog.set_level(logging.DEBUG)
+    target.add_dist("extensions/other", name="other", version="1.0")
+    target.add_dist("extensions/nondist")
+    if was_installed:
+        target.add_dist("extensions/old", name="inkex_bh", version="42.0")
     installer = Installer(target)
     installer.uninstall(InkexRequirement("inkex-bh"))
     assert {p.name for p in Path(target, "extensions").iterdir()} == {
         "other",
         "nondist",
     }
-    assert len(caplog.records) == 0
-
-    installer.uninstall(InkexRequirement("bh.symbols"))
-    assert {p.name for p in Path(target, "symbols").iterdir()} == set()
-    assert "uninstalling bh.symbols==0.1rc1" in caplog.text
+    if was_installed:
+        assert "uninstalling inkex-bh==42.0" in caplog.text
+    else:
+        assert len(caplog.records) == 0
