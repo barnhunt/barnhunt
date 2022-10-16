@@ -29,6 +29,8 @@ from barnhunt.installer import Installer
 from barnhunt.installer import NoSuchDistribution
 from barnhunt.installer import open_zipfile
 
+from ratelimit import mayberatelimited  # noreorder (test library)
+
 
 def test_InkexRequirement_project() -> None:
     req = InkexRequirement("inkex_bh")
@@ -80,6 +82,7 @@ def test_open_zipfile(mocker: MockerFixture, zip_data: bytes) -> None:
 
 
 @pytest.mark.requiresinternet
+@mayberatelimited
 def test_functional_download_zipfile() -> None:
     url = DownloadUrl(
         "https://github.com/barnhunt/inkex-bh/releases/download/v1.0.0rc3/"
@@ -215,6 +218,7 @@ def make_distzip(tmp_path: Path) -> ZipMaker:
 
 
 @pytest.mark.requiresinternet
+@mayberatelimited
 def test_Installer_install_from_gh(
     target: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
