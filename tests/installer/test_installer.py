@@ -5,6 +5,7 @@ import io
 import itertools
 import json
 import logging
+import os
 import zipfile
 from pathlib import Path
 from pathlib import PurePosixPath
@@ -75,14 +76,13 @@ def test_copy_to_tmp() -> None:
 
 
 def test_open_zipfile(mocker: MockerFixture, zip_data: bytes) -> None:
-    requests = mocker.patch("barnhunt.installer.request")
-    requests.urlopen.return_value = io.BytesIO(zip_data)
+    urlopen = mocker.patch("barnhunt.installer.urlopen")
+    urlopen.return_value = io.BytesIO(zip_data)
     with open_zipfile(DownloadUrl("https://example.com/dummy.zip")) as zf:
         assert zf.namelist() == ["test.txt"]
 
 
 @pytest.mark.requiresinternet
-@mayberatelimited
 def test_functional_download_zipfile() -> None:
     url = DownloadUrl(
         "https://github.com/barnhunt/inkex-bh/releases/download/v1.0.0rc3/"
@@ -179,7 +179,7 @@ def test_find_distributions(mocker: MockerFixture) -> None:
         Version("1.2"): "new",
         Version("1.5dev3+local"): "zip",
     }
-    github.iter_releases.assert_called_once_with("foo", "bar")
+    github.iter_releases.assert_called_once_with("foo", "bar", github_token=None)
 
 
 @pytest.fixture
@@ -223,7 +223,7 @@ def test_Installer_install_from_gh(
     target: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
     caplog.set_level(logging.DEBUG)
-    installer = Installer(target)
+    installer = Installer(target, github_token=os.environ.get("GITHUB_TOKEN"))
     installer.install(InkexRequirement("inkex-bh==1.0.0rc3"))
     assert {p.name for p in Path(target, "extensions").iterdir()} == {
         "other",

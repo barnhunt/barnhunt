@@ -142,6 +142,7 @@ class Test_InkexRequirementType:
 
 
 def test_install_target_from_inkscape(mocker: MockerFixture, tmp_path: Path) -> None:
+    mocker.patch.dict("os.environ", GITHUB_TOKEN="token")
     target = tmp_path
     get_user_data_directory = mocker.patch(
         "barnhunt.cli.get_user_data_directory", return_value=target
@@ -151,7 +152,7 @@ def test_install_target_from_inkscape(mocker: MockerFixture, tmp_path: Path) -> 
     result = runner.invoke(main, ("install", "--inkscape", "myinkscape"))
     assert result.exit_code == 0
     get_user_data_directory.assert_called_once_with("myinkscape")
-    Installer.assert_called_once_with(target, dry_run=False)
+    Installer.assert_called_once_with(target, dry_run=False, github_token="token")
 
 
 def test_uninstall(mocker: MockerFixture, tmp_path: Path) -> None:

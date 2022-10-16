@@ -57,6 +57,9 @@ jobs:
 
     - name: Test with tox
       run: tox
+      env:
+        # GITHUB_TOKEN gives us higher GH REST API rate-limits
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - uses: actions/upload-artifact@v3
       with:

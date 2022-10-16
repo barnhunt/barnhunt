@@ -387,15 +387,25 @@ def set_default_target(
     expose_value=False,
     callback=set_default_target,
 )
+@click.option(
+    "--github-token",
+    envvar="GITHUB_TOKEN",
+    help=""" Token to use for authentication to GitHub’s REST API.
+    This is not typically necessary, but if you are seeing rate-limit errors, using a
+    GitHub “Personal Access Token” here (it does not need to be granted access to any
+    scopes) greatly increases the rate-limit thresholds.  The token may also be passed
+    in the $GITHUB_TOKEN environment variable. """,
+)
 def install(
     target: Path,
     upgrade: bool,
     pre: bool,
     dry_run: bool,
+    github_token: str | None,
     requirements: Sequence[InkexRequirement],
 ) -> None:
     """Install extensions and/or symbol sets."""
-    installer = Installer(target, dry_run=dry_run)
+    installer = Installer(target, dry_run=dry_run, github_token=github_token)
     for requirement in requirements or DEFAULT_REQUIREMENTS:
         installer.install(requirement, pre_flag=pre, upgrade=upgrade)
 

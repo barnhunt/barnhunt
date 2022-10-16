@@ -46,7 +46,11 @@ ReleaseSchema = class_schema(Release)
 
 
 def iter_releases(
-    owner: str, repo: str, per_page: Optional[int] = None
+    owner: str,
+    repo: str,
+    per_page: Optional[int] = None,
+    *,
+    github_token: Optional[str] = None,
 ) -> Iterator[Release]:
     """Fetch releases for a GitHub repository.
 
@@ -57,6 +61,9 @@ def iter_releases(
     """
     session = requests.Session()
     session.headers["Accept"] = "application/vnd.github+json"
+    session.headers["User-Agent"] = "barnhunt (https://github.com/barnhunt/barnhunt)"
+    if github_token is not None:
+        session.headers["Authorization"] = f"Bearer {github_token}"
     releases_schema = ReleaseSchema(many=True)
 
     url = f"https://api.github.com/repos/{quote(owner)}/{quote(repo)}/releases"

@@ -15,7 +15,8 @@ from typing import Mapping
 from typing import NamedTuple
 from typing import NewType
 from typing import TYPE_CHECKING
-from urllib import request
+from urllib.request import Request
+from urllib.request import urlopen
 
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
@@ -94,7 +95,16 @@ def _copy_to_tmp(fp: io.BufferedIOBase) -> Iterator[IO[bytes]]:
 
 @contextmanager
 def open_zipfile(url: DownloadUrl) -> Iterator[zipfile.ZipFile]:
-    resp = request.urlopen(url)
+    resp = urlopen(
+        Request(
+            url,
+            headers={
+                "User-Agent": "barnhunt (https://github.com/barnhunt/barnhunt)",
+                "Accept": "application/zip, application/octet-stream;q=0.9, */*;q=0.1",
+            },
+        )
+    )
+
     with ExitStack() as stack:
         resp = stack.enter_context(resp)
         if resp.seekable():
@@ -106,9 +116,12 @@ def open_zipfile(url: DownloadUrl) -> Iterator[zipfile.ZipFile]:
 
 
 class Installer:
-    def __init__(self, target: StrPath, dry_run: bool = False):
+    def __init__(
+        self, target: StrPath, dry_run: bool = False, github_token: str | None = None
+    ):
         self.target = Path(target)
         self.dry_run = dry_run
+        self.github_token = github_token
 
     def install(
         self,
@@ -133,7 +146,7 @@ class Installer:
             return
 
         if requirement.url is None:
-            dist_urls = find_distributions(project)
+            dist_urls = find_distributions(project, self.github_token)
             prereleases = True if pre_flag else None
             try:
                 version = max(specifiers.filter(dist_urls.keys(), prereleases))
@@ -194,7 +207,9 @@ def find_installed(
     return installed
 
 
-def find_distributions(project: InkexProject) -> dict[Version, DownloadUrl]:
+def find_distributions(
+    project: InkexProject, github_token: str | None = None
+) -> dict[Version, DownloadUrl]:
     """Find zip files assets attached to the releases for a GitHub repository.
 
     This returns a dict mapping versions to download URLs.
@@ -203,7 +218,9 @@ def find_distributions(project: InkexProject) -> dict[Version, DownloadUrl]:
     and those that do not have a zip-file among their assets are ignored.
     """
     dists = {}
-    for release in github.iter_releases(project.gh_owner, project.gh_repo):
+    for release in github.iter_releases(
+        project.gh_owner, project.gh_repo, github_token=github_token
+    ):
         try:
             version = Version(release.tag_name)
         except InvalidVersion:
