@@ -1,6 +1,6 @@
 ## Changes
 
-### Next Release (unreleased)
+### Release 1.2.0rc3 (2022-10-19)
 
 #### Extension/Symbols Installer
 
