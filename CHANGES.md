@@ -1,5 +1,13 @@
 ## Changes
 
+### Next Release (unreleased)
+
+#### Extension/Symbols Installer
+
+- Make code for deducing Inkscape profile directory more robust.
+  (There's now a beter chance this will actually work on Windows.)
+- Support setting Inkscape profile directory via `$INKSCAPE_PROFILE_DIR`.
+
 ### Release 1.2.0rc2 (2022-10-17)
 
 ### Extension and Symbol Set Installation

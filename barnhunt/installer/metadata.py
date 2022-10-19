@@ -145,6 +145,6 @@ def metadata_from_distdir(dir_path: StrPath) -> Metadata:
     try:
         with mdfile.open("rb") as fp:
             json_data = json.load(fp)
-    except FileNotFoundError as exc:
+    except (FileNotFoundError, NotADirectoryError, ValueError) as exc:
         raise InvalidDistribution("No METADATA.json file found in dist") from exc
     return metadata_from_json(json_data)

@@ -89,7 +89,7 @@ def test_metadata_from_zipdist_invalid(tmp_path: Path) -> None:
             metadata_from_distzip(zf)
 
 
-def test_metadata_from_zipdir(tmp_path: Path, json_data: Dict[str, Any]) -> None:
+def test_metadata_from_distdir(tmp_path: Path, json_data: Dict[str, Any]) -> None:
     dist_path = tmp_path / "test.dist"
     dist_path.mkdir()
     Path(dist_path, "METADATA.json").write_text(json.dumps(json_data))
@@ -98,10 +98,12 @@ def test_metadata_from_zipdir(tmp_path: Path, json_data: Dict[str, Any]) -> None
     assert md.name == json_data["name"]
 
 
-def test_metadata_from_zipdir_invalid(tmp_path: Path) -> None:
-    dist_path = tmp_path / "test.dist"
-    dist_path.mkdir()
-    Path(dist_path, "foo.text").write_text("bar")
+def test_metadata_from_distdir_invalid(tmp_path: Path) -> None:
+    Path(tmp_path, "test.empty").mkdir()
+    Path(tmp_path, "test.badmeta").mkdir()
+    Path(tmp_path, "test.badmeta", "METADATA.json").write_text("burp")
+    Path(tmp_path, "test.notadir").touch()
 
-    with pytest.raises(InvalidDistribution):
-        metadata_from_distdir(dist_path)
+    for dist_path in tmp_path.iterdir():
+        with pytest.raises(InvalidDistribution):
+            metadata_from_distdir(dist_path)

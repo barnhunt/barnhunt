@@ -113,7 +113,8 @@ def inkscape_command_option(**kwargs: Any) -> Callable[..., Any]:
         envvar="INKSCAPE_COMMAND",  # NB: this is what inkex uses
         default=default_inkscape_command,
         help=f"""
-        Name of (or path to) inkscape executable to use for exporting PDFs.
+        Name of (or path to) inkscape executable to use for exporting PDFs and for
+        determining the location of the user profile directory.
         (Equivalently, you may set the $INKSCAPE_COMMAND environment variable.)
         The default is {default_inkscape_command()!r}.
         """,
@@ -356,6 +357,18 @@ class InkexRequirementType(click.ParamType):
         return value
 
 
+target_option = click.option(
+    "--target",
+    type=click.Path(exists=True, file_okay=False, writable=True, path_type=Path),
+    envvar="INKSCAPE_PROFILE_DIR",
+    help="""
+    Where to install distributions.
+    Defaults to inkscape’s user data directory, e.g. $XDG_CONFIG_HOME/inkscape, or
+    %APPDATA%\\inkscape on Windows.  This may also be set by setting the
+    $INKSCAPE_PROFILE_DIR environment variable.""",
+)
+
+
 def set_default_target(
     ctx: click.Context, param: click.Parameter, inkscape_command: str
 ) -> str:
@@ -376,12 +389,7 @@ def set_default_target(
 )
 @click.option("--pre/--no-pre", help="Include pre-release and development versions.")
 @click.option("-n", "--dry-run/--no-dry-run", help="Just show what would be done.")
-@click.option(
-    "--target",
-    type=click.Path(exists=True, file_okay=False, writable=True, path_type=Path),
-    help="""Where to install distributions.
-    Defaults to inkscape’s user data directory (e.g. $XDG_CONFIG_HOME/inkscape).""",
-)
+@target_option
 @inkscape_command_option(
     is_eager=True,
     expose_value=False,
@@ -406,6 +414,7 @@ def install(
 ) -> None:
     """Install extensions and/or symbol sets."""
     installer = Installer(target, dry_run=dry_run, github_token=github_token)
+    log.warning("installing to '%s'", target)
     for requirement in requirements or DEFAULT_REQUIREMENTS:
         installer.install(requirement, pre_flag=pre, upgrade=upgrade)
 
@@ -417,12 +426,7 @@ def install(
     nargs=-1,
 )
 @click.option("-n", "--dry-run/--no-dry-run", help="Just show what would be done.")
-@click.option(
-    "--target",
-    type=click.Path(exists=True, file_okay=False, writable=True, path_type=Path),
-    help="""Where to install distributions.
-    Defaults to inkscape’s user data directory (e.g. $XDG_CONFIG_HOME/inkscape).""",
-)
+@target_option
 @inkscape_command_option(
     is_eager=True,
     expose_value=False,
