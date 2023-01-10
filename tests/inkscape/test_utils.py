@@ -12,6 +12,7 @@ from types import SimpleNamespace
 import pytest
 from pytest_mock import MockerFixture
 
+from barnhunt.inkscape.utils import _get_appdata
 from barnhunt.inkscape.utils import get_default_user_data_directory
 from barnhunt.inkscape.utils import get_user_data_directory
 
@@ -69,11 +70,13 @@ def test_get_default_user_data_directory_from_env(
 
 
 @pytest.fixture
-def win32_appdata(monkeypatch: pytest.MonkeyPatch) -> Path:
-    if sys.platform == "win32":
-        return Path(os.environ["APPDATA"])
-
+def mock_windll_SHGetFolderPathW(monkeypatch: pytest.MonkeyPatch) -> None:
     # OCD to get test coverage of the win32 bits under linux
+    if sys.platform == "win32":
+        return
+    if not os.environ.get("BARNHUNT_MOCK_WIN32"):
+        pytest.skip("BARNHUNT_MOCK_WIN32 not set")
+
     monkeypatch.setattr("sys.platform", "win32")
     appdata = Path.home() / "AppData" / "Roaming"
 
@@ -95,8 +98,23 @@ def win32_appdata(monkeypatch: pytest.MonkeyPatch) -> Path:
     )
     monkeypatch.setitem(sys.modules, "ctypes.wintypes", wintypes)
 
-    return appdata
+
+@pytest.mark.skipif(sys.platform != "win32", reason="not Windows system")
+def test_get_default_user_data_directory_from_appdata() -> None:
+    default_user_data_directory = get_default_user_data_directory()
+    assert default_user_data_directory.is_absolute()
+    assert default_user_data_directory.name == "inkscape"
 
 
-def test_get_default_user_data_directory_win32(win32_appdata: Path) -> None:
-    assert get_default_user_data_directory() == win32_appdata / "inkscape"
+@pytest.mark.skipif(sys.platform == "win32", reason="not POSIX system")
+@pytest.mark.usefixtures("mock_windll_SHGetFolderPathW")
+def test_get_default_user_data_directory_from_appdata_coverage() -> None:
+    default_user_data_directory = get_default_user_data_directory()
+    assert default_user_data_directory.is_absolute()
+    assert default_user_data_directory.name == "inkscape"
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="not Windows system")
+def test_get_appdata(monkeypatch: pytest.MonkeyPatch) -> None:
+    appdata = _get_appdata()
+    assert Path(appdata).is_absolute()
