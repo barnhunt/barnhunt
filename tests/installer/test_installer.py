@@ -44,7 +44,7 @@ def test_InkexRequirement_project() -> None:
         ("unknown", "unknown requirement"),
         ("inkex-bh[extra]", "extras not"),
         ("inkex-bh; python_version>'3.6'", "markers not"),
-        ("unparseable requirement", "(?i)parse error"),
+        ("unparseable requirement", "(?i)parse error|expected end"),
     ],
 )
 def test_InkexRequirement_project_raises_value_error(
