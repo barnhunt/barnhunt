@@ -1,5 +1,15 @@
 ## Changes
 
+### Release 1.2.0rc4 (unreleased)
+
+Support python 3.11.
+
+#### Testing
+
+- Test under python 3.11
+- Fix tests for Windows environments where $APPDATA is not set
+- Fix tests for error message changes in packaging>=22
+
 ### Release 1.2.0rc3 (2022-10-19)
 
 #### Extension/Symbols Installer
