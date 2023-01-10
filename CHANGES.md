@@ -1,6 +1,6 @@
 ## Changes
 
-### Release 1.2.0rc4 (unreleased)
+### Release 1.2.0rc4 (2023-01-09)
 
 Support python 3.11.
 
