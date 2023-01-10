@@ -4,6 +4,16 @@
 
 Support python 3.11.
 
+#### Bugs
+
+- Shell-mode runner: fix readline/pexpect disagreement with respect to
+  horizontal scrolling of long lines.  In some cases, when Inkscape is
+  compiled to use GNU readline, long input lines will be scrolled
+  horizontally (even when stdin is not a tty). This messes with
+  pexpect's head. We've now added some basic tests for this, and set
+  some environment variables to try to convince readline not to do the
+  scrolling.
+
 #### Testing
 
 - Test under python 3.11

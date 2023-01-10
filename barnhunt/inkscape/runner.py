@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import locale
 import logging
+import os
 import re
 import shlex
 import threading
@@ -192,6 +193,16 @@ class CliRunner(Runner):
         log_output(proc.stdout, self.api.cruft_patterns)
 
 
+# Various environment variable seetings to attempt to disable GNU readline's
+# horizontal-scroll-mode, which, if enabled, screws up pexpect's parsing of the command
+# line when fed to `inkscape --shell`.
+DISABLE_RL_HORIZ_SCROLL = {
+    "INPUTRC": "/dev/null",
+    "TERM": "dumb",
+    "COLUMNS": "10000",
+}
+
+
 class ShellModeRunner(Runner):
     """Run Inkscape using it's --shell mode.
 
@@ -230,6 +241,7 @@ class ShellModeRunner(Runner):
             encoding=encoding,
             searchwindowsize=len(self.api.shell_mode_prompt) + 1,
             timeout=self.timeout,
+            env={**os.environ, **DISABLE_RL_HORIZ_SCROLL},
         )
         # Arrange to shutdown child when current thread is done
         # There are circular references within the PopenSpawn, so
