@@ -151,10 +151,95 @@ def test_ensure_visible(style: str, expected: str) -> None:
     assert elem.get("style") == expected
 
 
+@pytest.mark.parametrize(
+    "style, expected",
+    [
+        (None, "display:none;"),
+        ("display:inline; text-align:center;", "text-align:center;display:none;"),
+        ("display:none;text-align:center;", "display:none;text-align:center;"),
+        ("display:hidden", "display:none;"),
+    ],
+)
+def test_set_hidden(style: str, expected: str) -> None:
+    attrib = {"style": style} if style is not None else {}
+    elem = etree.Element("g", attrib=attrib)
+    svg.set_hidden(elem)
+    elem_style = elem.get("style")
+    assert elem_style is not None
+    assert set(elem_style.split(";")) == set(expected.split(";"))
+
+
 def test_layer_label(coursemap1: svg.ElementTree) -> None:
     cruft = get_by_id(coursemap1, "cruft")
     assert svg.is_layer(cruft)
     assert svg.layer_label(cruft) == "Cruft"
+
+
+def test_find_clones() -> None:
+    ref = svg_maker.group(id="source")
+    use = svg_maker.use(href="#source")
+    tree = svg_maker.tree(svg_maker.layer("Layer 1", children=[ref, use]))
+    assert list(svg.find_clones(tree)) == [(use, ref)]
+
+
+def test_find_clones_ignores_clones_in_defs() -> None:
+    ref = svg_maker.group(id="source")
+    use = svg_maker.use(href="#source")
+    tree = svg_maker.tree(
+        svg_maker.defs(use),
+        svg_maker.layer("Layer 1", children=[ref]),
+    )
+    assert list(svg.find_clones(tree)) == []
+
+
+def test_find_clones_ignores_sources_in_defs() -> None:
+    ref = svg_maker.group(id="source")
+    use = svg_maker.use(href="#source")
+    tree = svg_maker.tree(
+        svg_maker.defs(ref),
+        svg_maker.layer("Layer 1", children=[use]),
+    )
+    assert list(svg.find_clones(tree)) == []
+
+
+def test_find_hidden_clones_source_layers() -> None:
+    use = svg_maker.use(href="#source")
+    ref = svg_maker.group(id="source")
+    use2 = svg_maker.use(href="#source2")
+    ref2 = svg_maker.group(id="source2")
+    use3 = svg_maker.use(href="#sym")
+    sym = svg_maker.group(id="sym")
+    layer2 = svg_maker.layer("Layer 2", children=[ref])
+    tree = svg_maker.tree(
+        svg_maker.defs(sym),
+        svg_maker.layer("Layer 1", children=[use, use2, use3]),
+        layer2,
+        svg_maker.layer("Layer 3", children=[ref2]),
+    )
+    assert svg.find_hidden_clone_source_layers(tree, {layer2}) == {layer2}
+
+
+def test_find_hidden_clones_source_layers_skips_hidden_clones() -> None:
+    use = svg_maker.use(href="#source")
+    ref = svg_maker.group(id="source")
+    layer1 = svg_maker.layer("Layer 1", children=[use])
+    layer2 = svg_maker.layer("Layer 2", children=[ref])
+    tree = svg_maker.tree(layer1, layer2)
+    assert svg.find_hidden_clone_source_layers(tree, {layer1, layer2}) == set()
+
+
+def test_find_hidden_clones_source_layers_follows_hidden_clones() -> None:
+    use = svg_maker.use(href="#use2")
+    use2 = svg_maker.use(href="#source", id="use2")
+    ref = svg_maker.group(id="source")
+    layer1 = svg_maker.layer("Layer 1", children=[use])
+    layer2 = svg_maker.layer("Layer 2", children=[use2])
+    layer3 = svg_maker.layer("Layer 3", children=[ref])
+    tree = svg_maker.tree(layer1, layer2, layer3)
+    hidden_clone_source_layers = svg.find_hidden_clone_source_layers(
+        tree, {layer2, layer3}
+    )
+    assert hidden_clone_source_layers == {layer2, layer3}
 
 
 class Test_copy_etree:
@@ -175,6 +260,26 @@ class Test_copy_etree:
         copy1 = svg.copy_etree(tree1, omit_elements=(tree1.find("aa")))
         assert copy1.find("aa") is None
         assert copy1.find("aaa") is None
+
+
+def test_EnsureId_returns_existing_id() -> None:
+    elem = svg_maker.group(id="existing-id")
+    tree = svg_maker.tree(
+        svg_maker.layer("Layer 1", children=[elem]),
+    )
+    ensure_id = svg.EnsureId(tree)
+    assert ensure_id(elem) == "existing-id"
+
+
+def test_EnsureId_generates_unique_id() -> None:
+    elems = [svg_maker.group() for _ in range(100)]
+    tree = svg_maker.tree(
+        svg_maker.layer("Layer 1", children=elems),
+    )
+    ensure_id = svg.EnsureId(tree, mindigits=0, sparedigits=0)
+    ids = [ensure_id(elem) for elem in elems]
+    print(f"ids={ids!r}")
+    assert len(set(ids)) == len(elems)
 
 
 @pytest.mark.parametrize(

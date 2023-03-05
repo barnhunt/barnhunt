@@ -54,6 +54,10 @@ class SvgMaker:
         return etree.ElementTree(_e.svg({"id": "root"}, *elems))
 
     @staticmethod
+    def defs(*elems: svg.Element) -> svg.Element:
+        return _e.defs(*elems)
+
+    @staticmethod
     def layer(
         label: str,
         id: str | None = None,
@@ -78,6 +82,27 @@ class SvgMaker:
     def text(label: str, id: str | None = None) -> svg.Element:
         attrib = {"id": id or "".join(word.lower() for word in label.split())}
         return _e.text(_e.tspan(attrib, label))
+
+    @staticmethod
+    def use(href: str, id: str | None = None) -> svg.Element:
+        attrib = {
+            "{http://www.w3.org/1999/xlink}href": href,
+        }
+        if id is not None:
+            attrib["id"] = id
+        return _e.use(attrib)
+
+    @staticmethod
+    def group(
+        id: str | None = None,
+        children: Iterable[svg.Element] | None = None,
+    ) -> svg.Element:
+        g = _e.g()
+        if id is not None:
+            g.set("id", id)
+        if children is not None:
+            g.extend(children)
+        return g
 
 
 svg_maker = SvgMaker()

@@ -96,16 +96,35 @@ class CourseMaps:
             base_context = self._get_context(path)
             for basename in self._get_output_basenames(path):
                 if basename:
-                    omit_elements = hidden_layers.union(
+                    hide_layers = hidden_layers.union(
                         self._find_exclusions(basename, tree.getroot())
                     )
                 else:
-                    omit_elements = hidden_layers
-                # Copy tree, omitting hidden layers
-                pruned = svg.copy_etree(tree, omit_elements=omit_elements)
-                # Ensure all remaining layers are marked for display
-                for layer in svg.walk_layers(pruned.getroot()):
-                    svg.ensure_visible(layer)
+                    hide_layers = hidden_layers
+
+                # Can not just omit layers which contain the source for visible "clones"
+                hidden_clone_source_layers = svg.find_hidden_clone_source_layers(
+                    tree, hidden_layers=hide_layers
+                )
+                # Ensure that all the hidden clone source layers have ids
+                # so that we can identify them in the cloned tree
+                ensure_id = svg.EnsureId(tree)
+                hidden_layer_ids = set(map(ensure_id, hidden_clone_source_layers))
+
+                # Copy tree, omitting hidden layers that do not contain source for
+                # visible clones.
+                pruned = svg.copy_etree(
+                    tree, omit_elements=hide_layers - hidden_clone_source_layers
+                )
+
+                # Adjust visibility of remaining layers
+                for layer, children in svg.walk_layers2(pruned.getroot()):
+                    if layer.get("id") not in hidden_layer_ids:
+                        svg.ensure_visible(layer)
+                    else:
+                        svg.set_hidden(layer)
+                        children[:] = []
+
                 if basename:
                     context = {**base_context, "output_basename": basename}
                 else:

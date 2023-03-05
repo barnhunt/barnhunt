@@ -4,12 +4,19 @@
 from __future__ import annotations
 
 import copy
+import dataclasses
+import math
+import random
+from collections import deque
+from functools import lru_cache
 from itertools import islice
 from typing import cast
 from typing import Collection
+from typing import Iterable
 from typing import Iterator
 from typing import List
 from typing import Mapping
+from typing import NamedTuple
 from typing import NewType
 from typing import overload
 from typing import TYPE_CHECKING
@@ -32,6 +39,7 @@ else:
 NSMAP = {
     "svg": "http://www.w3.org/2000/svg",
     "inkscape": "http://www.inkscape.org/namespaces/inkscape",
+    "xlink": "http://www.w3.org/1999/xlink",
     "bh": "http://dairiki.org/barnhunt/inkscape-extensions",
 }
 
@@ -48,9 +56,11 @@ SVG_SVG_TAG = _qname("svg:svg")
 SVG_G_TAG = _qname("svg:g")
 SVG_TEXT_TAG = _qname("svg:text")
 SVG_TSPAN_TAG = _qname("svg:tspan")
+SVG_USE_TAG = _qname("svg:use")
 
 INKSCAPE_GROUPMODE = _qname("inkscape:groupmode")
 INKSCAPE_LABEL = _qname("inkscape:label")
+XLINK_HREF = _qname("xlink:href")
 
 LAYER_XP = f'{SVG_G_TAG}[@{INKSCAPE_GROUPMODE}="layer"]'
 
@@ -144,9 +154,75 @@ def ensure_visible(elem: Element) -> None:
         elem.set("style", style.serialize())
 
 
+def set_hidden(elem: Element) -> None:
+    style = InlineCSS(elem.get("style"))
+    style["display"] = "none"
+    elem.set("style", style.serialize())
+
+
 def layer_label(layer: LayerElement) -> str:
     """Get the label of on Inkscape layer"""
     return layer.get(INKSCAPE_LABEL) or ""
+
+
+class CloneInfo(NamedTuple):
+    elem: Element
+    ref: Element
+
+
+@lru_cache(128)
+def _compile_xpath(xpath: str) -> etree.XPath:
+    return etree.XPath(xpath, namespaces=NSMAP)
+
+
+def find_clones(tree: ElementTree) -> Iterator[CloneInfo]:
+    """Find clones in document.
+
+    “Clones” are <svg:use> elements whose href points to an element outside of the
+    <svg:defs> element.
+
+    Returns an iterable of (elem, ref) pairs where ``elem`` is the <svg:use> element,
+    and ``ref`` is the element referenced by the ``href``.
+    """
+    # catalog elements outside of <svg:defs>
+    find_elems_outside_defs = _compile_xpath("//*[@id and not(ancestor::svg:defs)]")
+    elems_by_id = {elem.get("id"): elem for elem in find_elems_outside_defs(tree)}
+
+    find_clones_outside_defs = _compile_xpath("//svg:use[not(ancestor::svg:defs)]")
+    for elem in find_clones_outside_defs(tree):
+        href = elem.get("href") or elem.get(XLINK_HREF)
+        if href is not None and href.startswith("#"):  # XXX: worry about "url(#foo)"?
+            ref = elems_by_id.get(href[1:])
+            if ref is not None:
+                yield CloneInfo(elem, ref)
+
+
+def find_hidden_clone_source_layers(
+    tree: ElementTree, hidden_layers: Iterable[LayerElement]
+) -> set[LayerElement]:
+    """Find hidden layers containing sources for visible “clones”."""
+    hidden_source_layers: set[LayerElement] = set()
+    omitted_layers = set(hidden_layers)
+    clones: deque[CloneInfo] = deque(find_clones(tree))
+    hidden_clones: list[CloneInfo] = []
+
+    def is_visible(elem: Element) -> bool:
+        return omitted_layers.isdisjoint(ancestor_layers(elem))
+
+    while clones:
+        clone = clones.popleft()
+        if not is_visible(clone.elem):
+            hidden_clones.append(clone)
+        elif not is_visible(clone.ref):
+            ref_layer = parent_layer(clone.ref)
+            assert ref_layer is not None
+            hidden_source_layers.add(ref_layer)
+            omitted_layers.remove(ref_layer)
+            # recheck all the clones that were not visible
+            clones.extend(hidden_clones)
+            hidden_clones.clear()
+
+    return hidden_source_layers
 
 
 def copy_etree(
@@ -187,6 +263,47 @@ def copy_etree(
         nsmap.update(update_nsmap)
     rv._setroot(copy_elem(root, nsmap=nsmap))
     return rv
+
+
+@dataclasses.dataclass
+class EnsureId:
+    """A helper to ensure that elements have id attributes.
+
+    A instance of this class is a callable which may be applied to elements
+    from ``tree``.  If the element has an id attribute set, it is returned;
+    otherwise, a new unique id is assigned to the element and the new id is
+    returned.
+
+    """
+
+    tree: ElementTree
+    mindigits: int = 5
+    sparedigits: int = 1
+    _unique_ids: Iterator[str] | None = dataclasses.field(default=None, init=False)
+
+    def __call__(self, elem: Element) -> str:
+        id_ = elem.get("id")
+        if not id_:
+            if self._unique_ids is None:
+                self._unique_ids = self._iter_unique_ids()
+            id_ = next(self._unique_ids)
+            elem.set("id", id_)
+        return id_
+
+    def _iter_unique_ids(self) -> Iterator[str]:
+        seen = {elem.get("id") for elem in self.tree.iterfind("//*[@id]")}
+
+        def random_id() -> str:
+            return f"bh-{random.randint(1, 10 ** ndigits - 1):0{ndigits}d}"
+
+        while True:
+            mindigits = int(math.log10(max(len(seen), 1))) + 1
+            ndigits = max(mindigits, self.mindigits) + self.sparedigits
+            new_id = random_id()
+            while new_id in seen:
+                new_id = random_id()
+            seen.add(new_id)
+            yield new_id
 
 
 def _svg_attrib(tree: ElementTree) -> etree._Attrib:

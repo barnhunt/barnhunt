@@ -162,6 +162,22 @@ class TestCourseMaps:
             # FIXME: assert not is_hidden(layer_)
             assert "display" not in layer_.get("style", "")
 
+    def test_call_includes_hidden_clone_source(self, coursemaps: CourseMaps) -> None:
+        layer = svg_maker.layer
+        tree = svg_maker.tree(
+            layer("[h] Hidden", children=[svg_maker.group(id="source")]),
+            layer("Layer", children=[svg_maker.use("#source")]),
+        )
+
+        result = list(coursemaps(tree))
+        assert len(result) == 1
+        context, pruned = result[0]
+        assert context == {"course": None, "overlay": None, "overlays": ()}
+        root = pruned.getroot()
+        assert len(root) == 2 and all(svg.is_layer(child) for child in root)
+        assert "display:none;" in root[0].get("style", "")
+        assert root[1].get("style") is None
+
     def test_get_context_no_overlays(self, coursemaps: CourseMaps) -> None:
         path: list[svg.LayerElement] = []
         context = coursemaps._get_context(path)

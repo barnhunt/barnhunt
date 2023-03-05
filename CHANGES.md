@@ -4,6 +4,14 @@
 
 #### Bugs Fixed
 
+- When there was a visible “clone” (`<svg:use>` element) that
+  referenced a source on a hidden layer were being pruned from the SVG
+  before conversion to PDF.  (When exporting an SVG, hidden layers are
+  omitted from the SVG — this speeds Inkscape up considerably when
+  there is a large amount of hidden content.) Now we detect hidden
+  layers that contain source material for clones, and retain them in
+  the SVG file.
+
 - Add a cruft pattern to ignore “`Gtk-WARNING"`” messages that have
   started appearing since I installed Inkscape from [Inkscape’s ppa][ppa].
 
