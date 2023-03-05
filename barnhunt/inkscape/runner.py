@@ -121,7 +121,10 @@ _appimage_cruft_patterns = (
     r"^\s*$",
     r"^\(ld-linux.*?\):\s* Gtk-WARNING\b",
 )
-_gtk_cruft_patterns = (r"^Gtk-Message:",)
+_gtk_cruft_patterns = (
+    r"^(.*: )?Gtk-Message:",
+    r"^(.*: )?Gtk-WARNING \*\*:",
+)
 
 INKSCAPE_APIS = {
     "1.0": InkscapeApi(

@@ -1,5 +1,14 @@
 ## Changes
 
+### Release 1.2.0rc5 (unreleased)
+
+#### Bugs Fixed
+
+- Add a cruft pattern to ignore “`Gtk-WARNING"`” messages that have
+  started appearing since I installed Inkscape from [Inkscape’s ppa][ppa].
+
+[ppa]: https://inkscape.org/release/inkscape-1.2.2/gnulinux/ubuntu/ppa/dl/
+
 ### Release 1.2.0rc4 (2023-01-09)
 
 Support python 3.11.
