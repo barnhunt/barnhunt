@@ -7,7 +7,11 @@
 - Add a cruft pattern to ignore “`Gtk-WARNING"`” messages that have
   started appearing since I installed Inkscape from [Inkscape’s ppa][ppa].
 
+- Fix tests to workaround segfault from pikepdf 7.0.0, 7.1.0, and 7.1.1.
+  (See [pikepdf/pikepdf#452].)
+
 [ppa]: https://inkscape.org/release/inkscape-1.2.2/gnulinux/ubuntu/ppa/dl/
+[pikepdf/pikepdf#452]: https://github.com/pikepdf/pikepdf/issues/452).
 
 ### Release 1.2.0rc4 (2023-01-09)
 

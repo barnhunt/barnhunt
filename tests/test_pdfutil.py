@@ -109,15 +109,21 @@ def test_iso_date() -> None:
 
 
 def page_count(pdf_fn: str | Path) -> int:
-    return len(pikepdf.Pdf.open(pdf_fn).pages)
+    # https://github.com/pikepdf/pikepdf/issues/452
+    pdf = pikepdf.Pdf.open(pdf_fn)
+    return len(pdf.pages)
 
 
 def xmp_title(pdf_fn: str | Path) -> str | None:
-    return pikepdf.Pdf.open(pdf_fn).open_metadata().get("dc:title")
+    # https://github.com/pikepdf/pikepdf/issues/452
+    pdf = pikepdf.Pdf.open(pdf_fn)
+    return pdf.open_metadata().get("dc:title")
 
 
 def docinfo_title(pdf_fn: str | Path) -> str | None:
-    title = pikepdf.Pdf.open(pdf_fn).docinfo.get("/Title")
+    # https://github.com/pikepdf/pikepdf/issues/452
+    pdf = pikepdf.Pdf.open(pdf_fn)
+    title = pdf.docinfo.get("/Title")
     if title is not None:
         return str(title)
     return None
