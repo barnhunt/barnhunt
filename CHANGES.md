@@ -1,6 +1,6 @@
 ## Changes
 
-### Release 1.2.0rc5 (unreleased)
+### Release 1.2.0rc5 (2023-03-05)
 
 #### Bugs Fixed
 
