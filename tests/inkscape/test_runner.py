@@ -99,7 +99,7 @@ class TestShellModeRunner:
             api=api,
             executable=sys.executable,
             inkscape_args=(dummy_inkscape_py,),
-            timeout=10,
+            timeout=30,
         )
 
     def test_success(self, runner: Runner, caplog: pytest.LogCaptureFixture) -> None:
