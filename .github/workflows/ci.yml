@@ -7,24 +7,39 @@ on:
   pull_request:
 
 env:
-  'default-python-version': '3.11'
+  default-python-version: '3.11'
+
+  # the `|| null` is to avoid casting `false` to `'false'`
+  is-tag-push: ${{
+    (
+      github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    ) || null
+    }}
 
 permissions:
   contents: read
 
 jobs:
+  defaults:
+    # https://github.com/orgs/community/discussions/26671#discussioncomment-4295807
+    runs-on: ubuntu-latest
+    outputs:
+      python-version: ${{ env.default-python-version }}
+    steps:
+      - run: echo "Exposing env vars"
 
   tests:
     name: Run Tests
     uses: ./.github/workflows/tests.yml
+    needs: defaults
     with:
-      default-python-version: '3.11'
+      default-python-version: ${{ needs.defaults.outputs.python-version }}
     secrets:
       github-token: ${{ secrets.GITHUB_TOKEN }}
 
-  pyoxidize:
-    name: Build Windows MSI installer
-    uses: ./.github/workflows/pyoxidize.yml
+  oxidize:
+    name: Build & Test Windows Installer
+    uses: ./.github/workflows/oxidize.yml
 
   package:
     name: Build python package
@@ -42,11 +57,9 @@ jobs:
         python-version: ${{ env.default-python-version }}
 
     - name: Install requirements
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install build
+      run: python -m pip install pdm
 
-    - run: python -m build
+    - run: pdm build
 
     - uses: actions/upload-artifact@v3
       with:
@@ -54,33 +67,39 @@ jobs:
         path: dist/
 
   release:
-    name: Possibly upload to PyPI and make Release
+    name: Upload to PyPI and make Release
     if: github.event_name == 'push'
-    needs: [package, pyoxidize]
+    needs: [package, oxidize]
+    environment:
+      name: pypi
+      url: https://pypi.org/p/barnhunt
     permissions:
       contents: write           # to create GH release
+      id-token: write
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/download-artifact@v3
 
+    steps:
+
+    - uses: actions/download-artifact@v3
     - run: ls -lR
 
     - name: classify tag
       id: classify-tag
+      # Releases (as opposed to pre-releases) are always tagged exactly vMAJ.MIN.PATCH
       run: |
         if [[ ${{ github.ref }} =~ ^refs/tags/v[[:digit:]]+(\.[[:digit:]]+){2}$ ]]; then
           echo "is_release=true" >> $GITHUB_ENV
           echo "is_release=true"
+        else
+          echo "is_release=false"
         fi
 
-    - name: Possibly publish to PyPI
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    - name: Publish to PyPI
+      if: ${{ env.is-tag-push }}
       uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        password: ${{ secrets.PYPI_API_TOKEN }}
 
     - name: Make GH Release
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+      if: ${{ env.is-tag-push }}
       uses: softprops/action-gh-release@v1
       with:
         files: 'oxidized/*.msi'

@@ -13,14 +13,6 @@ print("VARS", VARS)
 # Python version to build
 python_version = VARS.get("python_version", "3.10")
 
-# Path to requirements.txt listing packages to install
-# These are installed with `pip install --no-deps`
-requirements_txt = VARS.get("requirements_txt", "requirements.txt")
-
-# Path the to directory containing the barnhunt package.  I.e.
-# the `barnhunt` module source is in <package_root>/barnhunt/__init__.py.
-package_root = VARS.get("package_root", ".")
-
 # The version of the barnhunt program.
 barnhunt_version = VARS.get("barnhunt_version", "<dev>")
 
@@ -29,10 +21,11 @@ barnhunt_version = VARS.get("barnhunt_version", "<dev>")
 # 1 to 4 dotted integers.
 product_version = VARS.get("product_version", "0.0")
 
+version_module = "barnhunt._version"
+project_root = CWD + "/.."
+
 
 print("python_version", python_version)
-print("requirements.txt", requirements_txt)
-print("package_root", package_root)
 print("product_version", product_version)
 print("barnhunt_version", barnhunt_version)
 
@@ -54,6 +47,7 @@ STDLIB_MODULES = []
 # directory.
 reported_resources = []
 report_state = {}
+
 
 def resource_repr(resource):
     bits = [type(resource)]
@@ -78,6 +72,7 @@ def report_resource(policy, resource, prefix="", force=""):
     print(pfx, rsrc)
     reported_resources.append(rsrc)
     report_state.clear()
+
 
 def resource_already_reported(resource):
     return resource_repr(resource) in reported_resources
@@ -119,6 +114,7 @@ def filter_package_resources(policy, resource):
         resource.add_include = False
         report_resource(policy, resource, "OMIT")
 
+
 def include_dlls(policy, resource):
     if type(resource) == "File" and (
         resource.path.find(".libs/") > 0      # linux
@@ -128,6 +124,7 @@ def include_dlls(policy, resource):
         resource.add_include = True
         resource.add_location = "filesystem-relative:lib"
         report_resource(policy, resource, "ADD")
+
 
 def include_extmodules(policy, resource):
     if type(resource) == "PythonExtensionModule" and not resource.add_include:
@@ -140,7 +137,8 @@ def include_extmodules(policy, resource):
         # I.e. setting add_include does not seem to be necessary, but improves
         # the reporting.
         resource.add_include = True
-        #report_resource(policy, resource, "ADD?")
+        # report_resource(policy, resource, "ADD?")
+
 
 def is_uninteresting(resource):
     if type(resource) == "PythonExtensionModule":
@@ -172,6 +170,7 @@ def is_uninteresting(resource):
         )
     return False
 
+
 def report_interesting(policy, resource):
     force = type(resource) != "File" and report_state.get("was_file", False)
     if not force:
@@ -183,10 +182,7 @@ def report_interesting(policy, resource):
 
 def make_exe():
 
-    dist = default_python_distribution()
-
-    #for resource in dist.python_resources():
-    #    report_resource(resource)
+    dist = default_python_distribution(python_version=python_version)
 
     policy = dist.make_python_packaging_policy()
     # XXX: doesn't work yet
@@ -251,14 +247,11 @@ def make_exe():
         config=python_config,
     )
 
-    exe.add_python_resources(
-        exe.pip_install(["--prefer-binary", "-r", requirements_txt])
-    )
-    # Install just our python modules (no deps)
-    for resource in exe.read_package_root(".", ["barnhunt"]):
-        if resource.name == "barnhunt._version":
+    for resource in exe.pip_install(["--only-binary", ":all:", project_root]):
+        if type(resource) == "PythonModuleSource" and resource.name == version_module:
+            # mangle the the version module
             resource = exe.make_python_module_source(
-                resource.name,
+                version_module,
                 '__version__ = "{}"'.format(barnhunt_version),
                 resource.is_package,
             )

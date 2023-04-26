@@ -1,4 +1,4 @@
-name: Use PyOxidize to build executable installer for Windows
+name: PyOxidize build and test
 
 on:
   workflow_call:
@@ -12,25 +12,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Use older ubuntu for libc b/c
-          # If built on 22.04 I get "version `GLIBC_2.35' not found"
-          # when running on 20.04.
-          # - os: 'ubuntu-latest'
+          # Use older OS for libc b/c
           # - os: 'ubuntu-20.04'
           #   targets: install
 
-          # Blindly use older Windows for the same reason
-          #
-          # (The exe_installer target will build both .exe and .msi installers,
-          # so use just one or the other.)
-          # - 'windows-latest'
           - os: 'windows-2019'
             targets: msi_installer
+            # (The exe_installer target will build both .exe and .msi
+            # installers, so use just one or the other.)
 
           # Don't build on macOS. I have no way to test this.
           # - os: 'macos-latest'
           #   targets: install
-
 
     steps:
     - uses: actions/checkout@v3
@@ -42,9 +35,10 @@ jobs:
       with:
         python-version: '3.10.9'
 
-    - run: python -m pip install pip-tools pyoxidizer pdm
-    - run: pyoxidizer --version
-    - run: python pyoxidizer/build.py --release ${{ matrix.targets }}
+    - run: python -m pip install pdm
+    - run: pdm install
+    - run: pdm run pyoxidizer --version
+    - run: pdm oxidize --release ${{ matrix.targets }}
 
     - uses: actions/upload-artifact@v3
       with:
@@ -61,10 +55,12 @@ jobs:
     runs-on: windows-latest
     env:
       BARNHUNT_DUMP_LOADED_MODULES: 'yes'
+      test-svg: .\src\tests\drawing.svg
 
     steps:
     - uses: actions/checkout@v3
       with:
+        path: src
         lfs: true
     - uses: actions/download-artifact@v3
       with:
@@ -79,6 +75,7 @@ jobs:
         Get-Content -Path "install-msi.log"
         if ($proc.ExitCode -ne 0) { Throw "Could not install MSI" }
 
+        # Find install location and add to path
         $installed = (
           Get-ChildItem $env:ProgramFiles "barnhunt" -Directory
           | Select-Object -ExpandProperty FullName
@@ -87,16 +84,21 @@ jobs:
         $installed | Out-File $env:GITHUB_PATH utf8 -Append
         echo $installed
 
-    - run: choco install --no-progress --timeout 600 inkscape
+    - name: Install Inkscape
+      run: choco install --no-progress --timeout 600 inkscape
     - run: inkscape --debug-info
+    - run: inkscape --query-height ${{ env.test-svg }}
 
+    # Run a bunch of tests
     - run: barnhunt --version
     - run: barnhunt rats
     - run: barnhunt install
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - run: barnhunt pdfs --no-shell-mode-inkscape ".\tests\drawing.svg"
-    - run: barnhunt pdfs ".\tests\drawing.svg"
+    - run: barnhunt pdfs --no-shell-mode-inkscape ${{ env.test-svg }}
+
+    # XXX: shell-mode seems to fail sporadically?
+    - run: barnhunt pdfs ${{ env.test-svg }}
       continue-on-error: true
     - run: barnhunt uninstall
     - run: barnhunt 2up ".\pdfs\novice.pdf"

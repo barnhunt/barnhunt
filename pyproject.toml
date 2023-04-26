@@ -62,19 +62,20 @@ source-includes = [
 [tool.pdm.scripts]
 barnhunt.call = "barnhunt.cli:main"
 
-build-exe.cmd = "python pyoxidizer/build.py"
+oxidize.call = "pdm_build:oxidize"
+post_oxidize.call = "pdm_build:copy_output"
 
 [tool.pdm.dev-dependencies]
 dev = [
     "flake8>=5.0.4",
     "flake8-bugbear>=23.3.12",
     "mypy>=1.2.0",
+    "pdm-backend~=2.0.6",
     "types-atomicwrites",
     "types-lxml; python_version>='3.8'",
     "types-requests",
 ]
 pyoxidizer = [
-    "pip-tools>=6.13.0",
     "pyoxidizer>=0.24.0",
 ]
 test = [

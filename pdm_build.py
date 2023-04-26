@@ -1,9 +1,20 @@
 from __future__ import annotations
 
+import re
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 from pdm.backend.hooks import Context
 
+PROJECT_ROOT = Path(__file__).parent
+
+
+################################################################
+#
+# Generate dynamic README
+#
 
 
 def pdm_build_initialize(context: Context) -> None:
@@ -23,3 +34,89 @@ def compute_readme(root: Path) -> str:
     return "\n".join(
         file.read_text("utf-8").rstrip() + "\n" for file in (readme, changes)
     )
+
+
+################################################################
+#
+# Helpers for running pyoxidizer
+#
+#
+
+
+def get_dist_version() -> str:
+    """Get the current distribution version number."""
+    proc = subprocess.run(
+        ["pdm", "show", "--version"],
+        capture_output=True,
+        check=True,
+        text=True,
+    )
+    return proc.stdout.strip()
+
+
+def get_product_version(version: str) -> str:
+    """Return a version number suitable for using for the WiX installer builder.
+
+    WiX apparently only accepts version number consisting of between one and four
+    dot-separated non-negative integers.
+
+    Here we translate something like `v1.2.0rc5-14-gc920d76` to `1.2.0.5`.
+
+    It's not perfect.
+    """
+    # strip any +local part and .dev suffix
+    external_version, _, _ = version.partition("+")
+    non_dev_version, _, _ = external_version.partition(".dev")
+    nums = re.findall(r"\d+", non_dev_version)
+    return ".".join(nums[:4])
+
+
+def oxidize() -> None:
+    """Run `pyoxidizer build [args]` with some approriate settings."""
+    dist_version = get_dist_version()
+    product_version = get_product_version(dist_version)
+    # This is what goes into `barnhunt.__version__`
+    barnhunt_version = f"{product_version} ({dist_version})"
+
+    cmd: list[str | Path]
+    cmd = ["pyoxidizer", "build", *sys.argv[1:]]
+    cmd.extend(["--path", PROJECT_ROOT / "pyoxidizer"])
+    cmd.extend(["--var", "product_version", product_version])
+    cmd.extend(["--var", "barnhunt_version", barnhunt_version])
+    print(*cmd)
+
+    subprocess.run(
+        cmd,
+        check=True,
+        stderr=subprocess.STDOUT,
+    )
+
+
+def copy_output() -> None:
+    """Copy pyoxidizer out from deep in the build tree to the pyoxidizer directory.
+
+    This also mangles the names of the files copied to add the target-triple.
+    """
+    cwd = PROJECT_ROOT
+    dest_path = PROJECT_ROOT / "pyoxidizer"
+    build_path = PROJECT_ROOT / "pyoxidizer/build"
+
+    outputs = [
+        path
+        for path in build_path.glob("*/*/*/*")
+        if path.is_file() and path.suffix in {".msi", ".exe", ".app", ""}
+    ]
+
+    print("================================================================")
+    seen = set()
+    for built in sorted(outputs, key=lambda path: path.stat().st_mtime, reverse=True):
+        # output is in e.g:
+        #    build/<target-triple>/{debug|release}/<build-target>/*.msi
+        target_triple = built.parts[-4]
+        dest = dest_path / f"{built.stem}-{target_triple}{built.suffix}"
+        if dest not in seen:
+            print(f"Copying {built.relative_to(cwd)} to {dest.relative_to(cwd)}")
+            shutil.copyfile(built, dest)
+            seen.add(dest)
+    if len(seen) == 0:
+        print("No output found!")
