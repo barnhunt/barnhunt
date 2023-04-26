@@ -55,3 +55,8 @@ repos:
   rev: '22.6.0'
   hooks:
     - id: black
+
+- repo: https://github.com/pdm-project/pdm
+  rev: '2.5.3'
+  hooks:
+    - id: pdm-lock-check
