@@ -50,6 +50,7 @@ jobs:
       with:
         name: oxidized
         path: |
-          pyoxidizer/build/**/*_installer/*.msi
-          pyoxidizer/build/**/*_installer/*.exe
+          pyoxidizer/*.msi
+          pyoxidizer/*.exe
+          pyoxidizer/*.app
           pyoxidizer/build/**/install

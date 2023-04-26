@@ -83,7 +83,7 @@ jobs:
       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v1
       with:
-        files: 'oxidized/**/*.msi'
+        files: 'oxidized/*.msi'
         fail_on_unmatched_files: false
         generate_release_notes: true
         draft: ${{ ! startsWith(github.ref, 'refs/tags/') }}

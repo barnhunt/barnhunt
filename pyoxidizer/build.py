@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import os
 import re
+import shutil
 import subprocess
 import sys
+from itertools import chain
 from pathlib import Path
 
 
@@ -33,6 +37,16 @@ def get_product_version(version):
     return ".".join(nums[:4])
 
 
+def run(*cmd, extra_env=None):
+    env = os.environ
+    if extra_env is not None:
+        env = {**env, **extra_env}
+
+    print("================================================================")
+    print(*cmd)
+    subprocess.run(cmd, check=True, env=env, stderr=subprocess.STDOUT)
+
+
 def compile_requirements(source_file, output_file):
     args = [
         source_file,
@@ -42,20 +56,12 @@ def compile_requirements(source_file, output_file):
         "--emit-options",
         "--annotate",
     ]
-    print(
-        "================================================================",
-        file=sys.stderr,
-    )
-    print("pip-compile", *args, file=sys.stderr)
-    subprocess.run(
-        [sys.executable, "-m", "piptools", "compile", *args],
-        check=True,
-    )
+
+    run(sys.executable, "-m", "piptools", "compile", *args)
 
 
 def run_pyoxidizer(*args, vars=None, config=None):
-    env = os.environ.copy()
-
+    env = {}
     if config is not None:
         env["PYOXIDIZER_CONFIG"] = os.path.abspath(config)
 
@@ -64,12 +70,32 @@ def run_pyoxidizer(*args, vars=None, config=None):
         for key, value in vars.items():
             setvars.extend(["--var", key, value])
 
-    print(
-        "================================================================",
-        file=sys.stderr,
+    run("pyoxidizer", *args, *setvars, extra_env=env)
+
+
+def copy_output(config=None):
+    here = Path(config or __file__).parent
+    build_path = here / "build"
+    outputs = chain.from_iterable(
+        build_path.glob(f"**/*install*/*.{ext}") for ext in ("exe", "msi", "app")
     )
-    print("pyoxidizer", *args, file=sys.stderr)
-    subprocess.run(["pyoxidizer", *args, *setvars], env=env, check=True)
+
+    def dwim_build_target(path: Path) -> str | None:
+        for part in reversed(path.parts):
+            if re.match(r"(.*-){2}.", part):
+                return part
+        return None
+
+    print("================================================================")
+    for built in sorted(outputs, key=lambda path: path.stat().st_mtime):
+        target = here / built.name
+        build_target = dwim_build_target(built.relative_to(build_path))
+        if build_target is not None:
+            target = target.with_stem(f"{target.stem}-{build_target}")
+        print(f"Copying {built} to {target}")
+        shutil.copyfile(built, target)
+    else:
+        print("No output found!")
 
 
 def main():
@@ -97,6 +123,7 @@ def main():
             "requirements_txt": os.path.abspath(requirements_txt),
         },
     )
+    copy_output(config=pyoxidizer_config)
 
 
 if __name__ == "__main__":
