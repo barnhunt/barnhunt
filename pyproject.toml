@@ -24,7 +24,6 @@ requires-python = ">= 3.7"
 dependencies = [
     "atomicwrites",
     "click >= 8.1",
-    "importlib_metadata; python_version < '3.8'",
     "jinja2 >= 3",
     "lxml",
     "marshmallow",
@@ -42,6 +41,8 @@ barnhunt = "barnhunt.cli:main"
 
 [tool.pdm.version]
 source = "scm"
+write_to = "barnhunt/_version.py"
+write_template = '__version__ = "{}"'
 
 [tool.pdm.build]
 excludes = [

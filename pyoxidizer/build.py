@@ -5,7 +5,18 @@ import sys
 from pathlib import Path
 
 
-def get_wix_version():
+def get_version():
+    """Get the current version number."""
+    proc = subprocess.run(
+        ["pdm", "show", "--version"],
+        capture_output=True,
+        check=True,
+        text=True,
+    )
+    return proc.stdout.strip()
+
+
+def get_product_version(version):
     """Return a version number suitable for using for the WiX installer builder.
 
     WiX apparently only accepts version number consisting of between one and four
@@ -15,13 +26,10 @@ def get_wix_version():
 
     It's not perfect.
     """
-    proc = subprocess.run(
-        ["git", "describe", "--tags"],
-        capture_output=True,
-        check=True,
-        text=True,
-    )
-    nums = re.findall(r"\d+(?=.*-g(?i:[0-9a-z]))", proc.stdout)
+    # strip any +local part and .dev suffix
+    external_version, _, _ = version.partition("+")
+    non_dev_version, _, _ = external_version.partition(".dev")
+    nums = re.findall(r"\d+", non_dev_version)
     return ".".join(nums[:4])
 
 
@@ -72,8 +80,11 @@ def main():
 
     pyoxidizer_config = here / "pyoxidizer.bzl"
 
-    barnhunt_version = get_wix_version()
-    print("Version (for Wix):", barnhunt_version)
+    version = get_version()
+    product_version = get_product_version(version)
+    barnhunt_version = f"{product_version} ({version})"
+
+    print("barnhunt.__version__:", barnhunt_version)
 
     compile_requirements(pyproject_toml, requirements_txt)
     run_pyoxidizer(
@@ -82,6 +93,7 @@ def main():
         config=pyoxidizer_config,
         vars={
             "barnhunt_version": barnhunt_version,
+            "product_version": product_version,
             "requirements_txt": os.path.abspath(requirements_txt),
         },
     )

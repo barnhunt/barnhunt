@@ -16,7 +16,7 @@ from pikepdf import ObjectStreamMode
 from pikepdf import Pdf
 from pikepdf import Rectangle
 
-from ._compat import metadata
+import barnhunt
 
 
 def concat_pdfs(in_fns: Sequence[str | Path], out_fn: str | Path) -> None:
@@ -84,7 +84,7 @@ def update_metadata(
                 meta.load_from_docinfo(src.docinfo)
 
         date = iso_date(now_)
-        meta["pdf:Producer"] = f"barnhunt {metadata.version('barnhunt')}"
+        meta["pdf:Producer"] = f"barnhunt {barnhunt.__version__}"
         meta["xmp:MetadataDate"] = date
         meta.setdefault("xmp:ModifyDate", date)
 

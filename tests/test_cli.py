@@ -12,6 +12,7 @@ from click.testing import CliRunner
 from pytest_mock import MockerFixture
 
 from barnhunt.cli import _dump_loaded_modules
+from barnhunt.cli import barnhunt_cli
 from barnhunt.cli import default_2up_output_file
 from barnhunt.cli import default_inkscape_command
 from barnhunt.cli import default_shell_mode
@@ -99,6 +100,17 @@ def test_main(capsys: pytest.CaptureFixture[str]) -> None:
     assert "export pdfs from inkscape" in std.out.lower()
 
 
+def test_execute_python_c() -> None:
+    proc = subprocess.run(
+        [sys.executable, "-c", "from barnhunt.cli import main; main()", "--help"],
+        stdout=subprocess.PIPE,
+        text=True,
+        check=True,
+    )
+    assert "usage: barnhunt" in proc.stdout.lower()
+    assert proc.returncode == 0
+
+
 class Test_InkexRequirementType:
     CF = Callable[[Any], InkexRequirement]
 
@@ -152,7 +164,7 @@ def test_install_target_from_inkscape(mocker: MockerFixture, tmp_path: Path) -> 
     )
     Installer = mocker.patch("barnhunt.cli.Installer")
     runner = CliRunner()
-    result = runner.invoke(main, ("install", "--inkscape", "myinkscape"))
+    result = runner.invoke(barnhunt_cli, ("install", "--inkscape", "myinkscape"))
     assert result.exit_code == 0
     get_user_data_directory.assert_called_once_with("myinkscape")
     Installer.assert_called_once_with(target, dry_run=False, github_token="token")
@@ -161,7 +173,7 @@ def test_install_target_from_inkscape(mocker: MockerFixture, tmp_path: Path) -> 
 def test_uninstall(mocker: MockerFixture, tmp_path: Path) -> None:
     Installer = mocker.patch("barnhunt.cli.Installer")
     runner = CliRunner()
-    result = runner.invoke(main, ("uninstall", "--target", os.fspath(tmp_path)))
+    result = runner.invoke(barnhunt_cli, ("uninstall", "--target", os.fspath(tmp_path)))
     assert result.exit_code == 0
     assert Installer.mock_calls == [
         mocker.call(tmp_path, dry_run=False),

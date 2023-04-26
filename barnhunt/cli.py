@@ -23,7 +23,7 @@ from typing import TypeVar
 import click
 from atomicwrites import atomic_write
 
-from ._compat import metadata
+import barnhunt
 from .coursemaps import Coursemap
 from .coursemaps import iter_coursemaps
 from .inkscape.runner import inkscape_runner
@@ -42,14 +42,12 @@ log = logging.getLogger("")
 
 POSITIVE_INT = click.IntRange(1, None)
 
-BARNHUNT_VERSION = metadata.version("barnhunt")
-
 
 def _dump_loaded_modules() -> None:
     utcnow = datetime.datetime.utcnow()
     dump_file = f"barnhunt-modules.{os.getpid()}"
     with open(dump_file, "w") as fp:
-        print(f"# Modules loaded by barnhunt {BARNHUNT_VERSION}", file=fp)
+        print(f"# Modules loaded by barnhunt {barnhunt.__version__}", file=fp)
         print(f"# {utcnow.isoformat(timespec='seconds')}Z", file=fp)
         print(f"# Command: {' '.join(sys.argv[1:])}", file=fp)
         for name in sorted(sys.modules):
@@ -69,8 +67,8 @@ def _dump_loaded_modules() -> None:
         "the $BARNHUNT_DUMP_LOADED_MODULES environment variable.)"
     ),
 )
-@click.version_option()
-def main(verbose: int, dump_loaded_modules: bool) -> None:
+@click.version_option(version=barnhunt.__version__)
+def barnhunt_cli(verbose: int, dump_loaded_modules: bool) -> None:
     """Utilities for creating Barn Hunt course maps."""
     log_level = logging.WARNING
     if verbose:  # pragma: NO COVER
@@ -82,7 +80,7 @@ def main(verbose: int, dump_loaded_modules: bool) -> None:
         atexit.register(_dump_loaded_modules)  # pragma: no cover
 
 
-@main.command()
+@barnhunt_cli.command()
 @click.argument(
     "svgfiles",
     type=click.Path(exists=True, dir_okay=False, writable=True),
@@ -158,7 +156,7 @@ def default_shell_mode() -> bool:
     return True
 
 
-@main.command()
+@barnhunt_cli.command()
 @click.argument("svgfiles", type=click.File("rb"), nargs=-1, required=True)
 @click.option(
     "--output-directory",
@@ -243,7 +241,7 @@ def pdfs(
             log.warning("Wrote %d pages to %r", len(temp_fns), os.fspath(output_fn))
 
 
-@main.command("rats")
+@barnhunt_cli.command("rats")
 @click.option(
     "-n",
     "--number-of-rows",
@@ -262,7 +260,7 @@ def rats_(number_of_rows: int) -> None:
         print("%d %d %d %d %d" % rats)
 
 
-@main.command()
+@barnhunt_cli.command()
 @click.option(
     "-n",
     "--number-of-rows",
@@ -339,7 +337,7 @@ def default_2up_output_file() -> Path:
     return output_path
 
 
-@main.command(name="2up")
+@barnhunt_cli.command(name="2up")
 @click.argument("pdffiles", type=click.File("rb"), nargs=-1, required=True)
 @click.option(
     "-o",
@@ -407,7 +405,7 @@ def set_default_target(
     return inkscape_command
 
 
-@main.command()
+@barnhunt_cli.command()
 @click.argument(
     "requirements",
     type=InkexRequirementType(),
@@ -448,7 +446,7 @@ def install(
         installer.install(requirement, pre_flag=pre, upgrade=upgrade)
 
 
-@main.command()
+@barnhunt_cli.command()
 @click.argument(
     "requirements",
     type=InkexRequirementType(allow_specifiers=False),
@@ -470,3 +468,10 @@ def uninstall(
     installer = Installer(target, dry_run=dry_run)
     for requirement in requirements or DEFAULT_REQUIREMENTS:
         installer.uninstall(requirement)
+
+
+def main(args: Sequence[str] | None = None) -> None:
+    prog_name = None  # by default let click figure out program name
+    if sys.argv[0] == "-c":
+        prog_name = "barnhunt"  # pragma: no cover
+    barnhunt_cli(args, prog_name=prog_name)

@@ -21,21 +21,26 @@ requirements_txt = VARS.get("requirements_txt", "requirements.txt")
 # the `barnhunt` module source is in <package_root>/barnhunt/__init__.py.
 package_root = VARS.get("package_root", ".")
 
-# The version of the barnhunt program.  This is for the installers we build.
+# The version of the barnhunt program.
+barnhunt_version = VARS.get("barnhunt_version", "<dev>")
+
+# This is for the installers we build.
 # For the WiX (windows) installers, it must be in the format of
 # 1 to 4 dotted integers.
-barnhunt_version = VARS.get("barnhunt_version", "0.0")
+product_version = VARS.get("product_version", "0.0")
+
 
 print("python_version", python_version)
 print("requirements.txt", requirements_txt)
 print("package_root", package_root)
+print("product_version", product_version)
 print("barnhunt_version", barnhunt_version)
 
 # Configuration for WiX MSI installer generator
 WIX_CONFIG = {
     "id_prefix": "barnhunt",
     "product_name": "Barnhunt",
-    "product_version": barnhunt_version,
+    "product_version": product_version,
     "product_manufacturer": "Jeff Dairiki https://github.com/barnhunt",
 }
 
@@ -250,9 +255,14 @@ def make_exe():
         exe.pip_install(["--prefer-binary", "-r", requirements_txt])
     )
     # Install just our python modules (no deps)
-    exe.add_python_resources(
-        exe.read_package_root(".", ["barnhunt"])
-    )
+    for resource in exe.read_package_root(".", ["barnhunt"]):
+        if resource.name == "barnhunt._version":
+            resource = exe.make_python_module_source(
+                resource.name,
+                '__version__ = "{}"'.format(barnhunt_version),
+                resource.is_package,
+            )
+        exe.add_python_resource(resource)
 
     # Filter all resources collected so far through a filter of names
     # in a file.

@@ -10,7 +10,7 @@ from click.testing import CliRunner
 from lxml import etree
 from pdfminer.high_level import extract_text
 
-from barnhunt.cli import main
+from barnhunt.cli import barnhunt_cli
 
 
 def test_random_seed(tmp_drawing_svg: Path, caplog: pytest.LogCaptureFixture) -> None:
@@ -31,7 +31,7 @@ def test_random_seed(tmp_drawing_svg: Path, caplog: pytest.LogCaptureFixture) ->
         cmd.extend(args)
         cmd.append(svgfile)
         runner = CliRunner()
-        result = runner.invoke(main, cmd)
+        result = runner.invoke(barnhunt_cli, cmd)
         assert result.exit_code == 0
 
     # Set seed in SVG file without pre-existing seed
@@ -64,7 +64,7 @@ def test_pdfs(
     if processes is not None:
         cmd[1:1] = ["-p", processes]
     runner = CliRunner()
-    result = runner.invoke(main, cmd)
+    result = runner.invoke(barnhunt_cli, cmd)
     assert result.exit_code == 0
     expected_pdfs = {
         "novice.pdf",
@@ -83,14 +83,14 @@ def test_pdfs(
 
 def test_rats() -> None:
     runner = CliRunner()
-    result = runner.invoke(main, ["rats"])
+    result = runner.invoke(barnhunt_cli, ["rats"])
     assert result.exit_code == 0
     assert re.sub(r"[1-5]", "X", result.output) == ("X X X X X\n" * 5)
 
 
 def test_coords() -> None:
     runner = CliRunner()
-    result = runner.invoke(main, ["coords", "-n", "50"])
+    result = runner.invoke(barnhunt_cli, ["coords", "-n", "50"])
     assert result.exit_code == 0
     lines = result.output.rstrip().split("\n")
     pairs = [list(map(int, line.split(","))) for line in lines if line]
@@ -104,7 +104,7 @@ def test_2up(tmp_path: Path, test1_pdf: Path) -> None:
     outfile = tmp_path / "output.pdf"
     runner = CliRunner()
     result = runner.invoke(
-        main,
+        barnhunt_cli,
         ["2up", "-o", os.fspath(outfile), os.fspath(test1_pdf)],
     )
     assert result.exit_code == 0
