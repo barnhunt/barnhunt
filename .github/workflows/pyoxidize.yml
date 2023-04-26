@@ -88,6 +88,7 @@ jobs:
         echo $installed
 
     - run: choco install --no-progress --timeout 600 inkscape
+    - run: inkscape --debug-info
 
     - run: barnhunt --version
     - run: barnhunt rats
