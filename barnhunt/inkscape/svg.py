@@ -10,11 +10,9 @@ import random
 from collections import deque
 from functools import lru_cache
 from itertools import islice
-from typing import cast
 from typing import Collection
 from typing import Iterable
 from typing import Iterator
-from typing import List
 from typing import Mapping
 from typing import NamedTuple
 from typing import NewType
@@ -43,7 +41,7 @@ NSMAP = {
     "bh": "http://dairiki.org/barnhunt/inkscape-extensions",
 }
 
-etree.register_namespace("bh", NSMAP["bh"])  # type: ignore[attr-defined]
+etree.register_namespace("bh", NSMAP["bh"])
 
 
 def _qname(tag: str) -> str:
@@ -94,7 +92,7 @@ def walk_layers2(elem: Element) -> Iterator[tuple[LayerElement, list[LayerElemen
         elem = LayerElement(nodes.pop())
         children = elem.findall("./" + LAYER_XP)
         children.reverse()
-        yield elem, cast(List[LayerElement], children)
+        yield elem, children
         nodes.extend(reversed(children))
 
 
