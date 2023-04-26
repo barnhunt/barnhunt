@@ -1,8 +1,11 @@
 name: Tests
 
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - '*'
+      - '!feat.pyoxidizer'
+  pull_request:
 
 env:
   'default-python-version': '3.11'

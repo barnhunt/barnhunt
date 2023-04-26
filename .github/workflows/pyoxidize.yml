@@ -1,0 +1,58 @@
+name: Pyoxidize Flail
+
+on:
+  push:
+    branches:
+      - 'feat.pyoxidizer'
+
+jobs:
+  build:
+    name: ${{ matrix.os }} PyOxidizer build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Use older ubuntu for libc b/c
+          # If built on 22.04 I get "version `GLIBC_2.35' not found"
+          # when running on 20.04.
+          # - os: 'ubuntu-latest'
+          # - os: 'ubuntu-20.04'
+          #   targets: install
+
+          # Blindly use older Windows for the same reason
+          #
+          # (The exe_installer target will build both .exe and .msi installers,
+          # so use just one or the other.)
+          # - 'windows-latest'
+          - os: 'windows-2019'
+            targets: msi_installer
+
+          # Don't build on macOS. I have no way to test this.
+          # - os: 'macos-latest'
+          #   targets: install
+
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        lfs: true
+        fetch-depth: 0
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10.9'
+
+    # - run: cargo install pyoxidizer
+    - run: python -m pip install pip-tools pyoxidizer
+
+    - run: pyoxidizer --version
+
+    - run: python pyoxidizer/build.py ${{ matrix.targets }}
+
+    - uses: actions/upload-artifact@v3
+      with:
+        path: |
+          pyoxidizer/build/**/*_installer/*.msi
+          pyoxidizer/build/**/*_installer/*.exe
+          pyoxidizer/build/**/install

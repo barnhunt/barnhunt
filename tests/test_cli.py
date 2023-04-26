@@ -1,4 +1,6 @@
 import os
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 from typing import Callable
@@ -9,6 +11,7 @@ import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture
 
+from barnhunt.cli import _dump_loaded_modules
 from barnhunt.cli import default_2up_output_file
 from barnhunt.cli import default_inkscape_command
 from barnhunt.cli import default_shell_mode
@@ -164,3 +167,31 @@ def test_uninstall(mocker: MockerFixture, tmp_path: Path) -> None:
         mocker.call(tmp_path, dry_run=False),
         *(mocker.call().uninstall(req) for req in DEFAULT_REQUIREMENTS),
     ]
+
+
+def test_dump_loaded_modules_option(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    proc = subprocess.run(
+        [sys.executable, "-m", "barnhunt", "--dump-loaded-modules", "rats"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "Dumped loaded modules" in proc.stderr
+    dumpfiles = [p for p in tmp_path.iterdir() if p.name.startswith("barnhunt-modules")]
+    assert len(dumpfiles) == 1
+    modules = set(dumpfiles[0].read_text("utf-8").splitlines())
+    assert "pikepdf" in modules
+
+
+def test_dump_loaded_modules(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    _dump_loaded_modules()
+    assert len(caplog.records) == 1
+    assert "Dumped loaded modules" in caplog.text
+    dumpfiles = [p for p in tmp_path.iterdir() if p.name.startswith("barnhunt-modules")]
+    assert len(dumpfiles) == 1

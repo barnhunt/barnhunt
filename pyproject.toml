@@ -61,6 +61,7 @@ source-includes = [
 [tool.pdm.scripts]
 barnhunt.call = "barnhunt.cli:main"
 
+build-exe.cmd = "python pyoxidizer/build.py"
 
 [tool.pdm.dev-dependencies]
 dev = [
@@ -70,6 +71,10 @@ dev = [
     "types-atomicwrites",
     "types-lxml; python_version>='3.8'",
     "types-requests",
+]
+pyoxidizer = [
+    "pip-tools>=6.13.0",
+    "pyoxidizer>=0.24.0",
 ]
 test = [
     "pytest>=7.3.1",

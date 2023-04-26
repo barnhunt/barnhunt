@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import atexit
+import datetime
 import logging
 import os
 import random
@@ -21,6 +23,7 @@ from typing import TypeVar
 import click
 from atomicwrites import atomic_write
 
+from ._compat import metadata
 from .coursemaps import Coursemap
 from .coursemaps import iter_coursemaps
 from .inkscape.runner import inkscape_runner
@@ -39,11 +42,35 @@ log = logging.getLogger("")
 
 POSITIVE_INT = click.IntRange(1, None)
 
+BARNHUNT_VERSION = metadata.version("barnhunt")
+
+
+def _dump_loaded_modules() -> None:
+    utcnow = datetime.datetime.utcnow()
+    dump_file = f"barnhunt-modules.{os.getpid()}"
+    with open(dump_file, "w") as fp:
+        print(f"# Modules loaded by barnhunt {BARNHUNT_VERSION}", file=fp)
+        print(f"# {utcnow.isoformat(timespec='seconds')}Z", file=fp)
+        print(f"# Command: {' '.join(sys.argv[1:])}", file=fp)
+        for name in sorted(sys.modules):
+            print(name, file=fp)
+    log.warning("Dumped loaded modules to %r", dump_file)
+
 
 @click.group()
 @click.option("-v", "--verbose", count=True)
+@click.option(
+    "--dump-loaded-modules/--no-dump-loaded-modules",
+    envvar="BARNHUNT_DUMP_LOADED_MODULES",
+    default=False,
+    help=(
+        "Write a list of loaded modules to barnhunt-modes.<pid> after "
+        "command completion. (This can also be controlled by setting "
+        "the $BARNHUNT_DUMP_LOADED_MODULES environment variable.)"
+    ),
+)
 @click.version_option()
-def main(verbose: int) -> None:
+def main(verbose: int, dump_loaded_modules: bool) -> None:
     """Utilities for creating Barn Hunt course maps."""
     log_level = logging.WARNING
     if verbose:  # pragma: NO COVER
@@ -51,6 +78,8 @@ def main(verbose: int) -> None:
     logging.basicConfig(
         level=log_level, format="(%(levelname)1.1s) [%(threadName)s] %(message)s"
     )
+    if dump_loaded_modules:
+        atexit.register(_dump_loaded_modules)  # pragma: no cover
 
 
 @main.command()
