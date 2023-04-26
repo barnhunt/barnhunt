@@ -54,3 +54,57 @@ jobs:
           pyoxidizer/*.exe
           pyoxidizer/*.app
           pyoxidizer/build/**/install
+
+  test:
+    name: Test
+    needs: [build]
+    runs-on: windows-latest
+    env:
+      BARNHUNT_DUMP_LOADED_MODULES: 'yes'
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        lfs: true
+    - uses: actions/download-artifact@v3
+      with:
+        name: oxidized
+    - run: Get-ChildItem -Recurse
+
+    - name: Install MSI
+      run: |
+        $file = Get-ChildItem -Filter *.msi | Select-Object -First 1
+        $args = "/i `"$($file.FullName)`" /qn /l `"install-msi.log`""
+        $proc = Start-Process "msiexec" $args -NoNewWindow -PassThru -Wait
+        Get-Content -Path "install-msi.log"
+        if ($proc.ExitCode -ne 0) { Throw "Could not install MSI" }
+
+        $installed = (
+          Get-ChildItem $env:ProgramFiles "barnhunt" -Directory
+          | Select-Object -ExpandProperty FullName
+        )
+        if ($installed.length -eq 0) { Throw "Could not find path to installed path" }
+        $installed | Out-File $env:GITHUB_PATH utf8 -Append
+        echo $installed
+
+    - run: choco install --no-progress --timeout 600 inkscape
+
+    - run: barnhunt --version
+    - run: barnhunt rats
+    - run: barnhunt install
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - run: barnhunt pdfs --no-shell-mode-inkscape ".\tests\drawing.svg"
+    - run: barnhunt pdfs ".\tests\drawing.svg"
+      continue-on-error: true
+    - run: barnhunt uninstall
+    - run: barnhunt 2up ".\pdfs\novice.pdf"
+
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: oxidized_test
+        if-no-files-found: error
+        path: |
+          pdfs
+          barnhunt-modules.*
