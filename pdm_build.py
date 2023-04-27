@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import re
+import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
+from packaging.version import Version
 from pdm.backend.hooks import Context
 
 PROJECT_ROOT = Path(__file__).parent
@@ -54,21 +55,26 @@ def get_dist_version() -> str:
     return proc.stdout.strip()
 
 
-def get_product_version(version: str) -> str:
+def get_product_version(dist_version: str) -> str:
     """Return a version number suitable for using for the WiX installer builder.
 
     WiX apparently only accepts version number consisting of between one and four
     dot-separated non-negative integers.
 
-    Here we translate something like `v1.2.0rc5-14-gc920d76` to `1.2.0.5`.
+    Here we return <major>.<minor>.<micro>.<build>, where normally <build>
+    is taken from $GITHUB_RUN_NUMBER, guaranteed increasing run number for the
+    workflow.
 
-    It's not perfect.
     """
-    # strip any +local part and .dev suffix
-    external_version, _, _ = version.partition("+")
-    non_dev_version, _, _ = external_version.partition(".dev")
-    nums = re.findall(r"\d+", non_dev_version)
-    return ".".join(nums[:4])
+    version = Version(dist_version)
+    build_number = os.environ.get(
+        "BARNHUNT_BUILD_NUMBER", os.environ.get("GITHUB_RUN_NUMBER")
+    )
+    if build_number is not None:
+        build = int(build_number)
+        assert build >= 0
+        return f"{version.major}.{version.minor}.{version.micro}.{build}"
+    return f"{version.major}.{version.minor}.{version.micro}"
 
 
 def oxidize() -> None:
