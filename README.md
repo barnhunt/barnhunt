@@ -35,8 +35,37 @@ fixable.)
 
 ## Installation
 
+### Windows
+
+We now publish a compiled version of the program for Windows (which may
+even work.) Using this version has the advantage that Python is not required
+to be installed. (And even if Python is installed, this version may work-around
+some bugs having to do with the various different ways that Python can be
+installed on on Windows computer.)
+
+1. Browse to our [releases](https://github.com/barnhunt/barnhunt/releases/)
+   page. Select a release, and look down in the *Assets* section of the
+   release page. (You may have to click the triangle to expand the
+   *Assets* section.)
+
+2. Download the MSI installer (the filename should end with `.msi` —
+   e.g. `Barnhunt-1.2.0.49-x86_64-pc-windows-msvc.msi`). The file
+   is not signed, so you may have to click through some nasty warnings
+   about "unrecognized, potentially dangerous" files.
+
+3. Once downloaded, open (double-click) the file you just
+   downloaded. Hopefully and installer dialog should open.  Accept the
+   default choices.
+
+4. Now open a terminal command-line window. Type `barnhunt
+   --version`. If all is good, barnhunt should report its version. Run
+   `barnhunt --help` for the help screen.
+
+
+### Linux (or Windows with Python installed)
+
 As this package is published to
-[PyPI](https://pypi.org/project/barnhunt/) in may be installed into a
+[PyPI](https://pypi.org/project/barnhunt/) it may be installed into a
 [_virtualenv_][venv] using [`pip`][pip]. It is suggested that you use
 [`pipx`][pipx] to combine those two steps.
 
