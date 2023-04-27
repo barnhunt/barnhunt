@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - '*'
+    tags:
+      # v* are protected tags
+      - 'v*'
   pull_request:
 
 env:
@@ -12,7 +15,7 @@ env:
   # the `|| null` is to avoid casting `false` to `'false'`
   is-tag-push: ${{
     (
-      github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+      github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     ) || null
     }}
 
@@ -20,20 +23,21 @@ permissions:
   contents: read
 
 jobs:
-  defaults:
+  env:
     # https://github.com/orgs/community/discussions/26671#discussioncomment-4295807
     runs-on: ubuntu-latest
     outputs:
-      python-version: ${{ env.default-python-version }}
+      default-python-version: ${{ env.default-python-version }}
+      is-tag-push: ${{ env.is-tag-push }}
     steps:
       - run: echo "Exposing env vars"
 
   tests:
     name: Run Tests
     uses: ./.github/workflows/tests.yml
-    needs: defaults
+    needs: env
     with:
-      default-python-version: ${{ needs.defaults.outputs.python-version }}
+      default-python-version: ${{ needs.env.outputs.default-python-version }}
     secrets:
       github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -43,7 +47,7 @@ jobs:
 
   package:
     name: Build python package
-    needs: [tests]
+    needs: tests
     runs-on: ubuntu-latest
 
     steps:
@@ -68,8 +72,9 @@ jobs:
 
   release:
     name: Upload to PyPI and make Release
-    if: github.event_name == 'push'
-    needs: [package, oxidize]
+    if: ${{ needs.env.outputs.is-tag-push }}
+    # if: github.event_name == 'push'
+    needs: [env, package, oxidize]
     environment:
       name: pypi
       url: https://pypi.org/p/barnhunt
