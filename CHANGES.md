@@ -1,5 +1,25 @@
 ## Changes
 
+### Release 1.2.0rc6 (unreleased)
+
+- Build an Windows executable and installer using [PyOxidizer].  The
+  .msi installer should be downloadable from the
+  [Releases](https://github.com/barnhunt/barnhunt/releases) page.
+
+- Added a `--dump-loaded-modules` option which causes `barnhunt` to
+  write a list of all loaded modules the current working directory.
+  (This is a development tool, not generally useful to most users.)
+
+- Hardwire the distribution version into `barnhunt.__version__` rather
+  than deducing it via `importlib.metadata`.  This allows us to monkey
+  with the version we report from the PyOxidizer-built Windows
+  executable so that it indicates the MSI build version as well as
+  the distribution version.
+
+- Convert package from setuptools to PDM.
+
+[PyOxidizer]: https://pyoxidizer.readthedocs.io/en/stable/pyoxidizer.html
+
 ### Release 1.2.0rc5 (2023-03-05)
 
 #### Bugs Fixed
