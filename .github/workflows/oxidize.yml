@@ -15,15 +15,18 @@ jobs:
           # Use older OS for libc b/c
           # - os: 'ubuntu-20.04'
           #   targets: install
+          #   pyoxidizer-cache: ~/.cache/pyoxidizer
 
           - os: 'windows-2019'
             targets: msi_installer
+            pyoxidizer-cache: ~\AppData\Local\pyoxidizer
             # (The exe_installer target will build both .exe and .msi
             # installers, so use just one or the other.)
 
           # Don't build on macOS. I have no way to test this.
           # - os: 'macos-latest'
           #   targets: install
+          #   pyoxidizer-cache: ~/Library/Caches/pyoxidizer
 
     steps:
     - uses: actions/checkout@v3
@@ -31,9 +34,17 @@ jobs:
         lfs: true
         fetch-depth: 0
 
+    - name: PyOxidizer cache
+      uses: actions/cache@v3
+      with:
+        path: ${{ matrix.pyoxidizer-cache }}
+        key: ${{ matrix.os }}-pyoxidizer-${{ hashFiles('pdm.lock', '**/*.bzl') }}
+
     - uses: actions/setup-python@v4
       with:
         python-version: '3.10.9'
+        cache: 'pip'
+        cache-dependency-path: pdm.lock
 
     - run: python -m pip install pdm
     - run: pdm install
