@@ -1,6 +1,6 @@
 ## Changes
 
-### Release 1.2.0rc6 (unreleased)
+### Release 1.2.0rc6 (2023-04-27)
 
 - Build an Windows executable and installer using [PyOxidizer].  The
   .msi installer should be downloadable from the
