@@ -13,7 +13,7 @@ print("VARS", VARS)
 # Python version to build
 python_version = VARS.get("python_version", "3.10")
 
-# The version of the barnhunt program.
+# The python distribution version of the barnhunt program.
 barnhunt_version = VARS.get("barnhunt_version", "<dev>")
 
 # This is for the installers we build.
@@ -23,7 +23,6 @@ product_version = VARS.get("product_version", "0.0")
 
 version_module = "barnhunt._version"
 project_root = CWD + "/.."
-
 
 print("python_version", python_version)
 print("product_version", product_version)
@@ -37,10 +36,151 @@ WIX_CONFIG = {
     "product_manufacturer": "Jeff Dairiki https://github.com/barnhunt",
 }
 
-
-# Any module not listed here gets omitted by the filter_stdlib filter (below)
-# This is currently unused.
-STDLIB_MODULES = []
+UNNEEDED_MODULES = """
+antigravity
+test
+this
+#pdm_build
+lxml.cssselect
+lxml.usedoctest
+idlelib
+lxml.objectify
+unittest
+ensurepip
+distutils
+tkinter
+pydoc_data
+lib2to3
+lxml.html
+asyncio
+ctypes
+pyexpat
+xml
+lxml.includes
+_ctypes
+sqlite3
+_testcapi
+_curses
+html
+_sqlite3
+_sha3
+_elementtree
+_tkinter
+_asyncio
+lxml.sax
+_codecs_jp
+_testclinic
+turtledemo
+xmlrpc
+audioop
+lxml.builder
+_pydecimal
+concurrent
+_zoneinfo
+_codecs_hk
+_codecs_cn
+_testbuffer
+lxml.isoschematron
+wsgiref
+_codecs_kr
+_xxsubinterpreters
+cmath
+_codecs_tw
+readline
+turtle
+_codecs_iso2022
+ossaudiodev
+_sha256
+_dbm
+pydoc
+mmap
+doctest
+zoneinfo
+_lsprof
+_curses_panel
+argparse
+tarfile
+_gdbm
+_pyio
+pickletools
+_testmultiphase
+_xxtestfuzz
+venv
+difflib
+_testinternalcapi
+_ctypes_test
+mailbox
+nis
+_sha1
+_md5
+curses
+grp
+pdb
+logging.handlers
+optparse
+imaplib
+configparser
+spwd
+dbm
+syslog
+http.server
+smtplib
+_posixshmem
+statistics
+xxlimited
+_statistics
+nntplib
+_crypt
+xxlimited_35
+_contextvars
+logging.config
+ftplib
+_testimportmultiple
+smtpd
+cgi
+aifc
+bdb
+pstats
+trace
+plistlib
+fractions
+socketserver
+#_sysconfigdata__linux_x86_64-linux-gnu
+pkgutil
+modulefinder
+webbrowser
+telnetlib
+profile
+_osx_support
+asyncore
+compileall
+lxml.doctestcompare
+sunau
+tracemalloc
+wave
+fileinput
+poplib
+cmd
+binhex
+_markupbase
+timeit
+runpy
+deprecation
+cgitb
+asynchat
+pyclbr
+tabnanny
+code
+imp
+symtable
+filecmp
+graphlib
+mailcap
+pipes
+shelve
+lxml.ElementInclude
+""".split()
+print("UNNEEDED_MODULES", UNNEEDED_MODULES)
 
 # Configuration files consist of functions which define build "targets."
 # This function creates a Python executable and installs it in a destination
@@ -50,6 +190,8 @@ report_state = {}
 
 
 def resource_repr(resource):
+    """Return __repr__ for resource.
+    """
     bits = [type(resource)]
     for attr in ("path", "package", "name"):
         if hasattr(resource, attr):
@@ -59,7 +201,13 @@ def resource_repr(resource):
     return " ".join(bits)
 
 
-def report_resource(policy, resource, prefix="", force=""):
+def report_resource(policy, resource, prefix=""):
+    """Report resource to stdout.
+
+    Resource is prefix by PREFIX, if given.  If PREFIX is not specified a default
+    prefix indicating whether the resource is currently slated to be included
+    in the build is used.
+    """
     pfx = prefix
     if prefix:
         pfx = prefix
@@ -75,26 +223,26 @@ def report_resource(policy, resource, prefix="", force=""):
 
 
 def resource_already_reported(resource):
+    """Has this resource already been reported?
+    """
     return resource_repr(resource) in reported_resources
 
 
-def filter_stdlib(policy, resource):
-    if not getattr(resource, "is_stdlib", False):
-        return
+def exclude_unneeded(policy, resource):
     if not resource.add_include:
         return
-
-    if type(resource) == "PythonPackageResource":
-        name = resource.package
-        if name.startswith("config-"):
-            return
-    else:
+    if (
+        type(resource) == "PythonModuleSource"
+        or type(resource) == "PythonExtensionModule"
+    ):
         name = resource.name
-    if name in STDLIB_MODULES:
+    elif type(resource) == "PythonPackageResource":
+        name = resource.package
+    else:
         return
-
-    resource.add_include = False
-    report_resource(policy, resource, "OMIT")
+    if name in UNNEEDED_MODULES:
+        resource.add_include = False
+        report_resource(policy, resource, "UNNEEDED")
 
 
 def filter_package_resources(policy, resource):
@@ -141,6 +289,8 @@ def include_extmodules(policy, resource):
 
 
 def is_uninteresting(resource):
+    """Uninteresting resources are not reported, by default.
+    """
     if type(resource) == "PythonExtensionModule":
         # these always seem to be included, regardless of .add_include
         return True
@@ -173,6 +323,7 @@ def is_uninteresting(resource):
 
 def report_interesting(policy, resource):
     force = type(resource) != "File" and report_state.get("was_file", False)
+    force = force or VARS.get("verbose")
     if not force:
         if resource_already_reported(resource) or is_uninteresting(resource):
             return
@@ -185,12 +336,11 @@ def make_exe():
     dist = default_python_distribution(python_version=python_version)
 
     policy = dist.make_python_packaging_policy()
-    # XXX: doesn't work yet
-    # policy.register_resource_callback(filter_stdlib)
+
+    policy.register_resource_callback(exclude_unneeded)
     policy.register_resource_callback(include_dlls)
     policy.register_resource_callback(include_extmodules)
     policy.register_resource_callback(filter_package_resources)
-    # policy.register_resource_callback(report_resource)
     policy.register_resource_callback(report_interesting)
 
     policy.resources_location = "in-memory"
@@ -216,24 +366,19 @@ def make_exe():
     # This variable defines the configuration of the embedded Python
     python_config = dist.make_python_interpreter_config()
 
-    # Set initial value for `sys.path`. If the string `$ORIGIN` exists in
-    # a value, it will be expanded to the directory of the built executable.
-
     # FIXME: needed? (neither seem to be?)
     # python_config.module_search_paths = ["$ORIGIN/lib"]
     # python_config.filesystem_importer = True
 
-    # Write files containing loaded modules to the directory specified
-    # by the given environment variable.
-    # python_config.write_modules_directory_env = "/tmp/oxidized/loaded_modules"
-
-    # Run a Python module as __main__ when the interpreter starts.
-    # NB: sys.argv[0] ends up being None, so make sure to ancipate that
-    # See https://github.com/indygreg/PyOxidizer/issues/307
-    python_config.run_module = "barnhunt"
-
-    # Make the embedded interpreter behave like a `python` process.
-    # python_config.config_profile = "python"
+    if not VARS.get("build-python"):
+        # Run a Python module as __main__ when the interpreter starts.
+        # NB: sys.argv[0] ends up being None, so make sure to ancipate that
+        # See https://github.com/indygreg/PyOxidizer/issues/307
+        python_config.run_module = "barnhunt"
+    else:
+        # Make the embedded interpreter behave like a `python` process.
+        # python_config.config_profile = "python"
+        python_config.config_profile = "python"
 
     exe = dist.to_python_executable(
         name="barnhunt",
@@ -251,24 +396,14 @@ def make_exe():
             )
         exe.add_python_resource(resource)
 
-    # Filter all resources collected so far through a filter of names
-    # in a file.
-    #exe.filter_resources_from_files(files=["/path/to/filter-file"])
-
-    # Return our `PythonExecutable` instance so it can be built and
-    # referenced by other consumers of this target.
     return exe
 
 def make_embedded_resources(exe):
     return exe.to_embedded_resources()
 
 def make_install(exe):
-    # Create an object that represents our installed application file layout.
     files = FileManifest()
-
-    # Add the generated executable to our install layout in the root directory.
     files.add_python_resource(".", exe)
-
     return files
 
 def make_msi(exe):
@@ -287,6 +422,4 @@ register_target("install", make_install, depends=["exe"], default=True)
 register_target("msi_installer", make_msi, depends=["exe"])
 register_target("exe_installer", make_bundle, depends=["exe"])
 
-# Resolve whatever targets the invoker of this configuration file is requesting
-# be resolved.
 resolve_targets()
