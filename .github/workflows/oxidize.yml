@@ -31,7 +31,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        lfs: true
         fetch-depth: 0
 
     - name: PyOxidizer cache
@@ -72,7 +71,6 @@ jobs:
     - uses: actions/checkout@v3
       with:
         path: src
-        lfs: true
     - uses: actions/download-artifact@v3
       with:
         name: oxidized
