@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-import atexit
 import datetime
 import logging
 import os
 import random
+import re
 import sys
 from collections import defaultdict
 from contextlib import ExitStack
-from functools import partial
 from itertools import count
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any
 from typing import BinaryIO
 from typing import Callable
 from typing import Iterable
@@ -24,9 +22,12 @@ import click
 from atomicwrites import atomic_write
 
 import barnhunt
+from ._compat import importlib_metadata as metadata
 from .coursemaps import Coursemap
 from .coursemaps import iter_coursemaps
+from .inkscape.runner import DEFAULT_INKSCAPE_COMMAND
 from .inkscape.runner import inkscape_runner
+from .inkscape.utils import get_inkscape_debug_info
 from .inkscape.utils import get_user_data_directory
 from .installer import DEFAULT_REQUIREMENTS
 from .installer import InkexRequirement
@@ -43,41 +44,44 @@ log = logging.getLogger("")
 POSITIVE_INT = click.IntRange(1, None)
 
 
-def _dump_loaded_modules() -> None:
-    utcnow = datetime.datetime.utcnow()
-    dump_file = f"barnhunt-modules.{os.getpid()}"
-    with open(dump_file, "w") as fp:
-        print(f"# Modules loaded by barnhunt {barnhunt.__version__}", file=fp)
-        print(f"# {utcnow.isoformat(timespec='seconds')}Z", file=fp)
-        print(f"# Command: {' '.join(sys.argv[1:])}", file=fp)
-        for name in sorted(sys.modules):
-            print(name, file=fp)
-    log.warning("Dumped loaded modules to %r", dump_file)
+class ContextObj:
+    inkscape_command: str = DEFAULT_INKSCAPE_COMMAND
 
 
 @click.group()
 @click.option("-v", "--verbose", count=True)
-@click.option(
-    "--dump-loaded-modules/--no-dump-loaded-modules",
-    envvar="BARNHUNT_DUMP_LOADED_MODULES",
-    default=False,
-    help=(
-        "Write a list of loaded modules to barnhunt-modes.<pid> after "
-        "command completion. (This can also be controlled by setting "
-        "the $BARNHUNT_DUMP_LOADED_MODULES environment variable.)"
-    ),
-)
 @click.version_option(version=barnhunt.__version__)
-def barnhunt_cli(verbose: int, dump_loaded_modules: bool) -> None:
+@click.option(
+    "--inkscape-command",
+    "--inkscape",
+    metavar="COMMAND",
+    envvar="INKSCAPE_COMMAND",  # NB: this is what inkex uses
+    required=False,
+    help=f"""
+    Name of (or path to) inkscape executable to use for exporting PDFs and for
+    determining the location of the user profile directory.
+    (Equivalently, you may set the $INKSCAPE_COMMAND environment variable.)
+    The default is {DEFAULT_INKSCAPE_COMMAND!r}.
+    """,
+)
+@click.pass_context
+def barnhunt_cli(
+    ctx: click.Context,
+    verbose: int,
+    inkscape_command: str | None,
+) -> None:
     """Utilities for creating Barn Hunt course maps."""
+    ctx.ensure_object(ContextObj)
+
+    if inkscape_command:
+        ctx.obj.inkscape_command = inkscape_command
+
     log_level = logging.WARNING
     if verbose:  # pragma: NO COVER
         log_level = logging.DEBUG if verbose > 1 else logging.INFO
     logging.basicConfig(
         level=log_level, format="(%(levelname)1.1s) [%(threadName)s] %(message)s"
     )
-    if dump_loaded_modules:
-        atexit.register(_dump_loaded_modules)  # pragma: no cover
 
 
 @barnhunt_cli.command()
@@ -121,34 +125,6 @@ def random_seed(svgfiles: Iterable[str], force_reseed: bool) -> None:
             tree.write(f)
 
 
-def default_inkscape_command() -> str:
-    # This is what inkex.command does to find Inkscape (after first
-    # checking $INKSCAPE_COMMAND).
-    #
-    # https://gitlab.com/inkscape/extensions/-/blob/cb74374e46894030775cf947e97ca341b6ed85d8/inkex/command.py#L45
-    if sys.platform == "win32":
-        # prefer inkscape.exe over inkscape.com which spawns a command window
-        return "inkscape.exe"
-    return "inkscape"
-
-
-def inkscape_command_option(**kwargs: Any) -> Callable[..., Any]:
-    return click.option(
-        "--inkscape-command",
-        "--inkscape",
-        metavar="COMMAND",
-        envvar="INKSCAPE_COMMAND",  # NB: this is what inkex uses
-        default=default_inkscape_command,
-        help=f"""
-        Name of (or path to) inkscape executable to use for exporting PDFs and for
-        determining the location of the user profile directory.
-        (Equivalently, you may set the $INKSCAPE_COMMAND environment variable.)
-        The default is {default_inkscape_command()!r}.
-        """,
-        **kwargs,
-    )
-
-
 def default_shell_mode() -> bool:
     """Whether to use Inkscape's shell-mode by default."""
     if sys.platform == "darwin":
@@ -180,7 +156,6 @@ def default_shell_mode() -> bool:
     The default is {os.cpu_count()} (the number of CPUs detected on this platform).
     """,
 )
-@inkscape_command_option()
 @click.option(
     "--shell-mode-inkscape/--no-shell-mode-inkscape",
     "shell_mode",
@@ -191,14 +166,16 @@ def default_shell_mode() -> bool:
     seems to be broken).
     """,
 )
+@click.pass_context
 def pdfs(
+    ctx: click.Context,
     svgfiles: Iterable[BinaryIO],
     output_directory: str,
     shell_mode: bool,
-    inkscape_command: str,
     processes: int,
 ) -> None:
     """Export PDFs from inkscape SVG coursemaps."""
+    inkscape_command = ctx.obj.inkscape_command
     counter = count(1)
 
     with ExitStack() as stack:
@@ -384,6 +361,11 @@ class InkexRequirementType(click.ParamType):
         return value
 
 
+def get_default_target() -> Path:
+    ctx = click.get_current_context()
+    return get_user_data_directory(ctx.obj.inkscape_command)
+
+
 target_option = click.option(
     "--target",
     type=click.Path(exists=True, file_okay=False, writable=True, path_type=Path),
@@ -393,16 +375,8 @@ target_option = click.option(
     Defaults to inkscape’s user data directory, e.g. $XDG_CONFIG_HOME/inkscape, or
     %APPDATA%\\inkscape on Windows.  This may also be set by setting the
     $INKSCAPE_PROFILE_DIR environment variable.""",
+    default=get_default_target,
 )
-
-
-def set_default_target(
-    ctx: click.Context, param: click.Parameter, inkscape_command: str
-) -> str:
-    if ctx.default_map is None:
-        ctx.default_map = {}
-    ctx.default_map["target"] = partial(get_user_data_directory, inkscape_command)
-    return inkscape_command
 
 
 @barnhunt_cli.command()
@@ -417,11 +391,6 @@ def set_default_target(
 @click.option("--pre/--no-pre", help="Include pre-release and development versions.")
 @click.option("-n", "--dry-run/--no-dry-run", help="Just show what would be done.")
 @target_option
-@inkscape_command_option(
-    is_eager=True,
-    expose_value=False,
-    callback=set_default_target,
-)
 @click.option(
     "--github-token",
     envvar="GITHUB_TOKEN",
@@ -454,11 +423,6 @@ def install(
 )
 @click.option("-n", "--dry-run/--no-dry-run", help="Just show what would be done.")
 @target_option
-@inkscape_command_option(
-    is_eager=True,
-    expose_value=False,
-    callback=set_default_target,
-)
 def uninstall(
     target: Path,
     dry_run: bool,
@@ -470,8 +434,131 @@ def uninstall(
         installer.uninstall(requirement)
 
 
+@click.option("--command-info", is_flag=True, help="Show information about the command")
+@click.option("--inkscape-info", is_flag=True, help="Show information about Inkscape")
+@click.option("--system-info", is_flag=True, help="Show information about Python")
+@click.option("--package-info", is_flag=True, help="Show installed python packages")
+@barnhunt_cli.command()
+@click.pass_context
+def debug_info(
+    ctx: click.Context,
+    command_info: bool,
+    inkscape_info: bool,
+    system_info: bool,
+    package_info: bool,
+) -> None:
+    """Show debugging information.
+
+    This command display a compendium of information about the program and
+    the environment it is running in. The output of this command may help
+    in diagnosing the causes of failures or other problems.
+
+
+    Note: Setting the $BARNHUNT_DUMP_LOADED_MODULES environment variable to a non-empty
+    value will cause the program to write a list of loaded modules to a file in the
+    current working directory named "barnhunt-modes.<pid>".
+
+    """
+    inkscape_command = ctx.obj.inkscape_command
+    formatter = ctx.make_formatter()
+
+    if not (command_info or inkscape_info or system_info or package_info):
+        command_info = inkscape_info = system_info = package_info = True
+
+    def nl2br(info: Sequence[tuple[str, str]]) -> list[tuple[str, str]]:
+        return [(term, defn.replace("\n", "\n\n@")) for term, defn in info]
+
+    if command_info:
+        with formatter.section("Barnhunt"):
+            formatter.write_dl([
+                ("version", barnhunt.__version__),
+                ("inkscape-shell-mode", repr(ctx.obj.shell_mode)),
+                ("processors", str(ctx.obj.processes)),
+            ])
+
+    if inkscape_info:
+        with formatter.section("Inkscape"):
+            formatter.write_dl(nl2br(get_inkscape_debug_info(inkscape_command)), 0)
+
+    if system_info:
+        with formatter.section("Python Information"):
+            formatter.write_dl(nl2br(_get_system_debug_info()), 0)
+
+    if package_info:
+        with formatter.section("Installed Python Distributions"):
+            formatter.write_dl(_get_package_debug_info(), 22)
+
+    print(re.sub(r"\n\s*(\n\s*)@", r"\1", formatter.getvalue().strip()))
+
+
+def _get_package_debug_info() -> list[tuple[str, str]]:
+    return [
+        (dist.name, dist.version)
+        for dist in sorted(metadata.distributions(), key=lambda d: d.name.lower())
+    ]
+
+
+def _get_system_debug_info() -> list[tuple[str, str]]:
+    debug_items = [
+        "sys.executable",
+        "sys.version",
+        "sys.version_info",
+        "sys.platform",
+        "os.name",
+        "os.uname()",
+        "sys.implementation.name",
+        "sys.implementation.cache_tag",
+        "sys.implementation._multiarch",
+        "sys.api_version",
+        "sys.getdefaultencoding()",
+        "sys.getfilesystemencoding()",
+        "sys.windowsversion",
+        "sys.winver",
+        "sys.argv",
+        "sys.path",
+        "os.get_exec_path()",
+    ]
+
+    def get_value(item: str) -> str:
+        try:
+            value = eval(item, globals(), {})
+        except Exception:
+            return ""
+        if isinstance(value, list):
+            # sys.path
+            return "\n".join(map(repr, value))
+        if isinstance(value, tuple):
+            value = tuple(value)  # get rid of namedtuple names
+        return repr(value)
+
+    return [(item, get_value(item)) for item in debug_items]
+
+
 def main(args: Sequence[str] | None = None) -> None:
     prog_name = None  # by default let click figure out program name
     if sys.argv[0] == "-c":
+        # This fixup is needed for the PyOxidizer-compiled binary
         prog_name = "barnhunt"  # pragma: no cover
-    barnhunt_cli(args, prog_name=prog_name)
+    try:
+        barnhunt_cli(args, prog_name=prog_name)
+    finally:
+        if os.environ.get("BARNHUNT_DUMP_LOADED_MODULES"):
+            _dump_loaded_modules()
+
+
+def _dump_loaded_modules() -> None:
+    utcnow = datetime.datetime.utcnow()
+    dump_file = f"barnhunt-modules.{os.getpid()}"
+    with open(dump_file, "w") as fp:
+        print(f"# Modules loaded by barnhunt {barnhunt.__version__}", file=fp)
+        print(f"# {utcnow.isoformat(timespec='seconds')}Z", file=fp)
+        print(f"# Command: {' '.join(sys.argv[1:])}", file=fp)
+        for name in sorted(sys.modules):
+            print(name, file=fp)
+
+    formatter = click.HelpFormatter()
+    formatter.write_text(
+        f"Dumped loaded modules to {dump_file!r} "
+        "(Unset $BARNHUNT_DUMP_LOADED_MODULES to prevent this.)"
+    )
+    print("\n" + formatter.getvalue().rstrip(), file=sys.stderr)

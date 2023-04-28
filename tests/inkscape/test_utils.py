@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ctypes
+import inspect
 import os
 import re
 import sys
@@ -14,6 +15,7 @@ from pytest_mock import MockerFixture
 
 from barnhunt.inkscape.utils import _get_appdata
 from barnhunt.inkscape.utils import get_default_user_data_directory
+from barnhunt.inkscape.utils import get_inkscape_debug_info
 from barnhunt.inkscape.utils import get_user_data_directory
 
 if sys.version_info >= (3, 8):
@@ -118,3 +120,49 @@ def test_get_default_user_data_directory_from_appdata_coverage() -> None:
 def test_get_appdata(monkeypatch: pytest.MonkeyPatch) -> None:
     appdata = _get_appdata()
     assert Path(appdata).is_absolute()
+
+
+def test_get_inkscape_debug_info_no_inkscape() -> None:
+    info = dict(get_inkscape_debug_info("inkscape-is-not-installed"))
+    assert "not found" in info["which"]
+
+
+@pytest.fixture
+def dummy_script(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Create a dummy script named "inkscape" in the PATH
+
+    The script will echo its arguments, and then exit with a non-zero exit code.
+
+    """
+    if sys.platform == "win32":
+        script_path = tmp_path / "inkscape.bat"
+        script_path.write_text(
+            inspect.cleandoc(
+                """@echo off
+                if "%~1" NEQ "" echo %*
+                echo "diagnostics" 1>&2
+                exit 1
+                """
+            )
+        )
+    else:
+        script_path = tmp_path / "inkscape"
+        script_path.write_text(
+            inspect.cleandoc(
+                """#!/bin/sh
+                echo "$*"
+                echo "diagnostics" 1>&2
+                exit 1
+                """
+            )
+        )
+        script_path.chmod(0o500)
+    monkeypatch.setenv("PATH", os.fspath(tmp_path))
+
+
+@pytest.mark.usefixtures("dummy_script")
+def test_get_inkscape_debug_info_old_inkscape() -> None:
+    info = dict(get_inkscape_debug_info("inkscape"))
+    assert "debug-info" not in info
+    assert "--version" in info["version"]
+    assert "diagnostics" in info["stderr⇒"]

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 import shutil
@@ -72,3 +74,34 @@ def _get_appdata() -> str:
             f"ctypes call to SHGetFolderPathW failed ({result})"
         )
     return path_buf.value
+
+
+def get_inkscape_debug_info(inkscape_command: str) -> list[tuple[str, str]]:
+    """Get information about the installed version of Inkscape.
+
+    This information is displayed by the ``barnhunt debug-info`` command.
+
+    """
+    info = [("inkscape_command", inkscape_command)]
+    inkscape = shutil.which(inkscape_command)
+    if not inkscape:
+        info.append(("which", "<not found>"))
+        return info
+    info.append(("which", inkscape))
+
+    try:
+        resolved = Path(inkscape).resolve(strict=True)
+    except Exception as exc:  # pragma: no cover
+        info.append(("resolved", repr(exc)))
+    else:
+        info.append(("resolved", repr(str(resolved))))
+
+    proc = run((inkscape, "--debug-info"), capture_output=True, text=True)
+    if proc.returncode == 0:
+        info.append(("debug-info", proc.stdout.rstrip()))
+    else:
+        proc = run((inkscape, "--version"), capture_output=True, text=True)
+        info.append(("version", proc.stdout.rstrip().rpartition("\n")[2]))
+    if proc.stderr.strip():
+        info.append(("stderr⇒", proc.stderr.rstrip()))
+    return info

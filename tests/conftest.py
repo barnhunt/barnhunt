@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from barnhunt.cli import default_inkscape_command
+from barnhunt.inkscape.runner import get_default_inkscape_command
 
 
 @pytest.fixture
@@ -37,7 +37,7 @@ def tmp_drawing_svg(tmp_path: Path, drawing_svg: Path) -> Path:
 
 
 _inkscape_executable = shutil.which(
-    os.environ.get("INKSCAPE_COMMAND", default_inkscape_command())
+    os.environ.get("INKSCAPE_COMMAND", get_default_inkscape_command())
 )
 
 

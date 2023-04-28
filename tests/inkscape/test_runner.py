@@ -17,11 +17,27 @@ from barnhunt.inkscape.runner import dwim_old_inkscape
 from barnhunt.inkscape.runner import ExportPdfCommand
 from barnhunt.inkscape.runner import ExportPdfCommand_0_9x
 from barnhunt.inkscape.runner import ExportPdfCommand_1_0
+from barnhunt.inkscape.runner import get_default_inkscape_command
 from barnhunt.inkscape.runner import inkscape_runner
 from barnhunt.inkscape.runner import InkscapeApi
 from barnhunt.inkscape.runner import log_output
 from barnhunt.inkscape.runner import Runner
 from barnhunt.inkscape.runner import ShellModeRunner
+
+
+@pytest.mark.parametrize(
+    "platform, expect",
+    [
+        ("linux", "inkscape"),
+        ("win32", "inkscape.exe"),
+    ],
+)
+def test_get_default_inkscape_command(
+    platform: str, expect: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delitem(os.environ, "INKSCAPE_COMMAND", raising=False)
+    monkeypatch.setattr("sys.platform", platform)
+    assert get_default_inkscape_command() == expect
 
 
 class TestExportPdfCommand:

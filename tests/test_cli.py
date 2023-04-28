@@ -14,28 +14,12 @@ from pytest_mock import MockerFixture
 from barnhunt.cli import _dump_loaded_modules
 from barnhunt.cli import barnhunt_cli
 from barnhunt.cli import default_2up_output_file
-from barnhunt.cli import default_inkscape_command
 from barnhunt.cli import default_shell_mode
 from barnhunt.cli import InkexRequirementType
 from barnhunt.cli import main
 from barnhunt.cli import pdf_2up
 from barnhunt.installer import DEFAULT_REQUIREMENTS
 from barnhunt.installer import InkexRequirement
-
-
-@pytest.mark.parametrize(
-    "platform, expect",
-    [
-        ("linux", "inkscape"),
-        ("win32", "inkscape.exe"),
-    ],
-)
-def test_default_inkscape_command(
-    platform: str, expect: str, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.delitem(os.environ, "INKSCAPE_COMMAND", raising=False)
-    monkeypatch.setattr("sys.platform", platform)
-    assert default_inkscape_command() == expect
 
 
 @pytest.mark.parametrize(
@@ -164,7 +148,7 @@ def test_install_target_from_inkscape(mocker: MockerFixture, tmp_path: Path) -> 
     )
     Installer = mocker.patch("barnhunt.cli.Installer")
     runner = CliRunner()
-    result = runner.invoke(barnhunt_cli, ("install", "--inkscape", "myinkscape"))
+    result = runner.invoke(barnhunt_cli, ("--inkscape", "myinkscape", "install"))
     assert result.exit_code == 0
     get_user_data_directory.assert_called_once_with("myinkscape")
     Installer.assert_called_once_with(target, dry_run=False, github_token="token")
@@ -181,17 +165,22 @@ def test_uninstall(mocker: MockerFixture, tmp_path: Path) -> None:
     ]
 
 
-def test_dump_loaded_modules_option(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_debug_info() -> None:
+    runner = CliRunner()
+    result = runner.invoke(barnhunt_cli, ("debug-info",))
+    assert result.exit_code == 0
+
+
+def test_main_dumps_loaded_modules(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    proc = subprocess.run(
-        [sys.executable, "-m", "barnhunt", "--dump-loaded-modules", "rats"],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    assert "Dumped loaded modules" in proc.stderr
+    monkeypatch.setenv("BARNHUNT_DUMP_LOADED_MODULES", "true")
+    monkeypatch.setattr("sys.argv", ["-c", "--version"])
+    with pytest.raises(SystemExit) as exc_info:
+        main()
+    assert exc_info.value.code == 0
+    assert "Dumped loaded modules" in capsys.readouterr().err
     dumpfiles = [p for p in tmp_path.iterdir() if p.name.startswith("barnhunt-modules")]
     assert len(dumpfiles) == 1
     modules = set(dumpfiles[0].read_text("utf-8").splitlines())
@@ -199,11 +188,11 @@ def test_dump_loaded_modules_option(
 
 
 def test_dump_loaded_modules(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     monkeypatch.chdir(tmp_path)
     _dump_loaded_modules()
-    assert len(caplog.records) == 1
-    assert "Dumped loaded modules" in caplog.text
+    captured = capsys.readouterr()
+    assert "Dumped loaded modules" in captured.err
     dumpfiles = [p for p in tmp_path.iterdir() if p.name.startswith("barnhunt-modules")]
     assert len(dumpfiles) == 1

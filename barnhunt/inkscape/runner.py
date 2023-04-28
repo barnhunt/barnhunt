@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import shlex
+import sys
 import threading
 import weakref
 from dataclasses import dataclass
@@ -21,9 +22,24 @@ from typing import TypeVar
 
 from pexpect.popen_spawn import PopenSpawn
 
+from .._compat import Final
 from .._compat import Protocol
 
 log = logging.getLogger()
+
+
+def get_default_inkscape_command() -> str:
+    # This is what inkex.command does to find Inkscape (after first
+    # checking $INKSCAPE_COMMAND).
+    #
+    # https://gitlab.com/inkscape/extensions/-/blob/cb74374e46894030775cf947e97ca341b6ed85d8/inkex/command.py#L45
+    if sys.platform == "win32":
+        # prefer inkscape.exe over inkscape.com which spawns a command window
+        return "inkscape.exe"
+    return "inkscape"
+
+
+DEFAULT_INKSCAPE_COMMAND: Final = get_default_inkscape_command()
 
 
 class InkscapeCommand(Protocol):
