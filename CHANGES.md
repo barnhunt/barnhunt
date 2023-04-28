@@ -1,5 +1,16 @@
 ## Changes
 
+### Release 1.2.1rc1 (unreleased)
+
+(There was no final release of 1.2.0. It is a long story. I mistakenly
+committed a couple of files to LFS. To clear out LFS storage for a
+GitHub repo, one has to [delete the whole repo](😬). As a result, the
+workflow `$GITHUB_RUN_NUMBER` has reset. Thus a micro-version bump
+is required to keep those PyOxidizer windows build version numbers —
+`<major>.<minor>.<micro>.<run-number>` — monotonic.)
+
+[delete the whole repo]: https://docs.github.com/en/repositories/working-with-files/managing-large-files/removing-files-from-git-large-file-storage#git-lfs-objects-in-your-repository
+
 ### Release 1.2.0rc6 (2023-04-27)
 
 - Build an Windows executable and installer using [PyOxidizer].  The
