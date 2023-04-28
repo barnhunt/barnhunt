@@ -1,10 +1,10 @@
 # Barn Hunt Map Helper
 
-[![Tests](https://github.com/barnhunt/barnhunt/actions/workflows/tests.yml/badge.svg)](https://github.com/barnhunt/barnhunt/actions/workflows/tests.yml)
-[![PyPI Version](https://img.shields.io/pypi/v/barnhunt.svg)](https://pypi.org/project/barnhunt/)
-[![Python Versions](https://img.shields.io/pypi/pyversions/barnhunt.svg)](https://pypi.org/project/barnhunt/)
-[![Inkscape Versions](https://img.shields.io/badge/Inkscape-0.9x%E2%80%931.2-blue.svg?logo=inkscape)](https://inkscape.org/)
-[![PyPI Status](https://img.shields.io/pypi/status/barnhunt.svg)](https://pypi.org/project/barnhunt/)
+[![Test status badge](https://img.shields.io/github/actions/workflow/status/barnhunt/barnhunt/ci.yml?label=tests)](https://github.com/barnhunt/barnhunt/actions/workflows/ci.yml)
+[![Latest version badge](https://img.shields.io/pypi/v/barnhunt.svg)](https://pypi.org/project/barnhunt/)
+[![Supported Python versions badge](https://img.shields.io/pypi/pyversions/barnhunt.svg)](https://pypi.org/project/barnhunt/)
+[![Supported Inkscape versions badge](https://img.shields.io/badge/Inkscape-0.9x%E2%80%931.2.2-blue.svg?logo=inkscape)](https://inkscape.org/)
+[![Development status badge](https://img.shields.io/pypi/status/barnhunt.svg)](https://pypi.org/project/barnhunt/)
 
 This is a helper script Jeff uses for drafting [Barn Hunt][] course
 maps.
