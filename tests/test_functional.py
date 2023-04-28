@@ -62,7 +62,7 @@ def test_pdfs(
     drawing_svg = os.path.join(here, "drawing.svg")
     cmd = ["pdfs", "-o", os.fspath(tmp_path), drawing_svg]
     if processes is not None:
-        cmd[1:1] = ["-p", processes]
+        cmd[0:0] = ["-p", processes]
     runner = CliRunner()
     result = runner.invoke(barnhunt_cli, cmd)
     assert result.exit_code == 0

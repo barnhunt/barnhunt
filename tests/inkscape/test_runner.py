@@ -18,6 +18,7 @@ from barnhunt.inkscape.runner import ExportPdfCommand
 from barnhunt.inkscape.runner import ExportPdfCommand_0_9x
 from barnhunt.inkscape.runner import ExportPdfCommand_1_0
 from barnhunt.inkscape.runner import get_default_inkscape_command
+from barnhunt.inkscape.runner import get_default_shell_mode
 from barnhunt.inkscape.runner import inkscape_runner
 from barnhunt.inkscape.runner import InkscapeApi
 from barnhunt.inkscape.runner import log_output
@@ -38,6 +39,20 @@ def test_get_default_inkscape_command(
     monkeypatch.delitem(os.environ, "INKSCAPE_COMMAND", raising=False)
     monkeypatch.setattr("sys.platform", platform)
     assert get_default_inkscape_command() == expect
+
+
+@pytest.mark.parametrize(
+    "platform, expect",
+    [
+        ("linux", True),
+        ("darwin", False),
+    ],
+)
+def test_get_default_shell_mode(
+    platform: str, expect: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("sys.platform", platform)
+    assert get_default_shell_mode() is expect
 
 
 class TestExportPdfCommand:

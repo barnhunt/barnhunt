@@ -14,26 +14,11 @@ from pytest_mock import MockerFixture
 from barnhunt.cli import _dump_loaded_modules
 from barnhunt.cli import barnhunt_cli
 from barnhunt.cli import default_2up_output_file
-from barnhunt.cli import default_shell_mode
 from barnhunt.cli import InkexRequirementType
 from barnhunt.cli import main
 from barnhunt.cli import pdf_2up
 from barnhunt.installer import DEFAULT_REQUIREMENTS
 from barnhunt.installer import InkexRequirement
-
-
-@pytest.mark.parametrize(
-    "platform, expect",
-    [
-        ("linux", True),
-        ("darwin", False),
-    ],
-)
-def test_default_shell_mode(
-    platform: str, expect: bool, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr("sys.platform", platform)
-    assert default_shell_mode() is expect
 
 
 class Test_default_2up_output_file:

@@ -39,7 +39,15 @@ def get_default_inkscape_command() -> str:
     return "inkscape"
 
 
+def get_default_shell_mode() -> bool:
+    """Whether to use Inkscape's shell-mode by default."""
+    if sys.platform == "darwin":
+        return False  # ShellModeRunner current borked
+    return True
+
+
 DEFAULT_INKSCAPE_COMMAND: Final = get_default_inkscape_command()
+DEFAULT_SHELL_MODE: Final = get_default_shell_mode()
 
 
 class InkscapeCommand(Protocol):

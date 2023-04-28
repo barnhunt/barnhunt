@@ -22,10 +22,12 @@ import click
 from atomicwrites import atomic_write
 
 import barnhunt
+from ._compat import Final
 from ._compat import importlib_metadata as metadata
 from .coursemaps import Coursemap
 from .coursemaps import iter_coursemaps
 from .inkscape.runner import DEFAULT_INKSCAPE_COMMAND
+from .inkscape.runner import DEFAULT_SHELL_MODE
 from .inkscape.runner import inkscape_runner
 from .inkscape.utils import get_inkscape_debug_info
 from .inkscape.utils import get_user_data_directory
@@ -44,8 +46,13 @@ log = logging.getLogger("")
 POSITIVE_INT = click.IntRange(1, None)
 
 
+DEFAULT_PROCESSES: Final = os.cpu_count() or 1
+
+
 class ContextObj:
     inkscape_command: str = DEFAULT_INKSCAPE_COMMAND
+    shell_mode: bool = DEFAULT_SHELL_MODE
+    processes: int = DEFAULT_PROCESSES
 
 
 @click.group()
@@ -56,7 +63,7 @@ class ContextObj:
     "--inkscape",
     metavar="COMMAND",
     envvar="INKSCAPE_COMMAND",  # NB: this is what inkex uses
-    required=False,
+    default=DEFAULT_INKSCAPE_COMMAND,
     help=f"""
     Name of (or path to) inkscape executable to use for exporting PDFs and for
     determining the location of the user profile directory.
@@ -64,17 +71,45 @@ class ContextObj:
     The default is {DEFAULT_INKSCAPE_COMMAND!r}.
     """,
 )
+@click.option(
+    "--processes",
+    "-p",
+    metavar="N",
+    type=POSITIVE_INT,
+    default=DEFAULT_PROCESSES,
+    envvar="BARNHUNT_PROCESSES",
+    help=f"""
+    Number of inkscape processes to run in parallel.
+    Set to one to disable parallel processing.
+    The default is {DEFAULT_PROCESSES} (the number of CPUs detected on this platform).
+    (This option may be set via the $BARNHUNT_PROCESSES environment variable.)
+    """,
+)
+@click.option(
+    "--shell-mode-inkscape/--no-shell-mode-inkscape",
+    "shell_mode",
+    default=DEFAULT_SHELL_MODE,
+    envvar="BARNHUNT_SHELL_MODE_INKSCAPE",
+    help=f"""
+    Enable/disable running inkscape in shell-mode for efficiency.
+    The default is to {"use" if DEFAULT_SHELL_MODE else "disable"}
+    shell-mode.
+    (This option may be set via the $BARNHUNT_SHELL_MODE_INKSCAPE environment variable.)
+    """,
+)
 @click.pass_context
 def barnhunt_cli(
     ctx: click.Context,
     verbose: int,
     inkscape_command: str | None,
+    shell_mode: bool | None,
+    processes: int | None,
 ) -> None:
     """Utilities for creating Barn Hunt course maps."""
     ctx.ensure_object(ContextObj)
-
-    if inkscape_command:
-        ctx.obj.inkscape_command = inkscape_command
+    ctx.obj.inkscape_command = inkscape_command
+    ctx.obj.shell_mode = shell_mode
+    ctx.obj.processes = processes
 
     log_level = logging.WARNING
     if verbose:  # pragma: NO COVER
@@ -125,13 +160,6 @@ def random_seed(svgfiles: Iterable[str], force_reseed: bool) -> None:
             tree.write(f)
 
 
-def default_shell_mode() -> bool:
-    """Whether to use Inkscape's shell-mode by default."""
-    if sys.platform == "darwin":
-        return False  # ShellModeRunner current borked
-    return True
-
-
 @barnhunt_cli.command()
 @click.argument("svgfiles", type=click.File("rb"), nargs=-1, required=True)
 @click.option(
@@ -144,38 +172,17 @@ def default_shell_mode() -> bool:
     The default is './pdfs'.
     """,
 )
-@click.option(
-    "--processes",
-    "-p",
-    metavar="N",
-    type=POSITIVE_INT,
-    default=os.cpu_count,
-    help="""
-    Number of inkscape processes to run in parallel.
-    Set to one to disable parallel processing.
-    The default is {os.cpu_count()} (the number of CPUs detected on this platform).
-    """,
-)
-@click.option(
-    "--shell-mode-inkscape/--no-shell-mode-inkscape",
-    "shell_mode",
-    default=default_shell_mode,
-    help="""
-    Enable/disable running inkscape in shell-mode for efficiency.
-    The default is enabled (except on macOS, where shell-mode currently
-    seems to be broken).
-    """,
-)
 @click.pass_context
 def pdfs(
     ctx: click.Context,
     svgfiles: Iterable[BinaryIO],
     output_directory: str,
-    shell_mode: bool,
-    processes: int,
 ) -> None:
     """Export PDFs from inkscape SVG coursemaps."""
     inkscape_command = ctx.obj.inkscape_command
+    shell_mode = ctx.obj.shell_mode
+    processes = ctx.obj.processes
+
     counter = count(1)
 
     with ExitStack() as stack:
@@ -470,11 +477,13 @@ def debug_info(
 
     if command_info:
         with formatter.section("Barnhunt"):
-            formatter.write_dl([
-                ("version", barnhunt.__version__),
-                ("inkscape-shell-mode", repr(ctx.obj.shell_mode)),
-                ("processors", str(ctx.obj.processes)),
-            ])
+            formatter.write_dl(
+                [
+                    ("version", barnhunt.__version__),
+                    ("inkscape-shell-mode", repr(ctx.obj.shell_mode)),
+                    ("processors", str(ctx.obj.processes)),
+                ]
+            )
 
     if inkscape_info:
         with formatter.section("Inkscape"):
