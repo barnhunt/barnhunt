@@ -1,8 +1,5 @@
-*.pyc
 *~
-/barnhunt.egg-info/
+__pycache__/
 /.coverage
-/.coverage.*
-/.eggs/
 /.tox/
 /.pdm-python
