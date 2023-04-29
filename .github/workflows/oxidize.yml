@@ -99,12 +99,15 @@ jobs:
     - run: inkscape --query-height ${{ env.test-svg }}
 
     # Run a bunch of tests
+    - run: barnhunt
+    - run: barnhunt --help
     - run: barnhunt --version
+    - run: barnhunt debug-info
     - run: barnhunt rats
     - run: barnhunt install
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - run: barnhunt pdfs --no-shell-mode-inkscape ${{ env.test-svg }}
+    - run: barnhunt --no-shell-mode-inkscape pdfs ${{ env.test-svg }}
 
     # XXX: shell-mode seems to fail sporadically?
     - run: barnhunt pdfs ${{ env.test-svg }}
