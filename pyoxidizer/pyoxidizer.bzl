@@ -220,7 +220,7 @@ def make_exe():
     # a value, it will be expanded to the directory of the built executable.
 
     # FIXME: needed? (neither seem to be?)
-    python_config.module_search_paths = ["$ORIGIN/lib"]
+    # python_config.module_search_paths = ["$ORIGIN/lib"]
     # python_config.filesystem_importer = True
 
     # Write files containing loaded modules to the directory specified
@@ -228,18 +228,12 @@ def make_exe():
     # python_config.write_modules_directory_env = "/tmp/oxidized/loaded_modules"
 
     # Run a Python module as __main__ when the interpreter starts.
-    #
-    # This doesn't work. sys.argv[0] ends up being None
-    #
+    # NB: sys.argv[0] ends up being None, so make sure to ancipate that
     # See https://github.com/indygreg/PyOxidizer/issues/307
-    #
-    # python_config.run_module = "barnhunt.__main__"
+    python_config.run_module = "barnhunt"
 
     # Make the embedded interpreter behave like a `python` process.
     # python_config.config_profile = "python"
-
-    # Evaluate a string as Python code when the interpreter starts.
-    python_config.run_command = "from barnhunt.cli import main; main()"
 
     exe = dist.to_python_executable(
         name="barnhunt",

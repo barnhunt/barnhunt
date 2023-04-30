@@ -1,6 +1,4 @@
 import os
-import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 from typing import Callable
@@ -67,17 +65,6 @@ def test_main(capsys: pytest.CaptureFixture[str]) -> None:
         main(["--help"])
     std = capsys.readouterr()
     assert "export pdfs from inkscape" in std.out.lower()
-
-
-def test_execute_python_c() -> None:
-    proc = subprocess.run(
-        [sys.executable, "-c", "from barnhunt.cli import main; main()", "--help"],
-        stdout=subprocess.PIPE,
-        text=True,
-        check=True,
-    )
-    assert "usage: barnhunt" in proc.stdout.lower()
-    assert proc.returncode == 0
 
 
 class Test_InkexRequirementType:

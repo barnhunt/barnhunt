@@ -15,6 +15,7 @@ from tempfile import TemporaryDirectory
 from typing import BinaryIO
 from typing import Callable
 from typing import Iterable
+from typing import NoReturn
 from typing import Sequence
 from typing import TypeVar
 
@@ -543,13 +544,9 @@ def _get_system_debug_info() -> list[tuple[str, str]]:
     return [(item, get_value(item)) for item in debug_items]
 
 
-def main(args: Sequence[str] | None = None) -> None:
-    prog_name = None  # by default let click figure out program name
-    if sys.argv[0] == "-c":
-        # This fixup is needed for the PyOxidizer-compiled binary
-        prog_name = "barnhunt"  # pragma: no cover
+def main(args: Sequence[str] | None = None, prog_name: str | None = None) -> NoReturn:
     try:
-        barnhunt_cli(args, prog_name=prog_name)
+        barnhunt_cli.main(args=args, prog_name=prog_name)
     finally:
         if os.environ.get("BARNHUNT_DUMP_LOADED_MODULES"):
             _dump_loaded_modules()
