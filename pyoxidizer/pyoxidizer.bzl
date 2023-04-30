@@ -37,27 +37,7 @@ WIX_CONFIG = {
 }
 
 INCLUDE_MODULES = """
-#*
-#runpy
-
-click._textwrap
-click.shell_completion
-difflib
-#_sysconfigdata__linux_x86_64-linux-gnu
-#lxml.*
-#PIL.*
-#encodings.*
-#logging.*
-#http.*
-#json.*
-# Modules loaded by barnhunt <dev>
-# 2023-04-27T18:46:36Z
-# Command: 2up pdfs/novice.pdf
-# Command: install
-# Command: pdfs --no-shell-mode-inkscape tests/drawing.svg
-# Command: pdfs tests/drawing.svg
-# Command: rats
-# Command: uninstall
+barnhunt.__main__
 _abc
 abc
 array
@@ -93,11 +73,6 @@ bz2
 calendar
 certifi
 certifi.core
-cffi
-cffi.api
-cffi.error
-cffi.lock
-cffi.model
 charset_normalizer
 charset_normalizer.api
 charset_normalizer.assets
@@ -118,8 +93,10 @@ click.formatting
 click.globals
 click.parser
 click.termui
+click._textwrap
 click.types
 click.utils
+click._winconsole
 _codecs
 codecs
 _collections
@@ -133,6 +110,10 @@ copy
 copyreg
 _csv
 csv
+_ctypes
+ctypes
+ctypes._endian
+ctypes.wintypes
 _cython_0_29_32
 cython_runtime
 dataclasses
@@ -158,6 +139,7 @@ email.quoprimime
 email.utils
 encodings
 encodings.aliases
+encodings.cp1252
 encodings.cp437
 encodings.idna
 encodings.unicode_escape
@@ -166,7 +148,6 @@ encodings.utf_16_le
 encodings.utf_8
 enum
 errno
-fcntl
 fnmatch
 _frozen_importlib
 _frozen_importlib_external
@@ -175,6 +156,7 @@ functools
 __future__
 genericpath
 gettext
+glob
 gzip
 _hashlib
 hashlib
@@ -206,7 +188,6 @@ importlib.metadata._functools
 importlib.metadata._itertools
 importlib.metadata._meta
 importlib.metadata._text
-importlib.readers
 importlib.resources
 importlib.util
 inspect
@@ -270,6 +251,7 @@ marshmallow.warnings
 math
 mimetypes
 __mp_main__
+msvcrt
 _multibytecodec
 _multiprocessing
 multiprocessing
@@ -285,7 +267,9 @@ multiprocessing.synchronize
 multiprocessing.util
 mypy_extensions
 netrc
+nt
 ntpath
+nturl2path
 numbers
 _opcode
 opcode
@@ -293,6 +277,7 @@ _operator
 operator
 os
 os.path
+oxidized_importer
 packaging
 packaging._elffile
 packaging._manylinux
@@ -311,8 +296,6 @@ pexpect
 pexpect.exceptions
 pexpect.expect
 pexpect.popen_spawn
-pexpect.pty_spawn
-pexpect.run
 pexpect.spawnbase
 pexpect.utils
 _pickle
@@ -350,14 +333,8 @@ PIL.TiffTags
 PIL._util
 PIL._version
 platform
-posix
 posixpath
-_posixsubprocess
 pprint
-pty
-ptyprocess
-ptyprocess.ptyprocess
-ptyprocess.util
 _queue
 queue
 quopri
@@ -420,7 +397,7 @@ requests.status_codes
 requests.structures
 requests.utils
 requests.__version__
-resource
+runpy
 secrets
 select
 selectors
@@ -451,7 +428,6 @@ subprocess
 sys
 sysconfig
 tempfile
-termios
 textwrap
 _thread
 threading
@@ -465,7 +441,6 @@ tinycss2.tokenizer
 token
 tokenize
 traceback
-tty
 types
 typing
 typing_extensions
@@ -513,7 +488,6 @@ urllib.response
 uu
 _uuid
 uuid
-_virtualenv
 _warnings
 warnings
 _weakref
@@ -521,9 +495,12 @@ weakref
 _weakrefset
 webencodings
 webencodings.labels
+_winapi
+winreg
 zipfile
 zipimport
 zlib
+
 """.split()
 print("INCLUDE_MODULES", INCLUDE_MODULES)
 

@@ -20,24 +20,21 @@ def module_size(module_info: pkgutil.ModuleInfo) -> float:
         return INF
     mod_file = getattr(mod, "__file__", None)
     if mod_file is None:
-        return 0                # builtin
+        return 0  # builtin
     mod_path = Path(mod_file)
     mod_path.name.startswith("__init__.")
     if not module_info.ispkg:
         return mod_path.stat().st_size
-    return sum(
-        p.stat().st_size for p in mod_path.parent.glob("**/*")
-        if p.is_file()
-    )
+    return sum(p.stat().st_size for p in mod_path.parent.glob("**/*") if p.is_file())
 
 
 def human(size: float) -> str:
     if size is INF:
         return "-"
     for suffix, divisor in [
-        ("G", 1024 ** 3),
-        ("M", 1024 ** 2),
-        ("K", 1024 ** 1),
+        ("G", 1024**3),
+        ("M", 1024**2),
+        ("K", 1024**1),
     ]:
         fmt = f"{size / divisor:.1f}{suffix}"
         if not fmt.startswith("0"):
