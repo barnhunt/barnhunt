@@ -58,6 +58,7 @@ jobs:
           pyoxidizer/*.exe
           pyoxidizer/*.app
           pyoxidizer/build/**/install
+        retention-days: 1       # save money
 
   test:
     name: Test
@@ -123,3 +124,4 @@ jobs:
         path: |
           pdfs
           barnhunt-modules.*
+        retention-days: 1       # save money

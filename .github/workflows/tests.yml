@@ -79,6 +79,7 @@ jobs:
       with:
         name: coverage-data
         path: .coverage.*
+        retention-days: 1       # save money
 
   coverage:
     name: Coverage Report
@@ -103,7 +104,7 @@ jobs:
         coverage html
         coverage report --fail-under=100 --show-missing
     - name: Upload HTML coverage report
-      if: always()
+      if: false # always()  # save money
       uses: actions/upload-artifact@v3
       with:
         name: htmlcov
