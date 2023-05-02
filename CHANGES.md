@@ -11,6 +11,21 @@ is required to keep those PyOxidizer windows build version numbers —
 
 [delete the whole repo]: https://docs.github.com/en/repositories/working-with-files/managing-large-files/removing-files-from-git-large-file-storage#git-lfs-objects-in-your-repository
 
+#### CLI Changes
+
+- The `--inkscape-command`, `--processes` and `--shell-mode-inkscape`
+  options have been moved from the `barnhunt pdfs` subcommand to the
+  man `barnhunt` command group.
+
+- And new `debug-info` subcommand has been added to display various
+  information about the installed version of the `barnhunt` command
+  and its execution environment.
+
+- The `--dump-loaded-modules` option has been removed.  The
+  functionality is still available by setting the
+  `$BARNHUNT_DUMP_LOADED_MODULES` environment variable to a non-empty
+  value.
+
 ### Release 1.2.0rc6 (2023-04-27)
 
 - Build an Windows executable and installer using [PyOxidizer].  The
