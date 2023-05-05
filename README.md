@@ -5,6 +5,7 @@
 [![Supported Python versions badge](https://img.shields.io/pypi/pyversions/barnhunt.svg)](https://pypi.org/project/barnhunt/)
 [![Supported Inkscape versions badge](https://img.shields.io/badge/Inkscape-0.9x%E2%80%931.2.2-blue.svg?logo=inkscape)](https://inkscape.org/)
 [![Development status badge](https://img.shields.io/pypi/status/barnhunt.svg)](https://pypi.org/project/barnhunt/)
+[![Trackgit-views](https://us-central1-trackgit-analytics.cloudfunctions.net/token/ping/lhapwefdbvler7yp5dsl)](https://trackgit.com)
 
 This is a helper script Jeff uses for drafting [Barn Hunt][] course
 maps.
