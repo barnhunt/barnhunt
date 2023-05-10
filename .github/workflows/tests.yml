@@ -3,14 +3,16 @@ name: Tests
 on:
   workflow_call:
     # https://docs.github.com/en/actions/using-workflows/reusing-workflows
-    inputs:
-      default-python-version:
-        type: string
-        required: false
-        default: '3.11'
-    secrets:
-      github-token:
-        required: true
+    outputs:
+      version-type:
+        description: |
+          Type of version (from VCS version). This is one of 'local', 'dev', 'pre',
+          or 'release'.
+
+          Note that unless a commit is tagged, the version type will always be 'local'.
+        value: ${{ jobs.build.outputs.version-type }}
+
+  workflow_dispatch:
 
 jobs:
   pytest:
@@ -73,7 +75,7 @@ jobs:
       run: tox
       env:
         # GITHUB_TOKEN gives us higher GH REST API rate-limits
-        GITHUB_TOKEN: ${{ secrets.github-token }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - uses: actions/upload-artifact@v3
       with:
@@ -88,9 +90,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
-      with:
-        python-version: ${{ inputs.default-python-version }}
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip
@@ -98,34 +97,29 @@ jobs:
     - uses: actions/download-artifact@v3
       with:
         name: coverage-data
-    - name: Test coverage and generate reports
+    - name: Test coverage
       run: |
         coverage combine
-        coverage html
         coverage report --fail-under=100 --show-missing
-    - name: Upload HTML coverage report
-      if: false # always()  # save money
-      uses: actions/upload-artifact@v3
-      with:
-        name: htmlcov
-        path: htmlcov
 
   lint:
     name: Lint Checks
     runs-on: ubuntu-latest
+    env:
+      python-version: '3.11'
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v4
       id: py
       with:
-        python-version: ${{ inputs.default-python-version }}
+        python-version: ${{ env.python-version }}
     - name: pre-commit cache
       uses: actions/cache@v3
       with:
         path: |
           ~/.cache/pre-commit
           ~/.cache/pip
-        key: py-${{ steps.py.outputs.python-version }}-${{ hashFiles('.pre-commit-config.yaml', 'pdm.lock') }}
+        key: py-${{ env.python-version }}-${{ hashFiles('.pre-commit-config.yaml', 'pdm.lock') }}
 
     - name: Install python deps
       run: |
@@ -142,3 +136,40 @@ jobs:
     - name: Pre-Commit
       if: always()
       run: pre-commit run --all-files
+
+  build:
+    name: Build python package
+    needs: [pytest, coverage, lint]
+    runs-on: ubuntu-latest
+    outputs:
+      version-type: ${{ steps.classify-version.outputs.version-type }}
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - run: python -m pip install --upgrade pip
+    - run: python -m pip install pdm packaging
+    - run: pdm build
+    - uses: actions/upload-artifact@v3
+      with:
+        name: dist
+        path: dist/
+        retention-days: 1       # save money
+    - name: Classify Version
+      id: classify-version
+      run: |
+        pdm show --version | python -c '
+        import sys, packaging.version
+        version = packaging.version.parse(sys.stdin.read())
+        if version.local:
+            version_type = "local"
+        elif version.is_devrelease:
+            version_type = "dev"
+        elif version.is_prerelease:
+            version_type = "pre"
+        else:
+            version_type = "release"
+        print(f"version-type={version_type}")
+        print(f"version-type={version_type}", file=sys.stderr)
+        ' >> "$GITHUB_OUTPUT"

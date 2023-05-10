@@ -3,6 +3,7 @@ name: PyOxidize build and test
 on:
   workflow_call:
     # https://docs.github.com/en/actions/using-workflows/reusing-workflows
+  workflow_dispatch:
 
 jobs:
   build:

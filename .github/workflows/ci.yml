@@ -9,107 +9,50 @@ on:
       - 'v*'
   pull_request:
 
-env:
-  default-python-version: '3.11'
-
-  # the `|| null` is to avoid casting `false` to `'false'`
-  is-tag-push: ${{
-    (
-      github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    ) || null
-    }}
-
 permissions:
   contents: read
 
 jobs:
-  env:
-    # https://github.com/orgs/community/discussions/26671#discussioncomment-4295807
-    runs-on: ubuntu-latest
-    outputs:
-      default-python-version: ${{ env.default-python-version }}
-      is-tag-push: ${{ env.is-tag-push }}
-    steps:
-      - run: echo "Exposing env vars"
 
   tests:
-    name: Run Tests
+    name: Run Tests and Build Python Dist
     uses: ./.github/workflows/tests.yml
-    needs: env
-    with:
-      default-python-version: ${{ needs.env.outputs.default-python-version }}
-    secrets:
-      github-token: ${{ secrets.GITHUB_TOKEN }}
 
   oxidize:
     name: Build & Test Windows Installer
     uses: ./.github/workflows/oxidize.yml
 
-  package:
-    name: Build python package
-    needs: tests
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-
-    - uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.default-python-version }}
-
-    - name: Install requirements
-      # XXX: pin urllib3<2 to workaround https://github.com/ionrock/cachecontrol/issues/293
-      run: python -m pip install pdm urllib3~=1.26
-
-    - run: pdm build
-
-    - uses: actions/upload-artifact@v3
-      with:
-        name: dist
-        path: dist/
-        retention-days: 1       # save money
-
-  release:
-    name: Upload to PyPI and make Release
-    if: ${{ needs.env.outputs.is-tag-push }}
-    # if: github.event_name == 'push'
-    needs: [env, package, oxidize]
+  pypi-publish:
+    name: Upload to PyPI
+    needs: [tests, oxidize]
+    if: contains(fromJSON('["pre", "release"]'), needs.tests.outputs.version-type)
     environment:
       name: pypi
       url: https://pypi.org/p/barnhunt
     permissions:
-      contents: write           # to create GH release
       id-token: write
     runs-on: ubuntu-latest
-
     steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
 
-    - uses: actions/download-artifact@v3
-    - run: ls -lR
-
-    - name: classify tag
-      id: classify-tag
-      # Releases (as opposed to pre-releases) are always tagged exactly vMAJ.MIN.PATCH
-      run: |
-        if [[ ${{ github.ref }} =~ ^refs/tags/v[[:digit:]]+(\.[[:digit:]]+){2}$ ]]; then
-          echo "is_release=true" >> $GITHUB_ENV
-          echo "is_release=true"
-        else
-          echo "is_release=false"
-        fi
-
-    - name: Publish to PyPI
-      if: ${{ env.is-tag-push }}
-      uses: pypa/gh-action-pypi-publish@release/v1
-
-    - name: Make GH Release
-      if: ${{ env.is-tag-push }}
-      uses: softprops/action-gh-release@v1
-      with:
-        files: 'oxidized/*.msi'
-        fail_on_unmatched_files: false
-        generate_release_notes: true
-        draft: ${{ ! startsWith(github.ref, 'refs/tags/') }}
-        prerelease: ${{ env.is_release != 'true' }}
+  gh-release:
+    name: Post GH Release
+    needs: [tests, oxidize, pypi-publish]
+    if: contains(fromJSON('["pre", "release"]'), needs.tests.outputs.version-type)
+    permissions:
+      contents: write           # to create GH release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: oxidized
+      - uses: softprops/action-gh-release@v1
+        with:
+          files: '*.msi'
+          fail_on_unmatched_files: false
+          generate_release_notes: true
+          prerelease: ${{ needs.tests.outputs.version-type != 'release' }}
