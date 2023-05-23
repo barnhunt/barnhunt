@@ -1,6 +1,6 @@
 ## Changes
 
-### Release 1.2.1rc1 (unreleased)
+### Release 1.2.1rc1 (2023-05-22)
 
 (There was no final release of 1.2.0. It is a long story. I mistakenly
 committed a couple of files to LFS. To clear out LFS storage for a
