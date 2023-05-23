@@ -26,6 +26,11 @@ is required to keep those PyOxidizer windows build version numbers —
   `$BARNHUNT_DUMP_LOADED_MODULES` environment variable to a non-empty
   value.
 
+#### Bugs Fixed
+
+- Fixed exception in `barnhunt.cli.default_2up_output_file` during
+  shell-completion for `barnhunt 2up`.
+
 ### Release 1.2.0rc6 (2023-04-27)
 
 - Build an Windows executable and installer using [PyOxidizer].  The

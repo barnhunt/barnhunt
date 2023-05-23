@@ -21,8 +21,12 @@ from barnhunt.installer import InkexRequirement
 
 class Test_default_2up_output_file:
     @pytest.fixture
-    def ctx(self) -> Iterator[click.Context]:
-        with click.Context(pdf_2up) as ctx:
+    def resilient_parsing(self) -> bool:
+        return False
+
+    @pytest.fixture
+    def ctx(self, resilient_parsing: bool) -> Iterator[click.Context]:
+        with click.Context(pdf_2up, resilient_parsing=resilient_parsing) as ctx:
             yield ctx
 
     @pytest.fixture
@@ -58,6 +62,23 @@ class Test_default_2up_output_file:
         add_input_file("input2.pdf")
         with pytest.raises(click.UsageError, match="multiple input files"):
             default_2up_output_file()
+
+    @pytest.mark.parametrize("resilient_parsing", [True])
+    def test_resilient(self, ctx: click.Context) -> None:
+        assert default_2up_output_file() is None
+
+    def test_shell_completion(self) -> None:
+        runner = CliRunner()
+        result = runner.invoke(
+            barnhunt_cli,
+            args="2up",
+            env={
+                "_BARNHUNT_COMPLETE": "bash_complete",
+                "COMP_WORDS": "barnhunt 2up",
+                "COMP_CWORD": "2",
+            },
+        )
+        assert result.stdout.strip() == "file,"
 
 
 def test_main(capsys: pytest.CaptureFixture[str]) -> None:

@@ -56,7 +56,7 @@ class ContextObj:
     processes: int = DEFAULT_PROCESSES
 
 
-@click.group()
+@click.group("barnhunt")
 @click.option("-v", "--verbose", count=True)
 @click.version_option(version=barnhunt.__version__)
 @click.option(
@@ -306,17 +306,20 @@ def coords(dimensions: tuple[int, int], number_of_rows: int, group_size: int) ->
     )
 
 
-def default_2up_output_file() -> Path:
+def default_2up_output_file() -> Path | None:
     """Compute default output filename."""
     ctx = click.get_current_context()
-    input_paths = {Path(infp.name) for infp in ctx.params.get("pdffiles", ())}
-    if len(input_paths) != 1:
+    pdffiles = ctx.params.get("pdffiles")
+    if ctx.resilient_parsing:
+        return None
+    assert isinstance(pdffiles, Sequence)
+    if len(pdffiles) != 1:
         raise click.UsageError(
             "Can not deduce default output filename when multiple input "
             "files are specified.",
             ctx=ctx,
         )
-    input_path = input_paths.pop()
+    input_path = Path(pdffiles[0].name)
     output_path = input_path.with_name(input_path.stem + "-2up" + input_path.suffix)
     click.echo(f"Writing output to {output_path!s}")
     return output_path
