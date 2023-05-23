@@ -46,8 +46,7 @@ jobs:
         cache: 'pip'
         cache-dependency-path: pdm.lock
 
-      # XXX: pin urllib3<2 to workaround https://github.com/ionrock/cachecontrol/issues/293
-    - run: python -m pip install pdm urllib3~=1.26
+    - run: python -m pip install pdm
     - run: pdm install
     - run: pdm run pyoxidizer --version
     - run: pdm oxidize --release ${{ matrix.targets }}
