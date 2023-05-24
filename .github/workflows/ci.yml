@@ -25,7 +25,7 @@ jobs:
   pypi-publish:
     name: Upload to PyPI
     needs: [tests, oxidize]
-    if: contains(fromJSON('["pre", "release"]'), needs.tests.outputs.version-type)
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     environment:
       name: pypi
       url: https://pypi.org/p/barnhunt
@@ -38,11 +38,13 @@ jobs:
           name: dist
           path: dist
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
 
   gh-release:
     name: Post GH Release
     needs: [tests, oxidize, pypi-publish]
-    if: contains(fromJSON('["pre", "release"]'), needs.tests.outputs.version-type)
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write           # to create GH release
     runs-on: ubuntu-latest
