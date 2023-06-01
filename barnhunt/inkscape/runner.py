@@ -377,9 +377,11 @@ def inkscape_runner(
 def dwim_old_inkscape(executable: str) -> bool:
     """Determine whether we're running an old Inkscape."""
     proc = run([executable, "--version"], capture_output=True, text=True, check=True)
-    m = re.search(r"(?m)^Inkscape (\d+)\.(\d+)\.(\d+) ", proc.stdout)
+    m = re.search(
+        r"(?m)^Inkscape (\d+)\.(\d+)(?:\.(\d+))?(?:-(dev|alpha|beta))? ", proc.stdout
+    )
     if m is None:
         log.warning("Can not determine Inkscape version.")
         return False
-    version = tuple(map(int, m.groups()))
+    version = tuple(map(int, m.groups("0")[:3]))
     return version < (1, 0)
