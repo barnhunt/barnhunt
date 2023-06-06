@@ -2,6 +2,12 @@
 
 ### Release 1.2.1rc2 (unreleased)
 
+#### New Features
+
+- Provide access to RDF metadata in the SVG source in string
+  templates.  E.g. the document description may be interpolated via
+  `{{ rdf['dc:description'] }}`.
+
 #### Bugs Fixed
 
 - Fix parsing of version strings reported by pre-release versions of

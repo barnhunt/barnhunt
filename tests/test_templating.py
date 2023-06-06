@@ -2,19 +2,27 @@ from __future__ import annotations
 
 import os
 import stat
+from pathlib import Path
+from typing import Any
 from typing import Callable
 from typing import Sequence
 
 import jinja2
+import lxml.etree
 import pytest
+import rdflib
 
 from barnhunt.inkscape import svg
 from barnhunt.templating import _hash_string
 from barnhunt.templating import FileAdapter
 from barnhunt.templating import get_element_context
+from barnhunt.templating import get_rdf_adapter
 from barnhunt.templating import is_string_literal
 from barnhunt.templating import LayerAdapter
 from barnhunt.templating import random_rats
+from barnhunt.templating import RdfAdapter
+from barnhunt.templating import RdfCollectionAdapter
+from barnhunt.templating import RdfLiteralAdapter
 from barnhunt.templating import render_template
 from barnhunt.templating import safepath
 from barnhunt.templating import TemplateContext
@@ -114,12 +122,118 @@ def test_hash_string(s: str, h: int) -> None:
     assert _hash_string(s) == h
 
 
+class Test_RdfAdapter:
+    @pytest.fixture
+    def rdf_adapter(self, drawing_svg: Path) -> RdfAdapter:
+        with open(drawing_svg, "rb") as fp:
+            tree = lxml.etree.parse(fp)
+        adapter = get_rdf_adapter(tree.getroot())
+        assert adapter is not None
+        return adapter
+
+    @pytest.mark.parametrize(
+        "attr, expected",
+        [
+            ("dc:title", "TITLE"),
+        ],
+    )
+    def test_getattr(self, rdf_adapter: RdfAdapter, attr: str, expected: Any) -> None:
+        assert rdf_adapter[attr] == expected
+
+    @pytest.mark.parametrize(
+        "attr, expected",
+        [
+            ("dc:title", "TITLE"),
+            ("dc:creator", "CREATOR"),
+        ],
+    )
+    def test_getattr_str(
+        self, rdf_adapter: RdfAdapter, attr: str, expected: str
+    ) -> None:
+        assert str(rdf_adapter[attr]) == expected
+
+    def test_str_returns_repr_if_no_title(self, rdf_adapter: RdfAdapter) -> None:
+        # dc:subject is an rdf:Bag (currently unsupported)
+        assert str(rdf_adapter["dc:subject"]).startswith("RdfCollectionAdapter(")
+
+    def test_getattr_returns_undefined(self, rdf_adapter: RdfAdapter) -> None:
+        assert jinja2.is_undefined(rdf_adapter["xx-missing"])
+
+    def test_iter(self, rdf_adapter: RdfAdapter) -> None:
+        assert set(rdf_adapter).issuperset({"dc:title", "dc:creator", "rdf:type"})
+
+    def test_iter_unknown_namespace(self, rdf_adapter: RdfAdapter) -> None:
+        # Hide the original dc: namespace
+        rdf_adapter._graph.bind("dc", "http://dairiki.org/testing#", replace=True)
+        dc = rdflib.Namespace("http://purl.org/dc/elements/1.1/")
+        assert dc.title in iter(rdf_adapter)
+
+    def test_len(self, rdf_adapter: RdfAdapter) -> None:
+        assert len(rdf_adapter) > 3
+
+    def test_to_qname(self, rdf_adapter: RdfAdapter) -> None:
+        rdf_adapter._graph.bind("", "http://dairiki.org/testing#")
+        assert (
+            rdf_adapter._to_qname(rdflib.URIRef("http://dairiki.org/testing#foo"))
+            == "foo"
+        )
+
+    @pytest.fixture
+    def dc_subject(self, rdf_adapter: RdfAdapter) -> RdfCollectionAdapter:
+        dc_subject = rdf_adapter["dc:subject"]
+        assert isinstance(dc_subject, RdfCollectionAdapter)
+        return dc_subject
+
+    def test_collection_getitem(self, dc_subject: RdfCollectionAdapter) -> None:
+        assert str(dc_subject[0]) == "key"
+
+    def test_collection_getitem_missing(self, dc_subject: RdfCollectionAdapter) -> None:
+        assert jinja2.is_undefined(dc_subject[2])
+
+    def test_collection_getitem_slice(self, dc_subject: RdfCollectionAdapter) -> None:
+        assert list(map(str, dc_subject[1:])) == ["words"]
+
+    def test_collection_iter(self, dc_subject: RdfCollectionAdapter) -> None:
+        assert set(map(str, dc_subject)) == {"key", "words"}
+
+    def test_collection_len(self, dc_subject: RdfCollectionAdapter) -> None:
+        assert len(dc_subject) == 2
+
+    @pytest.fixture
+    def dc_title(self, rdf_adapter: RdfAdapter) -> RdfLiteralAdapter:
+        title = rdf_adapter["dc:title"]
+        assert isinstance(title, RdfLiteralAdapter)
+        return title
+
+    def test_literal_str(self, dc_title: RdfLiteralAdapter) -> None:
+        assert str(dc_title) == "TITLE"
+
+    def test_literal_getattr(self, dc_title: RdfLiteralAdapter) -> None:
+        assert dc_title.lower() == "title"
+
+    def test_literal_eq(self, dc_title: RdfLiteralAdapter) -> None:
+        assert dc_title == "TITLE"
+
+    def test_literal_eq_adapter(
+        self, dc_title: RdfLiteralAdapter, dc_subject: RdfCollectionAdapter
+    ) -> None:
+        assert dc_title == dc_title
+        assert dc_title != dc_subject
+
+
+def test_get_rdf_adapter_returns_none_if_no_rdf() -> None:
+    assert get_rdf_adapter(svg_maker.tree().getroot()) is None
+
+
 class Test_get_element_context:
     @pytest.fixture(scope="session")
     def tree(self) -> svg.ElementTree:
         layer = svg_maker.layer
         text = svg_maker.text
         return svg_maker.tree(
+            lxml.etree.Element(  # add empty <RDF:rdf> for test coverage
+                "{http://www.w3.org/1999/02/22-rdf-syntax-ns#}RDF"
+            ),
             layer("[h] Junk", id="cruft"),
             layer("Outline", id="ring"),
             layer(

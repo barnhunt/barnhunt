@@ -5,15 +5,26 @@ import logging
 import os
 import random
 import re
+import uuid
+from contextvars import ContextVar
+from dataclasses import dataclass
 from functools import partial
+from operator import itemgetter
 from typing import Any
 from typing import BinaryIO
 from typing import Dict
 from typing import Iterator
+from typing import Mapping
+from typing import overload
 from typing import Sequence
 
 import jinja2
+import lxml.etree
+import rdflib
+from rdflib import DC
+from rdflib import RDF
 
+from ._compat import Final
 from .inkscape import svg
 from .layerinfo import LayerFlags
 from .layerinfo import LayerInfoParser
@@ -104,6 +115,163 @@ def _hash_string(s: str) -> int:
     return hash(int(hashlib.sha1(bytes_).hexdigest(), 16))
 
 
+@dataclass
+class RdfNodeAdapter:
+    """Base for classes that adapt an RDF node for ease of use in templates.
+
+    These adapters represent a particular RDF node within a particular RDF graph.
+
+    """
+
+    _subject: rdflib.IdentifiedNode | rdflib.Literal
+    _graph: rdflib.Graph
+
+    def _adapt(self, node: rdflib.term.Node) -> RdfNodeAdapter:
+        """Wrap a node from our RDF graph in an appropriate adapter class."""
+        if isinstance(node, rdflib.Literal):
+            return RdfLiteralAdapter(node, self._graph)
+        assert isinstance(node, rdflib.IdentifiedNode)
+        node_type = self._graph.value(subject=node, predicate=RDF.type, any=False)
+        if node_type in {RDF.Bag, RDF.Seq, RDF.Alt}:
+            return RdfCollectionAdapter(node, self._graph)
+        return RdfAdapter(node, self._graph)
+
+
+@dataclass
+class RdfLiteralAdapter(RdfNodeAdapter):
+    """Adapt an RDF literal node for ease of use in templates.
+
+    Basically, this proxies to the literal value.
+    """
+
+    _subject: rdflib.Literal
+
+    def __str__(self) -> str:
+        return str(self._subject.value)
+
+    def __getattr__(self, attr: str) -> Any:
+        return getattr(self._subject.value, attr)
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, RdfNodeAdapter):
+            return super().__eq__(other)
+        return self._subject.value == other  # type: ignore[no-any-return]
+
+
+@dataclass
+class RdfIdentifiedNodeAdapter(RdfNodeAdapter):
+    _subject: rdflib.IdentifiedNode
+
+    def __str__(self) -> str:
+        """Stringify to dc:title if there is one."""
+        title = self._graph.value(subject=self._subject, predicate=DC.title, any=False)
+        if title is not None:
+            return str(self._adapt(title))
+        return repr(self)
+
+
+class RdfAdapter(RdfIdentifiedNodeAdapter, Mapping[str, RdfNodeAdapter]):
+    """Adapt an RDF node for ease of use in templates.
+
+    This is a mapping that maps RDF predicates to RDF objects.
+    """
+
+    def __getitem__(  # type: ignore[override]
+        self, predicate: str
+    ) -> RdfNodeAdapter | jinja2.Undefined:
+        # XXX: what if multiple objects?
+        object = self._graph.value(
+            subject=self._subject, predicate=self._to_uriref(predicate), any=False
+        )
+        if object is not None:
+            return self._adapt(object)
+        undefined = jinja_undefined.get()
+        # FIXME: better value for obj (to make better error message)
+        return undefined(obj=self, name=predicate)
+
+    def __iter__(self) -> Iterator[str]:
+        graph = self._graph
+        for predicate in graph.predicates(subject=self._subject, unique=True):
+            assert isinstance(predicate, rdflib.URIRef)
+            try:
+                yield self._to_qname(predicate)
+            except LookupError:
+                yield predicate
+
+    def __len__(self) -> int:
+        return sum(
+            1 for _ in self._graph.predicates(subject=self._subject, unique=True)
+        )
+
+    def _to_uriref(self, uri_or_qname: str) -> rdflib.URIRef:
+        prefix, sep, suffix = uri_or_qname.partition(":")
+        if sep:
+            for pfx, base in self._graph.namespace_manager.namespaces():
+                if pfx == prefix:
+                    return base + suffix
+        return rdflib.URIRef(uri_or_qname)
+
+    def _to_qname(self, uriref: rdflib.URIRef) -> str:
+        prefix, _uri, name = self._graph.compute_qname(uriref, generate=False)
+        if not prefix:
+            return name
+        return f"{prefix}:{name}"
+
+
+class RdfCollectionAdapter(RdfIdentifiedNodeAdapter, Sequence[RdfNodeAdapter]):
+    """Adapt an RDF collection node for ease of use in templates.
+
+    This presents an RDF collection (rdf:Bag, rdf:Seq, or rdf:Alt) as a sequence.
+    """
+
+    @overload  # type: ignore[override]
+    def __getitem__(self, n: int) -> RdfNodeAdapter | jinja2.Undefined:
+        ...
+
+    @overload
+    def __getitem__(self, n: slice) -> Sequence[RdfNodeAdapter]:
+        ...
+
+    def __getitem__(
+        self, n: int | slice
+    ) -> RdfNodeAdapter | Sequence[RdfNodeAdapter] | jinja2.Undefined:
+        if isinstance(n, slice):
+            return list(self)[n]
+        try:
+            return list(self)[n]
+        except IndexError:
+            undefined = jinja_undefined.get()
+            # FIXME: better value for obj (to make better error message)
+            return undefined(obj=self, name=str(n))
+
+    _RDF_MEMBER_RE: Final = re.compile(rf"\A{re.escape(str(RDF))}_((?!0)\d+)\Z")
+
+    def __iter__(self) -> Iterator[RdfNodeAdapter]:
+        graph = self._graph
+        items = []
+        for predicate, object_ in graph.predicate_objects(self._subject, unique=True):
+            m = self._RDF_MEMBER_RE.match(str(predicate))
+            if m is not None:
+                items.append((object_, int(m.group(1))))
+        return (self._adapt(object_) for object_, _ in sorted(items, key=itemgetter(1)))
+
+    def __len__(self) -> int:
+        return sum(1 for _ in iter(self))
+
+
+_find_rdf = lxml.etree.ETXPath("//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}RDF[1]")
+
+
+def get_rdf_adapter(tree: svg.Element) -> RdfAdapter | None:
+    rdf = _find_rdf(tree)
+    if len(rdf) > 0:
+        base = rdflib.URIRef(uuid.uuid4().urn)
+        graph = rdflib.Graph(bind_namespaces="rdflib")
+        graph.parse(data=lxml.etree.tostring(rdf[0]), format="xml", publicID=base)
+        return RdfAdapter(base, graph)
+    return None
+
+
 def get_element_context(
     elem: svg.Element, layer_info_parser: LayerInfoParser = parse_flagged_layer_info
 ) -> TemplateContext:
@@ -130,6 +298,11 @@ def get_element_context(
         # Overlay is the innermost containing overlay, but only if is
         # distinct from course.
         context["overlay"] = overlays[-1]
+
+    rdf_adapter = get_rdf_adapter(elem)
+    if rdf_adapter is not None:
+        context["rdf"] = rdf_adapter
+
     return context
 
 
@@ -252,13 +425,22 @@ default_env = make_jinja2_environment()
 strict_env = make_jinja2_environment(undefined=jinja2.StrictUndefined)
 
 
+jinja_undefined: ContextVar[type[jinja2.Undefined]] = ContextVar(
+    "jinja_undefined", default=jinja2.Undefined
+)
+
+
 def render_template(
     tmpl_string: str, context: TemplateContext, strict_undefined: bool = False
 ) -> str:
     """Render string template."""
     env = strict_env if strict_undefined else default_env
     tmpl = env.from_string(tmpl_string)
-    return tmpl.render(context)
+    token = jinja_undefined.set(env.undefined)
+    try:
+        return tmpl.render(context)
+    finally:
+        jinja_undefined.reset(token)
 
 
 def is_string_literal(tmpl_string: str) -> bool:
