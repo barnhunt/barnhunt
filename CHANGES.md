@@ -1,6 +1,6 @@
 ## Changes
 
-### Release 1.2.1rc2 (unreleased)
+### Release 1.2.1rc2 (2023-06-06)
 
 #### New Features
 
