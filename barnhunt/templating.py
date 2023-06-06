@@ -125,16 +125,17 @@ class RdfNodeAdapter:
 
     _subject: rdflib.IdentifiedNode | rdflib.Literal
     _graph: rdflib.Graph
+    _desc: str
 
-    def _adapt(self, node: rdflib.term.Node) -> RdfNodeAdapter:
+    def _adapt(self, node: rdflib.term.Node, desc: str) -> RdfNodeAdapter:
         """Wrap a node from our RDF graph in an appropriate adapter class."""
         if isinstance(node, rdflib.Literal):
-            return RdfLiteralAdapter(node, self._graph)
+            return RdfLiteralAdapter(node, self._graph, desc)
         assert isinstance(node, rdflib.IdentifiedNode)
         node_type = self._graph.value(subject=node, predicate=RDF.type, any=False)
         if node_type in {RDF.Bag, RDF.Seq, RDF.Alt}:
-            return RdfCollectionAdapter(node, self._graph)
-        return RdfAdapter(node, self._graph)
+            return RdfCollectionAdapter(node, self._graph, desc)
+        return RdfAdapter(node, self._graph, desc)
 
 
 @dataclass
@@ -166,8 +167,13 @@ class RdfIdentifiedNodeAdapter(RdfNodeAdapter):
         """Stringify to dc:title if there is one."""
         title = self._graph.value(subject=self._subject, predicate=DC.title, any=False)
         if title is not None:
-            return str(self._adapt(title))
+            return str(self._adapt(title, f"{self._desc}['dc:title']"))
         return repr(self)
+
+    def _make_undefined(self, name: str | Any) -> jinja2.Undefined:
+        undefined = jinja_undefined.get()
+        what = "attribute" if isinstance(name, str) else "element"
+        return undefined(f"{self._desc} has no {what} {name}", obj=self, name=name)
 
 
 class RdfAdapter(RdfIdentifiedNodeAdapter, Mapping[str, RdfNodeAdapter]):
@@ -183,11 +189,9 @@ class RdfAdapter(RdfIdentifiedNodeAdapter, Mapping[str, RdfNodeAdapter]):
         object = self._graph.value(
             subject=self._subject, predicate=self._to_uriref(predicate), any=False
         )
-        if object is not None:
-            return self._adapt(object)
-        undefined = jinja_undefined.get()
-        # FIXME: better value for obj (to make better error message)
-        return undefined(obj=self, name=predicate)
+        if object is None:
+            return self._make_undefined(predicate)
+        return self._adapt(object, f"{self._desc}[{predicate!r}]")
 
     def __iter__(self) -> Iterator[str]:
         graph = self._graph
@@ -240,9 +244,7 @@ class RdfCollectionAdapter(RdfIdentifiedNodeAdapter, Sequence[RdfNodeAdapter]):
         try:
             return list(self)[n]
         except IndexError:
-            undefined = jinja_undefined.get()
-            # FIXME: better value for obj (to make better error message)
-            return undefined(obj=self, name=str(n))
+            return self._make_undefined(n)
 
     _RDF_MEMBER_RE: Final = re.compile(rf"\A{re.escape(str(RDF))}_((?!0)\d+)\Z")
 
@@ -253,7 +255,10 @@ class RdfCollectionAdapter(RdfIdentifiedNodeAdapter, Sequence[RdfNodeAdapter]):
             m = self._RDF_MEMBER_RE.match(str(predicate))
             if m is not None:
                 items.append((object_, int(m.group(1))))
-        return (self._adapt(object_) for object_, _ in sorted(items, key=itemgetter(1)))
+        return (
+            self._adapt(item[0], f"{self._desc}[{n}]")
+            for n, item in enumerate(sorted(items, key=itemgetter(1)))
+        )
 
     def __len__(self) -> int:
         return sum(1 for _ in iter(self))
@@ -262,13 +267,13 @@ class RdfCollectionAdapter(RdfIdentifiedNodeAdapter, Sequence[RdfNodeAdapter]):
 _find_rdf = lxml.etree.ETXPath("//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}RDF[1]")
 
 
-def get_rdf_adapter(tree: svg.Element) -> RdfAdapter | None:
+def get_rdf_adapter(tree: svg.Element, name: str = "rdf") -> RdfAdapter | None:
     rdf = _find_rdf(tree)
     if len(rdf) > 0:
         base = rdflib.URIRef(uuid.uuid4().urn)
         graph = rdflib.Graph(bind_namespaces="rdflib")
         graph.parse(data=lxml.etree.tostring(rdf[0]), format="xml", publicID=base)
-        return RdfAdapter(base, graph)
+        return RdfAdapter(base, graph, name)
     return None
 
 
@@ -299,7 +304,7 @@ def get_element_context(
         # distinct from course.
         context["overlay"] = overlays[-1]
 
-    rdf_adapter = get_rdf_adapter(elem)
+    rdf_adapter = get_rdf_adapter(elem, name="rdf")
     if rdf_adapter is not None:
         context["rdf"] = rdf_adapter
 

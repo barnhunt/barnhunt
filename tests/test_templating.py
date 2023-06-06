@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import stat
 from pathlib import Path
 from typing import Any
@@ -122,6 +123,15 @@ def test_hash_string(s: str, h: int) -> None:
     assert _hash_string(s) == h
 
 
+def assert_is_undefined(
+    value: Any, *, match: str | re.Pattern[str] | None = None
+) -> None:
+    assert jinja2.is_undefined(value)
+    with pytest.raises(jinja2.UndefinedError, match=match):
+        # trigger exception via __getattr__
+        value._
+
+
 class Test_RdfAdapter:
     @pytest.fixture
     def rdf_adapter(self, drawing_svg: Path) -> RdfAdapter:
@@ -156,8 +166,8 @@ class Test_RdfAdapter:
         # dc:subject is an rdf:Bag (currently unsupported)
         assert str(rdf_adapter["dc:subject"]).startswith("RdfCollectionAdapter(")
 
-    def test_getattr_returns_undefined(self, rdf_adapter: RdfAdapter) -> None:
-        assert jinja2.is_undefined(rdf_adapter["xx-missing"])
+    def test_undefined(self, rdf_adapter: RdfAdapter) -> None:
+        assert_is_undefined(rdf_adapter["x"], match="rdf has no attribute x")
 
     def test_iter(self, rdf_adapter: RdfAdapter) -> None:
         assert set(rdf_adapter).issuperset({"dc:title", "dc:creator", "rdf:type"})
@@ -176,6 +186,17 @@ class Test_RdfAdapter:
         assert (
             rdf_adapter._to_qname(rdflib.URIRef("http://dairiki.org/testing#foo"))
             == "foo"
+        )
+
+    @pytest.fixture
+    def dc_creator(self, rdf_adapter: RdfAdapter) -> RdfAdapter:
+        dc_creator = rdf_adapter["dc:creator"]
+        assert isinstance(dc_creator, RdfAdapter)
+        return dc_creator
+
+    def test_creator_undefined(self, dc_creator: RdfAdapter) -> None:
+        assert_is_undefined(
+            dc_creator["x"], match=re.escape("rdf['dc:creator'] has no attribute x")
         )
 
     @pytest.fixture
@@ -198,6 +219,11 @@ class Test_RdfAdapter:
 
     def test_collection_len(self, dc_subject: RdfCollectionAdapter) -> None:
         assert len(dc_subject) == 2
+
+    def test_collection_undefined(self, dc_subject: RdfCollectionAdapter) -> None:
+        assert_is_undefined(
+            dc_subject[2], match=re.escape("rdf['dc:subject'] has no element 2")
+        )
 
     @pytest.fixture
     def dc_title(self, rdf_adapter: RdfAdapter) -> RdfLiteralAdapter:
