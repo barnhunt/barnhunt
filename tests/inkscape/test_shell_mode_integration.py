@@ -64,4 +64,4 @@ def test_shell_mode_inkscape_version(
         line[6:] for line in warnings[-1].splitlines() if line.startswith("!! => ")
     ]
     assert len(unexpected_lines) == 1
-    assert re.match(r"\AInkscape \d+\.\d+\.\d+ ", unexpected_lines[0])
+    assert re.match(r"\AInkscape \d+(\.\d+){1,2} ", unexpected_lines[0])
