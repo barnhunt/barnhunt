@@ -1,6 +1,6 @@
 ## Changes
 
-### Release 1.2.1rc3 (unreleased)
+### Release 1.2.1rc3 (2023-08-04)
 
 #### Bugs Fixed
 
