@@ -120,7 +120,7 @@ def test_ancestor_layers(coursemap1: svg.ElementTree) -> None:
         coursemap1, ("buildtext", "buildnotes", "overlays", "t1master")
     )
     assert list(svg.ancestor_layers(buildtext)) == [buildnotes, overlays, t1master]
-    assert list(svg.ancestor_layers(buildnotes)) == [overlays, t1master]
+    assert list(svg.ancestor_layers(buildnotes)) == [buildnotes, overlays, t1master]
 
 
 def test_sibling_layers(coursemap1: svg.ElementTree) -> None:

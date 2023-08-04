@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-from itertools import chain
 from itertools import count
 from typing import BinaryIO
 from typing import Collection
@@ -145,7 +144,7 @@ class CourseMaps:
     ) -> Iterable[str] | tuple[None]:
         if path:
             overlay = path[-1]
-            for layer in chain((overlay,), svg.ancestor_layers(overlay)):
+            for layer in svg.ancestor_layers(overlay):
                 layer_info = self.parse_layer_info(layer)
                 if layer_info.output_basenames:
                     return layer_info.output_basenames

@@ -3,6 +3,7 @@ from __future__ import annotations
 import enum
 import logging
 import re
+from itertools import islice
 from typing import Callable
 from typing import Collection
 from typing import NamedTuple
@@ -123,7 +124,8 @@ def obs_is_overlay(layer: svg.LayerElement) -> bool:
     if parent is None:
         return False
     return svg.layer_label(parent) == "Overlays" and any(
-        obs_is_course(ancestor) for ancestor in svg.ancestor_layers(parent)
+        obs_is_course(ancestor)
+        for ancestor in islice(svg.ancestor_layers(parent), 1, None)
     )
 
 

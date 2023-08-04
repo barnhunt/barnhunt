@@ -9,7 +9,6 @@ import math
 import random
 from collections import deque
 from functools import lru_cache
-from itertools import islice
 from typing import Collection
 from typing import Iterable
 from typing import Iterator
@@ -120,7 +119,10 @@ def parent_layer(elem: Element) -> LayerElement | None:
     Returns the element for the Inkscape layer which contains ``elem``.
 
     """
-    return next(ancestor_layers(elem), None)
+    for layer in ancestor_layers(elem):
+        if layer is not elem:
+            return layer
+    return None
 
 
 def ancestor_layers(elem: Element) -> Iterator[LayerElement]:
@@ -129,8 +131,13 @@ def ancestor_layers(elem: Element) -> Iterator[LayerElement]:
     Yields, first, the layer that contains ``elem``, then the layer that
     contains that layer, and so on.
 
+    If ``elem`` is a layer, it will be the first element returned.
+
+    **NOTE**: Changed in 1.2.1rc3: Previously, if ``elem`` is a layer, it was not
+      included in the ``ancestor_layers`` result.  Now it is.
+
     """
-    for parent in islice(lineage(elem), 1, None):
+    for parent in lineage(elem):
         if is_layer(parent):
             yield parent
 
@@ -212,10 +219,12 @@ def find_hidden_clone_source_layers(
         if not is_visible(clone.elem):
             hidden_clones.append(clone)
         elif not is_visible(clone.ref):
-            ref_layer = parent_layer(clone.ref)
-            assert ref_layer is not None
-            hidden_source_layers.add(ref_layer)
-            omitted_layers.remove(ref_layer)
+            hidden_ancestor_layers = omitted_layers.intersection(
+                ancestor_layers(clone.ref)
+            )
+            assert len(hidden_ancestor_layers) > 0
+            hidden_source_layers |= hidden_ancestor_layers
+            omitted_layers -= hidden_ancestor_layers
             # recheck all the clones that were not visible
             clones.extend(hidden_clones)
             hidden_clones.clear()

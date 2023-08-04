@@ -1,5 +1,18 @@
 ## Changes
 
+### Release 1.2.1rc3 (unreleased)
+
+#### Bugs Fixed
+
+- Fix crash when clone refers to a hidden layer.
+
+#### Internal API changes
+
+- `Inkscape.svg.ancestor_layers(elem)` now includes `elem` in the
+  returned results if `elem` is an Inkscape layer element.
+  Previously, the search for ancestor layers strated with `elem`'s
+  parent.
+
 ### Release 1.2.1rc2 (2023-06-06)
 
 #### New Features
