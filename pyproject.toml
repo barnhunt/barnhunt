@@ -69,16 +69,13 @@ post_oxidize.call = "pdm_build:copy_output"
 
 [tool.pdm.dev-dependencies]
 dev = [
-    "flake8>=5.0.4",
-    "flake8-bugbear>=23.3.12",
-
     "mypy==1.2.0",
     "pdm-backend>=2.0.6",
     "types-atomicwrites",
     "types-lxml; python_version >= '3.8'", # not available for py37
     "types-requests",
-
     "pydeps",
+    "ruff==0.6.3",
 ]
 pyoxidizer = [
     "pyoxidizer>=0.24.0",
@@ -173,3 +170,35 @@ module = [
     "tinycss2",
 ]
 ignore_missing_imports = true
+
+
+[tool.ruff]
+extend-exclude = [".pdm-build"]
+
+[tool.ruff.lint]
+explicit-preview-rules = true
+select = [
+    "F", "E", "W", "C90",       # flake8 (pyflakes, pycodestyle mccabe)
+    "B0", "B0",                 # flake8-bugbear
+    "I",                        # isort
+    "UP",                       # pyupgrade
+    "RUF100",                   # unused-noqa
+    "PGH",                      # pygrep-hooks
+    ]
+ignore = [
+    "B018",     # useless-expression
+    "I001",     # unsorted-imports
+    "UP006",    # no-pep585-annotation
+    "UP031",    # printf-string-formatting
+    "UP032",    # f-string
+    "UP037",    # quoted-annotation
+    "PGH001",   # eval
+]
+
+[tool.ruff.lint.isort]
+force-single-line = true
+order-by-type = false
+known-local-folder = ["barnhunt"]
+
+[tool.ruff.lint.flake8-unused-arguments]
+ignore-variadic-names = true

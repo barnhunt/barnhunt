@@ -1,0 +1,16 @@
+extend = "../pyproject.toml"
+
+[lint.isort]
+known-first-party = ["barnhunt"]
+known-local-folder = [
+    "dummy_inkscape",
+    "ratelimit",
+    "testlib",
+]
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "local-folder",
+    "first-party",
+]
