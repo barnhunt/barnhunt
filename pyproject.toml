@@ -69,7 +69,7 @@ post_oxidize.call = "pdm_build:copy_output"
 
 [tool.pdm.dev-dependencies]
 dev = [
-    "mypy==1.2.0",
+    "mypy==1.11.2; python_version >= '3.8'", # not available for py37
     "pdm-backend>=2.0.6",
     "types-atomicwrites",
     "types-lxml; python_version >= '3.8'", # not available for py37
@@ -154,6 +154,8 @@ exclude = [
 
 show_error_codes = true
 error_summary = true
+warn_unused_configs = true
+warn_unused_ignores = true
 
 strict = true
 
