@@ -1,56 +1,66 @@
-import io
-import subprocess
-from typing import Any
+from collections.abc import Callable
+from collections.abc import Iterable
+from subprocess import _CMD
+from subprocess import _ENV
+from subprocess import Popen
 from typing import AnyStr
-from typing import Callable
-from typing import Iterable
-from typing import Mapping
 from typing import overload
-from typing import TextIO
 
 from _typeshed import StrOrBytesPath
 
-from .spawnbase import _BufferType
+from .spawnbase import _SupportsWriteFlush
 from .spawnbase import SpawnBase
 
-class PopenSpawn(SpawnBase[AnyStr, _BufferType]):
-    proc: subprocess.Popen[bytes]
-    pid: int
-    terminated: bool
-
+class PopenSpawn(SpawnBase[AnyStr]):
+    proc: Popen[AnyStr]
     @overload
     def __init__(
-        self: PopenSpawn[str, io.StringIO],
-        cmd: Iterable[str],
-        timeout: float = ...,
-        maxread: int = ...,
-        searchwindowsize: int | None = ...,
-        logfile: TextIO | None = ...,
-        cwd: StrOrBytesPath | None = ...,
-        env: Mapping[str, str] | None = ...,
-        encoding: str = ...,
-        codec_errors: str = ...,
-        preexec_fn: Callable[[], Any] | None = ...,
+        self: PopenSpawn[bytes],
+        cmd: _CMD,
+        timeout: float | None = 30,
+        maxread: int = 2000,
+        searchwindowsize: int | None = None,
+        logfile: _SupportsWriteFlush[bytes] | None = None,
+        cwd: StrOrBytesPath | None = None,
+        env: _ENV | None = None,
+        encoding: None = None,
+        codec_errors: str = "strict",
+        preexec_fn: Callable[[], object] | None = None,
     ) -> None: ...
     @overload
     def __init__(
-        self: PopenSpawn[bytes, io.BytesIO],
-        cmd: Iterable[str],
-        timeout: float = ...,
-        maxread: int = ...,
-        searchwindowsize: int | None = ...,
-        logfile: TextIO | None = ...,
-        cwd: StrOrBytesPath | None = ...,
-        env: Mapping[str, str] | None = ...,
-        encoding: None = ...,
-        codec_errors: str | None = ...,
-        preexec_fn: Callable[[], Any] | None = ...,
+        self: PopenSpawn[str],
+        cmd: _CMD,
+        timeout: float | None,
+        maxread: int,
+        searchwindowsize: int | None,
+        logfile: _SupportsWriteFlush[str] | None,
+        cwd: StrOrBytesPath | None,
+        env: _ENV | None,
+        encoding: str,
+        codec_errors: str = "strict",
+        preexec_fn: Callable[[], object] | None = None,
     ) -> None: ...
-    def read_nonblocking(self, size: int, timeout: float | None) -> AnyStr: ...
-    def write(self, s: AnyStr) -> None: ...
-    def writelines(self, sequence: Iterable[AnyStr]) -> None: ...
-    def send(self, s: AnyStr) -> int: ...
-    def sendline(self, s: AnyStr = ...) -> int: ...
+    @overload
+    def __init__(
+        self: PopenSpawn[str],
+        cmd: _CMD,
+        timeout: float | None = 30,
+        maxread: int = 2000,
+        searchwindowsize: int | None = None,
+        logfile: _SupportsWriteFlush[str] | None = None,
+        cwd: StrOrBytesPath | None = None,
+        env: _ENV | None = None,
+        *,
+        encoding: str,
+        codec_errors: str = "strict",
+        preexec_fn: Callable[[], object] | None = None,
+    ) -> None: ...
+    def read_nonblocking(self, size: int, timeout: float | None) -> AnyStr: ...  # type: ignore[override]
+    def write(self, s: AnyStr | str) -> None: ...
+    def writelines(self, sequence: Iterable[AnyStr | str]) -> None: ...
+    def send(self, s: AnyStr | str) -> int: ...
+    def sendline(self, s: AnyStr | str = "") -> int: ...
     def wait(self) -> int: ...
     def kill(self, sig: int) -> None: ...
     def sendeof(self) -> None: ...

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import io
 import locale
 import logging
 import os
@@ -254,9 +253,9 @@ class ShellModeRunner(Runner):
         self._threadlocal = threading.local()
 
     @property
-    def child(self) -> PopenSpawn[str, io.StringIO]:
+    def child(self) -> PopenSpawn[str]:
         threadlocal = self._threadlocal
-        child: PopenSpawn[str, io.StringIO] | None = getattr(threadlocal, "child", None)
+        child: PopenSpawn[str] | None = getattr(threadlocal, "child", None)
         if child is not None:
             return child
 
@@ -298,19 +297,17 @@ class ShellModeRunner(Runner):
         )
 
     @staticmethod
-    def _shutdown_child(child: PopenSpawn[str, io.StringIO]) -> None:
+    def _shutdown_child(child: PopenSpawn[str]) -> None:
         child.sendeof()
         # FIXME: send kill()s, too, after a bit of a wait?
 
     @property
-    def _proc(self) -> Popen[bytes] | None:
+    def _proc(self) -> Popen[str] | None:
         """Access to the underlyting Popen object.
 
         This is for use by tests.
         """
-        child: PopenSpawn[str, io.StringIO] | None = getattr(
-            self._threadlocal, "child", None
-        )
+        child: PopenSpawn[str] | None = getattr(self._threadlocal, "child", None)
         if child is not None:
             return child.proc
         return None
