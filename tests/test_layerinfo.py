@@ -16,7 +16,7 @@ from barnhunt.layerinfo import parse_obs_layer_info
 
 
 @pytest.mark.parametrize(
-    "s, flags",
+    ("s", "flags"),
     [
         ("", LayerFlags(0)),
         ("h", LayerFlags.HIDDEN),
@@ -36,7 +36,7 @@ def test_layerflags_parse_warns(caplog: pytest.LogCaptureFixture) -> None:
 
 
 @pytest.mark.parametrize(
-    "s, flags",
+    ("s", "flags"),
     [
         ("", LayerFlags(0)),
         ("h", LayerFlags.HIDDEN),
@@ -71,7 +71,7 @@ def tree1() -> svg.ElementTree:
 
 
 @pytest.mark.parametrize(
-    "predicate_name, expected_ids",
+    ("predicate_name", "expected_ids"),
     [
         (
             "obs_is_ring",
@@ -115,7 +115,7 @@ def test_predicate(
 
 
 @pytest.mark.parametrize(
-    "layer_label, label, flags, output_basenames, exclude_from, include_in",
+    ("layer_label", "label", "flags", "output_basenames", "exclude_from", "include_in"),
     [
         ("[h] Hidden", "Hidden", LayerFlags.HIDDEN, [], set(), set()),
         ("[o] An Overlay", "An Overlay", LayerFlags.OVERLAY, [], set(), set()),
@@ -151,7 +151,7 @@ def test_FlaggedLayerInfo(
 
 class Test_obs_layer_info:
     @pytest.mark.parametrize(
-        "label, flags",
+        ("label", "flags"),
         [
             ("Prototypes", LayerFlags.HIDDEN),
             ("Master 1", LayerFlags.OVERLAY),

@@ -155,9 +155,11 @@ class TestCourseMaps:
         context, pruned = result[0]
         assert context == {"course": None, "overlay": None, "overlays": ()}
         root = pruned.getroot()
-        assert len(root) == 1 and svg.is_layer(root[0])
+        assert len(root) == 1
+        assert svg.is_layer(root[0])
         assert svg.layer_label(root[0]) == "Layer"
-        assert len(root[0]) == 1 and svg.is_layer(root[0][0])
+        assert len(root[0]) == 1
+        assert svg.is_layer(root[0][0])
         assert svg.layer_label(root[0][0]) == "Child"
         assert len(root[0][0]) == 0
 
@@ -177,7 +179,8 @@ class TestCourseMaps:
         context, pruned = result[0]
         assert context == {"course": None, "overlay": None, "overlays": ()}
         root = pruned.getroot()
-        assert len(root) == 2 and all(svg.is_layer(child) for child in root)
+        assert len(root) == 2
+        assert all(svg.is_layer(child) for child in root)
         assert "display:none;" in root[0].get("style", "")
         assert root[1].get("style") is None
 
@@ -215,7 +218,7 @@ class TestCourseMaps:
         ]
 
     @pytest.mark.parametrize(
-        "output_basename, exclusions",
+        ("output_basename", "exclusions"),
         [
             ("base", {"[!base] Not in base"}),
             ("notbase", set()),

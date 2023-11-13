@@ -34,7 +34,7 @@ def test_concat_pdfs(input_pdfs: Sequence[Path], n_pdfs: int, tmp_path: Path) ->
 
 def test_concat_pdfs_no_pdfs(tmp_path: Path) -> None:
     output_fn = tmp_path / "empty.pdf"
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"\bNo PDFs to concatenate\b"):
         concat_pdfs([], output_fn)
 
 
@@ -51,7 +51,7 @@ def test_two_up(input_pdfs: Sequence[Path], n_pdfs: int, tmp_path: Path) -> None
 
 def test_two_up_no_pages(tmp_path: Path) -> None:
     out_path = tmp_path / "empty.pdf"
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"\bNo PDFs\b"):
         with out_path.open("wb") as out_file:
             two_up([], out_file)
 

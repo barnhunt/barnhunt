@@ -39,7 +39,7 @@ def test_InkexRequirement_project() -> None:
 
 
 @pytest.mark.parametrize(
-    "requirement, message",
+    ("requirement", "message"),
     [
         ("unknown", "unknown requirement"),
         ("inkex-bh[extra]", "extras not"),
@@ -50,9 +50,8 @@ def test_InkexRequirement_project() -> None:
 def test_InkexRequirement_project_raises_value_error(
     requirement: str, message: str
 ) -> None:
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(ValueError, match=message):
         InkexRequirement(requirement)
-    assert exc_info.match(message)
 
 
 @pytest.fixture

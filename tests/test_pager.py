@@ -95,7 +95,7 @@ class TestTTYPager:
         assert "\a" in output
 
     @pytest.mark.parametrize(
-        "keys, command",
+        ("keys", "command"),
         [
             (("v",), Command.PAGE_DOWN),
             (("\x1b", "v"), Command.PAGE_UP),
@@ -105,7 +105,7 @@ class TestTTYPager:
         assert pager._get_cmd() == command
 
     @pytest.mark.parametrize(
-        "keys, command",
+        ("keys", "command"),
         [
             (("x", "q"), Command.QUIT),
             (("\x1b", "x", "r"), Command.REDRAW),
@@ -119,7 +119,7 @@ class TestTTYPager:
 
 
 @pytest.mark.parametrize(
-    "key, command",
+    ("key", "command"),
     [
         (" ", Command.PAGE_DOWN),
         ("q", Command.QUIT),

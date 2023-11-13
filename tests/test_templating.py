@@ -114,7 +114,7 @@ class TestLayerAdapter:
 
 
 @pytest.mark.parametrize(
-    "s, h",
+    ("s", "h"),
     [
         ("", 628939552449298973),
         ("Fü", 1702320224449935351),
@@ -143,7 +143,7 @@ class Test_RdfAdapter:
         return adapter
 
     @pytest.mark.parametrize(
-        "attr, expected",
+        ("attr", "expected"),
         [
             ("dc:title", "TITLE"),
         ],
@@ -152,7 +152,7 @@ class Test_RdfAdapter:
         assert rdf_adapter[attr] == expected
 
     @pytest.mark.parametrize(
-        "attr, expected",
+        ("attr", "expected"),
         [
             ("dc:title", "TITLE"),
             ("dc:creator", "CREATOR"),
@@ -376,7 +376,7 @@ class Test_random_rats:
 
 
 @pytest.mark.parametrize(
-    "pathcomp, expected",
+    ("pathcomp", "expected"),
     [
         ("a b", "a_b"),
         ("a/b", "a_b"),
@@ -392,7 +392,7 @@ def test_safepath_coerces_to_text() -> None:
 
 class Test_render_template:
     @pytest.mark.parametrize(
-        "tmpl, output",
+        ("tmpl", "output"),
         [
             ("foo", "foo"),
             ("{{ 'a b'|safepath }}", "a_b"),

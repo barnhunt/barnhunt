@@ -137,7 +137,7 @@ def test_sibling_layers_no_parent(coursemap1: svg.ElementTree) -> None:
 
 
 @pytest.mark.parametrize(
-    "style, expected",
+    ("style", "expected"),
     [
         ("display:none", "display:inline;"),
         ("display:none; text-align:center;", "text-align:center;display:inline;"),
@@ -153,7 +153,7 @@ def test_ensure_visible(style: str, expected: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "style, expected",
+    ("style", "expected"),
     [
         (None, "display:none;"),
         ("display:inline; text-align:center;", "text-align:center;display:none;"),
@@ -284,7 +284,7 @@ def test_EnsureId_generates_unique_id() -> None:
 
 
 @pytest.mark.parametrize(
-    "attr, expect",
+    ("attr", "expect"),
     [
         ("attr", "test attr value"),
         ("unknown", "DEFVAL"),
@@ -296,7 +296,7 @@ def test_get_svg_attrib(svgtree1: svg.ElementTree, attr: str, expect: str) -> No
 
 
 def test_get_svg_attrib_raises_value_error(tree1: svg.ElementTree) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Expected XML root to be an <svg> tag"):
         svg.get_svg_attrib(tree1, "attr")
 
 
@@ -307,7 +307,7 @@ def test_set_svg_attrib(svgtree1: svg.ElementTree) -> None:
 
 
 def test_set_svg_attrib_raises_value_error(tree1: svg.ElementTree) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Expected XML root to be an <svg> tag"):
         svg.set_svg_attrib(tree1, "attr", "value")
 
 
@@ -322,9 +322,8 @@ def test_get_random_seed_default(svgtree1: svg.ElementTree) -> None:
 
 def test_get_random_seed_raise_value_error(svgtree1: svg.ElementTree) -> None:
     svgtree1.getroot().attrib[svg.BH_RANDOM_SEED] = "not an int"
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError, match="Expected integer"):
         svg.get_random_seed(svgtree1)
-    assert "Expected integer" in str(excinfo.value)
 
 
 def test_set_random_seed(svgtree1: svg.ElementTree) -> None:
@@ -333,5 +332,5 @@ def test_set_random_seed(svgtree1: svg.ElementTree) -> None:
 
 
 def test_set_random_seed_raises_value_error(svgtree1: svg.ElementTree) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Unknown format code"):
         svg.set_random_seed(svgtree1, "44")  # type: ignore[arg-type]

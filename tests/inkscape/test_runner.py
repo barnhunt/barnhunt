@@ -27,7 +27,7 @@ from barnhunt.inkscape.runner import ShellModeRunner
 
 
 @pytest.mark.parametrize(
-    "platform, expect",
+    ("platform", "expect"),
     [
         ("linux", "inkscape"),
         ("win32", "inkscape.exe"),
@@ -42,7 +42,7 @@ def test_get_default_inkscape_command(
 
 
 @pytest.mark.parametrize(
-    "platform, expect",
+    ("platform", "expect"),
     [
         ("linux", True),
         ("darwin", False),

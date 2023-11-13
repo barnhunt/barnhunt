@@ -183,13 +183,13 @@ ignore = [
     "COM812",                   # missing-trailing-comma
     "SLF001",                   # flake8-self (private-member-access)
     "ISC001",                   # (conflicts with `ruff format`)
+    "PT004",                    # (pytest-missing-fixture-name-underscore)
 
     "PL",                       # pylint
     "S",                        # flake8-bandit
     "EM",                       # flake8-errmsg
     "FA",                       # flake8-future-annotations
     "PYI",                      # flake8-pyi
-    "PT",                       # flake8-pytest-style
     "RET",                      # flake8-return
     "SIM",                      # flake8-simplify
     "TCH",                      # flake8-type-checking
