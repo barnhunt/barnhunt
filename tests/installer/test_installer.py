@@ -17,6 +17,8 @@ from packaging.utils import canonicalize_name
 from packaging.version import Version
 from pytest_mock import MockerFixture
 
+from ratelimit import mayberatelimited
+
 from barnhunt.installer import _copy_to_tmp
 from barnhunt.installer import DownloadUrl
 from barnhunt.installer import find_distributions
@@ -27,8 +29,6 @@ from barnhunt.installer import InkexRequirement
 from barnhunt.installer import Installer
 from barnhunt.installer import NoSuchDistribution
 from barnhunt.installer import open_zipfile
-
-from ratelimit import mayberatelimited  # noreorder (test library)
 
 
 def test_InkexRequirement_project() -> None:

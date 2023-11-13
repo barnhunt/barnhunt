@@ -1,5 +1,4 @@
-""" Code for rendering Inkscape SVG to PDFS
-"""
+"""Code for rendering Inkscape SVG to PDFS"""
 
 from __future__ import annotations
 

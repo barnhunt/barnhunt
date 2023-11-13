@@ -185,15 +185,6 @@ select = [
     "RUF100",                   # unused-noqa
     "PGH",                      # pygrep-hooks
     ]
-ignore = [
-    "B018",     # useless-expression
-    "I001",     # unsorted-imports
-    "UP006",    # no-pep585-annotation
-    "UP031",    # printf-string-formatting
-    "UP032",    # f-string
-    "UP037",    # quoted-annotation
-    "PGH001",   # eval
-]
 
 [tool.ruff.lint.isort]
 force-single-line = true

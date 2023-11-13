@@ -3,10 +3,11 @@ from io import BytesIO
 import pytest
 from lxml import etree
 
-from barnhunt.inkscape import svg
 from testlib import get_by_id
 from testlib import get_by_ids
 from testlib import svg_maker
+
+from barnhunt.inkscape import svg
 
 XML1 = b"""<root xmlns:foo="urn:example:foo">
   <a foo:attr="bar"><aa><aaa/></aa></a>

@@ -1,6 +1,4 @@
-""" Helpers for dealing with inline CSS
-
-"""
+"""Helpers for dealing with inline CSS"""
 
 from __future__ import annotations
 

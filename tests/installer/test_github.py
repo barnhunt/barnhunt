@@ -4,9 +4,9 @@ import os
 
 import pytest
 
-from barnhunt.installer.github import iter_releases
+from ratelimit import mayberatelimited
 
-from ratelimit import mayberatelimited  # noreorder (test library)
+from barnhunt.installer.github import iter_releases
 
 
 @pytest.mark.requiresinternet

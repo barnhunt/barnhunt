@@ -13,6 +13,8 @@ import lxml.etree
 import pytest
 import rdflib
 
+from testlib import svg_maker
+
 from barnhunt.inkscape import svg
 from barnhunt.templating import _hash_string
 from barnhunt.templating import FileAdapter
@@ -27,7 +29,6 @@ from barnhunt.templating import RdfLiteralAdapter
 from barnhunt.templating import render_template
 from barnhunt.templating import safepath
 from barnhunt.templating import TemplateContext
-from testlib import svg_maker
 
 
 class TestLayerAdapter:
@@ -129,7 +130,7 @@ def assert_is_undefined(
     assert jinja2.is_undefined(value)
     with pytest.raises(jinja2.UndefinedError, match=match):
         # trigger exception via __getattr__
-        value._
+        _ = value.x
 
 
 class Test_RdfAdapter:

@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 from subprocess import run
 
-
 log = logging.getLogger()
 
 
@@ -59,7 +58,7 @@ def get_default_user_data_directory() -> Path:
 
 def _get_appdata() -> str:
     """Get path to the Windows %APPDATA% directory."""
-    from ctypes import c_int, create_unicode_buffer
+    from ctypes import c_int, create_unicode_buffer  # noqa: I001
     from ctypes import windll  # type: ignore[attr-defined]
     from ctypes.wintypes import DWORD, HANDLE, HWND, MAX_PATH
 

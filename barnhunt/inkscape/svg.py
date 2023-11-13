@@ -1,6 +1,4 @@
-""" Helpers to operator on Inkscape SVG files.
-
-"""
+"""Helpers to operator on Inkscape SVG files."""
 
 from __future__ import annotations
 

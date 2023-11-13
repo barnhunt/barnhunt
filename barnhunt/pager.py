@@ -1,5 +1,4 @@
-"""Support for paging output
-"""
+"""Support for paging output"""
 
 import enum
 import sys
@@ -181,5 +180,5 @@ class Command(enum.Enum):
     @classmethod
     def lookup(cls, key: str) -> "Command":
         """Look up comand for ``key``."""
-        _lookup: Dict[str, "Command"] = cls._lookup  # type: ignore[attr-defined]
+        _lookup: Dict[str, Command] = cls._lookup  # type: ignore[attr-defined]
         return _lookup[key]

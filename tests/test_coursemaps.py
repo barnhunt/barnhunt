@@ -9,13 +9,16 @@ from typing import Iterator
 import pytest
 from lxml import etree
 
+from testlib import svg_maker
+
 from barnhunt.coursemaps import _hash_dev_ino
 from barnhunt.coursemaps import CourseMaps
 from barnhunt.coursemaps import iter_coursemaps
 from barnhunt.coursemaps import TemplateRenderer
 from barnhunt.inkscape import svg
 from barnhunt.layerinfo import parse_flagged_layer_info
-from testlib import svg_maker
+
+# ruff: noqa: UP031 (printf-string-formatting)
 
 
 def get_labels(layers: Iterable[svg.LayerElement]) -> Iterator[str]:

@@ -20,7 +20,7 @@ class PopenSpawn(SpawnBase[AnyStr, _BufferType]):
 
     @overload
     def __init__(
-        self: "PopenSpawn[str, io.StringIO]",
+        self: PopenSpawn[str, io.StringIO],
         cmd: Iterable[str],
         timeout: float = ...,
         maxread: int = ...,
@@ -34,7 +34,7 @@ class PopenSpawn(SpawnBase[AnyStr, _BufferType]):
     ) -> None: ...
     @overload
     def __init__(
-        self: "PopenSpawn[bytes, io.BytesIO]",
+        self: PopenSpawn[bytes, io.BytesIO],
         cmd: Iterable[str],
         timeout: float = ...,
         maxread: int = ...,

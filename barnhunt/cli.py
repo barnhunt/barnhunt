@@ -300,8 +300,8 @@ def coords(dimensions: tuple[int, int], number_of_rows: int, group_size: int) ->
     pager = get_pager(group_size)
     pager(
         [
-            "{0[0]:3d},{0[1]:3d}".format(coord(pt))
-            for pt in random.sample(range(n_pts), number_of_rows)
+            f"{x:3d},{y:3d}"
+            for x, y in map(coord, random.sample(range(n_pts), number_of_rows))
         ]
     )
 

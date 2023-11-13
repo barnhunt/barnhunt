@@ -5,13 +5,14 @@ from typing import Sequence
 
 import pytest
 
+from testlib import svg_maker
+
 from barnhunt import layerinfo
 from barnhunt.inkscape import svg
 from barnhunt.layerinfo import dwim_layer_info
 from barnhunt.layerinfo import LayerFlags
 from barnhunt.layerinfo import parse_flagged_layer_info
 from barnhunt.layerinfo import parse_obs_layer_info
-from testlib import svg_maker
 
 
 @pytest.mark.parametrize(

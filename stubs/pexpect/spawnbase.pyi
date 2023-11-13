@@ -10,7 +10,6 @@ from typing import Iterator
 from typing import Literal
 from typing import overload
 from typing import TextIO
-from typing import Type
 from typing import TypeVar
 
 from _typeshed import Incomplete
@@ -18,9 +17,9 @@ from _typeshed import Incomplete
 from .exceptions import EOF
 from .exceptions import TIMEOUT
 
-Pattern = AnyStr | re.Pattern[AnyStr] | Type[EOF] | Type[TIMEOUT]
-CompiledPattern = re.Pattern[AnyStr] | Type[EOF] | Type[TIMEOUT]
-ExactPattern = AnyStr | Type[EOF] | Type[TIMEOUT]
+Pattern = AnyStr | re.Pattern[AnyStr] | type[EOF] | type[TIMEOUT]
+CompiledPattern = re.Pattern[AnyStr] | type[EOF] | type[TIMEOUT]
+ExactPattern = AnyStr | type[EOF] | type[TIMEOUT]
 
 _BufferType = TypeVar("_BufferType", io.StringIO, io.BytesIO)
 
@@ -57,17 +56,17 @@ class SpawnBase(Generic[AnyStr, _BufferType]):
     name: str
     closed: bool
     codec_errors: str | None
-    string_type: Type[AnyStr]
-    buffer_type: Type[_BufferType]
+    string_type: type[AnyStr]
+    buffer_type: type[_BufferType]
     crlf: AnyStr
-    allowed_string_types: tuple[Type[bytes] | Type[str], ...]
+    allowed_string_types: tuple[type[bytes] | type[str], ...]
     linesep: AnyStr
     write_to_stdout: Callable[[AnyStr], int]
     async_pw_transport: Incomplete
 
     @overload
     def __init__(
-        self: "SpawnBase[str, io.StringIO]",
+        self: SpawnBase[str, io.StringIO],
         timeout: float = ...,
         maxread: int = ...,
         searchwindowsize: int | None = ...,
@@ -77,7 +76,7 @@ class SpawnBase(Generic[AnyStr, _BufferType]):
     ): ...
     @overload
     def __init__(
-        self: "SpawnBase[bytes, io.BytesIO]",
+        self: SpawnBase[bytes, io.BytesIO],
         timeout: float = ...,
         maxread: int = ...,
         searchwindowsize: int | None = ...,
@@ -188,7 +187,7 @@ class SpawnBase(Generic[AnyStr, _BufferType]):
     def __enter__(self: _Self) -> _Self: ...
     def __exit__(
         self,
-        etype: Type[BaseException] | None,
+        etype: type[BaseException] | None,
         evalue: Exception | None,
         tb: TracebackType | None,
     ) -> None: ...
