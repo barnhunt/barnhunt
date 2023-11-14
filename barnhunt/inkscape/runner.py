@@ -14,16 +14,18 @@ from subprocess import PIPE
 from subprocess import Popen
 from subprocess import run
 from subprocess import STDOUT
-from typing import Any
 from typing import Callable
 from typing import Iterable
 from typing import Sequence
-from typing import TypeVar
+from typing import TYPE_CHECKING
 
 from pexpect.popen_spawn import PopenSpawn
 
 from .._compat import Final
 from .._compat import Protocol
+
+if TYPE_CHECKING:
+    from _typeshed import Self
 
 log = logging.getLogger()
 
@@ -176,9 +178,6 @@ INKSCAPE_APIS = {
 }
 
 
-_Runner = TypeVar("_Runner", bound="Runner")
-
-
 class Runner:
     def __init__(self, api: InkscapeApi, executable: str):
         self.api = api
@@ -195,10 +194,10 @@ class Runner:
     def close(self) -> None:
         pass
 
-    def __enter__(self: _Runner) -> _Runner:
+    def __enter__(self: Self) -> Self:
         return self
 
-    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
+    def __exit__(self, exc_type: object, exc_value: object, traceback: object) -> None:
         self.close()
 
 

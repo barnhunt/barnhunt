@@ -10,16 +10,18 @@ from typing import Iterator
 from typing import Literal
 from typing import overload
 from typing import TextIO
+from typing import TypeAlias
 from typing import TypeVar
 
 from _typeshed import Incomplete
+from _typeshed import Self
 
 from .exceptions import EOF
 from .exceptions import TIMEOUT
 
-Pattern = AnyStr | re.Pattern[AnyStr] | type[EOF] | type[TIMEOUT]
-CompiledPattern = re.Pattern[AnyStr] | type[EOF] | type[TIMEOUT]
-ExactPattern = AnyStr | type[EOF] | type[TIMEOUT]
+Pattern: TypeAlias = AnyStr | re.Pattern[AnyStr] | type[EOF | TIMEOUT]
+CompiledPattern: TypeAlias = re.Pattern[AnyStr] | type[EOF | TIMEOUT]
+ExactPattern: TypeAlias = AnyStr | type[EOF | TIMEOUT]
 
 _BufferType = TypeVar("_BufferType", io.StringIO, io.BytesIO)
 
@@ -59,7 +61,7 @@ class SpawnBase(Generic[AnyStr, _BufferType]):
     string_type: type[AnyStr]
     buffer_type: type[_BufferType]
     crlf: AnyStr
-    allowed_string_types: tuple[type[bytes] | type[str], ...]
+    allowed_string_types: tuple[type[bytes | str], ...]
     linesep: AnyStr
     write_to_stdout: Callable[[AnyStr], int]
     async_pw_transport: Incomplete
@@ -182,12 +184,10 @@ class SpawnBase(Generic[AnyStr, _BufferType]):
     def fileno(self) -> int: ...
     def flush(self) -> None: ...
     def isatty(self) -> bool: ...
-
-    _Self = TypeVar("_Self", bound="SpawnBase[AnyStr, _BufferType]")
-    def __enter__(self: _Self) -> _Self: ...
+    def __enter__(self: Self) -> Self: ...
     def __exit__(
         self,
         etype: type[BaseException] | None,
-        evalue: Exception | None,
+        evalue: BaseException | None,
         tb: TracebackType | None,
     ) -> None: ...

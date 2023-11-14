@@ -189,7 +189,6 @@ ignore = [
     "SIM117",                   # multiple-with-statements
 
     "PL",                       # pylint
-    "PYI",                      # flake8-pyi
     "TCH",                      # flake8-type-checking
     "EM",                       # flake8-errmsg
     "TRY",                      # tryceratops (exception handling anti-patterns)

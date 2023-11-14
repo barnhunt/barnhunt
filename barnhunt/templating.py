@@ -89,14 +89,15 @@ class LayerAdapter:
         assert self.id
         return _hash_string(self.id)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, LayerAdapter):
+            return NotImplemented
         return (
-            type(other) is type(self)
-            and other.elem == self.elem
+            other.elem == self.elem
             and other._parse_layer_info is self._parse_layer_info
         )
 
-    def __ne__(self, other: Any) -> bool:
+    def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
     def __repr__(self) -> str:
@@ -153,7 +154,7 @@ class RdfLiteralAdapter(RdfNodeAdapter):
     def __getattr__(self, attr: str) -> Any:
         return getattr(self._subject.value, attr)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, RdfNodeAdapter):
             return super().__eq__(other)
         return self._subject.value == other  # type: ignore[no-any-return]

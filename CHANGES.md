@@ -1,5 +1,11 @@
 ## Changes
 
+### Next Release (unreleased)
+
+#### Style
+
+- Use ruff in place of black, flake8, reorder-python-imports, yesqa, ...
+
 ### Release 1.2.1rc3 (2023-08-04)
 
 #### Bugs Fixed
