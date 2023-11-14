@@ -1,8 +1,9 @@
 """Support for paging output"""
 
+from __future__ import annotations
+
 import enum
 import sys
-from typing import Dict
 from typing import Sequence
 
 import click
@@ -79,7 +80,7 @@ class TTYPager:
                 click.echo("\a", nl=False)
         click.echo()
 
-    def _get_cmd(self) -> "Command":
+    def _get_cmd(self) -> Command:
         while True:
             key = click.getchar()
             if key == "\x1b":
@@ -114,7 +115,7 @@ K_Return = "\r"
 K_Escape = "\x1b"
 
 
-_Command_lookup: Dict[str, "Command"] = {}
+_Command_lookup: dict[str, Command] = {}
 
 
 class Command(enum.Enum):
@@ -178,7 +179,7 @@ class Command(enum.Enum):
             _lookup[key] = self
 
     @classmethod
-    def lookup(cls, key: str) -> "Command":
+    def lookup(cls, key: str) -> Command:
         """Look up comand for ``key``."""
-        _lookup: Dict[str, Command] = cls._lookup  # type: ignore[attr-defined]
+        _lookup: dict[str, Command] = cls._lookup  # type: ignore[attr-defined]
         return _lookup[key]

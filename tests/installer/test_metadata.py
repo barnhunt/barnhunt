@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import json
 from pathlib import Path
 from typing import Any
-from typing import Dict
 from zipfile import ZipFile
 
 import marshmallow
@@ -64,14 +65,14 @@ def test_metadata_from_json_provides_extras() -> None:
 
 
 @pytest.fixture
-def json_data() -> Dict[str, Any]:
+def json_data() -> dict[str, Any]:
     return {
         "name": "test.name",
         "version": "0.42",
     }
 
 
-def test_metadata_from_zipdist(tmp_path: Path, json_data: Dict[str, Any]) -> None:
+def test_metadata_from_zipdist(tmp_path: Path, json_data: dict[str, Any]) -> None:
     zip_path = tmp_path / "test.zip"
     with ZipFile(zip_path, "w") as zf:
         zf.writestr("org.dairiki.foo_bar/METADATA.json", json.dumps(json_data))
@@ -89,7 +90,7 @@ def test_metadata_from_zipdist_invalid(tmp_path: Path) -> None:
             metadata_from_distzip(zf)
 
 
-def test_metadata_from_distdir(tmp_path: Path, json_data: Dict[str, Any]) -> None:
+def test_metadata_from_distdir(tmp_path: Path, json_data: dict[str, Any]) -> None:
     dist_path = tmp_path / "test.dist"
     dist_path.mkdir()
     Path(dist_path, "METADATA.json").write_text(json.dumps(json_data))

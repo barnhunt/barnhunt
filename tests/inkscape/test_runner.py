@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 import re
@@ -8,7 +10,6 @@ from subprocess import CalledProcessError
 from typing import Any
 from typing import Callable
 from typing import Sequence
-from typing import Type
 
 import pytest
 
@@ -60,12 +61,12 @@ class TestExportPdfCommand:
     def command_class(self, request: pytest.FixtureRequest) -> ExportPdfCommand:
         return request.param  # type: ignore[no-any-return]
 
-    def test_no_pdf_version(self, command_class: Type[ExportPdfCommand]) -> None:
+    def test_no_pdf_version(self, command_class: type[ExportPdfCommand]) -> None:
         command = command_class("in.svg", "out.pdf")
         assert all("export-pdf-version" not in arg for arg in command.cli_args)
         assert "export-pdf-version" not in command.shell_mode_cmdline
 
-    def test_pdf_version(self, command_class: Type[ExportPdfCommand]) -> None:
+    def test_pdf_version(self, command_class: type[ExportPdfCommand]) -> None:
         command = command_class("in.svg", "out.pdf", "1.23")
         assert "--export-pdf-version=1.23" in command.cli_args
         if command_class is ExportPdfCommand_0_9x:
@@ -216,7 +217,7 @@ def test_log_output_squelches_cruft(caplog: pytest.LogCaptureFixture) -> None:
 def test_inkscape_runner(
     shell_mode: bool,
     old_inkscape: bool,
-    runner_class: Type[Runner],
+    runner_class: type[Runner],
     export_pdf_command: Any,
 ) -> None:
     runner = inkscape_runner(shell_mode, old_inkscape=old_inkscape)

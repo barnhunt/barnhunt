@@ -189,10 +189,9 @@ ignore = [
     "SIM117",                   # multiple-with-statements
 
     "PL",                       # pylint
-    "EM",                       # flake8-errmsg
-    "FA",                       # flake8-future-annotations
     "PYI",                      # flake8-pyi
     "TCH",                      # flake8-type-checking
+    "EM",                       # flake8-errmsg
     "TRY",                      # tryceratops (exception handling anti-patterns)
 
     "D",                        # pydocstyle

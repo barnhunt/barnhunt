@@ -1,3 +1,4 @@
+# ruff: noqa: FA100 (missing __future__.annotations import)
 import datetime
 from dataclasses import dataclass
 from typing import Iterator
