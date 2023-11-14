@@ -6,6 +6,7 @@ import stat
 from pathlib import Path
 from typing import Any
 from typing import Callable
+from typing import Generator
 from typing import Sequence
 
 import jinja2
@@ -319,8 +320,9 @@ class Test_get_element_context:
 
 class TestFileAdapter:
     @pytest.fixture
-    def srcfile(self) -> FileAdapter:
-        return FileAdapter(open(__file__, "rb"))
+    def srcfile(self) -> Generator[FileAdapter, None, None]:
+        with open(__file__, "rb") as fp:
+            yield FileAdapter(fp)
 
     def test_name(self, srcfile: FileAdapter) -> None:
         assert srcfile.name == __file__

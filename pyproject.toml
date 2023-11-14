@@ -184,20 +184,22 @@ ignore = [
     "SLF001",                   # flake8-self (private-member-access)
     "ISC001",                   # (conflicts with `ruff format`)
     "PT004",                    # (pytest-missing-fixture-name-underscore)
+    "SIM102",                   # collapsible-if
+    "SIM108",                   # if-else-block-instead-of-if-exp
+    "SIM117",                   # multiple-with-statements
 
     "PL",                       # pylint
-    "S",                        # flake8-bandit
     "EM",                       # flake8-errmsg
     "FA",                       # flake8-future-annotations
     "PYI",                      # flake8-pyi
     "RET",                      # flake8-return
-    "SIM",                      # flake8-simplify
     "TCH",                      # flake8-type-checking
     "TRY",                      # tryceratops (exception handling anti-patterns)
 
     "D",                        # pydocstyle
     "N",                        # pep8-naming
     "ANN",                      # flake8-annotations
+    "S",                        # flake8-bandit
     "BLE",                      # flake8-blind-except
     "FBT",                      # flake8-boolean-trap
     "A",                        # flake8-builtins
