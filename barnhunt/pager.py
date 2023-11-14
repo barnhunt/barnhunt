@@ -34,7 +34,7 @@ class Grouper:
         for i in range(0, len(lines), group_size):
             for line in lines[i : i + group_size]:
                 print(line)
-            print("")
+            print()
 
 
 class TTYPager:

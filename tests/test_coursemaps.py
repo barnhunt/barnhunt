@@ -90,7 +90,7 @@ def test_get_local_context(template_renderer: TemplateRenderer) -> None:
     )
     tree = etree.parse(BytesIO(xml.encode("utf-8")))
     tspan = tree.getroot()[0]
-    context = template_renderer._get_local_context(tspan, dict(foo="bar"))
+    context = template_renderer._get_local_context(tspan, {"foo": "bar"})
     assert context["foo"] == "bar"
     assert context["layer"].label == "The Layer"
 

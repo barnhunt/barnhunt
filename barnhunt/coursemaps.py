@@ -4,6 +4,7 @@ import logging
 import os
 from itertools import count
 from typing import BinaryIO
+from typing import ClassVar
 from typing import Collection
 from typing import Iterable
 from typing import Iterator
@@ -71,7 +72,7 @@ class TemplateRenderer:
 
 
 class CourseMaps:
-    default_context = {
+    default_context: ClassVar = {
         "overlays": (),
         "course": None,
         "overlay": None,
@@ -83,7 +84,7 @@ class CourseMaps:
         context: TemplateContext | None = None,
     ):
         self.parse_layer_info = layer_info_parser
-        self.context = dict()
+        self.context = {}
         if context is not None:
             self.context.update(context)
         self.context.update(self.default_context)
@@ -162,7 +163,7 @@ class CourseMaps:
         for overlay in overlays:
             other_overlays = set(overlays).difference([overlay])
             for path, hidden in self._iter_overlays(overlay):
-                yield [overlay] + path, hidden | cruft | other_overlays
+                yield [overlay, *path], hidden | cruft | other_overlays
 
     def _find_overlays(
         self, elem: svg.Element

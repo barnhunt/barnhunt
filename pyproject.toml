@@ -177,14 +177,40 @@ extend-exclude = [".pdm-build"]
 
 [tool.ruff.lint]
 explicit-preview-rules = true
-select = [
-    "F", "E", "W", "C90",       # flake8 (pyflakes, pycodestyle mccabe)
-    "B0", "B0",                 # flake8-bugbear
-    "I",                        # isort
-    "UP",                       # pyupgrade
-    "RUF100",                   # unused-noqa
-    "PGH",                      # pygrep-hooks
-    ]
+allowed-confusables = ["’", "–"]
+select = ["ALL"]
+ignore = [
+    "COM812",                   # missing-trailing-comma
+    "SLF001",                   # flake8-self (private-member-access)
+    "ISC001",                   # (conflicts with `ruff format`)
+
+    "PL",                       # pylint
+    "S",                        # flake8-bandit
+    "EM",                       # flake8-errmsg
+    "FA",                       # flake8-future-annotations
+    "PYI",                      # flake8-pyi
+    "PT",                       # flake8-pytest-style
+    "RET",                      # flake8-return
+    "SIM",                      # flake8-simplify
+    "TCH",                      # flake8-type-checking
+    "TRY",                      # tryceratops (exception handling anti-patterns)
+
+    "D",                        # pydocstyle
+    "N",                        # pep8-naming
+    "ANN",                      # flake8-annotations
+    "BLE",                      # flake8-blind-except
+    "FBT",                      # flake8-boolean-trap
+    "A",                        # flake8-builtins
+    "DTZ",                      # flake8-datetimez
+    "FIX", "TD",                # flake8-fixme, flake8-todos
+    "G",                        # flake8-logging-format
+    "INP",                      # flake8-no-pep420
+    "T20",                      # flake8-print
+    "TID",                      # flake8-tidy-imports
+    "ARG",                      # flake8-unused-arguments
+    "PTH",                      # flake8-use-pathlib
+    "ERA",                      # eradicate (commented-out-code)
+]
 
 [tool.ruff.lint.isort]
 force-single-line = true

@@ -39,7 +39,7 @@ class Test_default_2up_output_file:
             dummy_path = tmp_path / filename
             dummy_path.touch()
             fp = click.File("rb")(os.fspath(dummy_path))
-            params[param_name] = params.get(param_name, ()) + (fp,)
+            params[param_name] = (*params.get(param_name, ()), fp)
             return dummy_path
 
         return add_input_file

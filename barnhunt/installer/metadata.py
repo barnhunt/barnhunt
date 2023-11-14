@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
 from typing import Any
+from typing import ClassVar
 from typing import Dict
 from typing import Generic
 from typing import List
@@ -107,7 +108,7 @@ class NormalizedNameField(marshmallow.fields.Field, Generic[T]):
 
 
 class SchemaBase(marshmallow.Schema):
-    TYPE_MAPPING = {
+    TYPE_MAPPING: ClassVar = {  # type: ignore[misc]
         NormalizedName: NormalizedNameField,
         Requirement: TypeField[Requirement],
         SpecifierSet: TypeField[SpecifierSet],

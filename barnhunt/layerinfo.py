@@ -59,7 +59,7 @@ def parse_flagged_layer_info(elem: svg.LayerElement) -> LayerInfo:
         r"  (?P<exclusions>(?:,*[!=]\w[-\w\d]*)*)"
         r"\]\s*",
         label,
-        re.X,
+        re.VERBOSE,
     )
     if m:
         flags = LayerFlags.parse(m.group("flags"))

@@ -54,12 +54,12 @@ class InkscapeCommand(Protocol):
     @property
     def cli_args(self) -> Iterable[str]:
         """Commmand line args for Inkscape."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     def shell_mode_cmdline(self) -> str:
         """Equivalent shell-mode command line"""
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class ExportPdfCommand(InkscapeCommand):
@@ -75,7 +75,7 @@ class ExportPdfCommand(InkscapeCommand):
 
     @property
     def _params(self) -> list[tuple[str, str] | tuple[str]]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class ExportPdfCommand_1_0(ExportPdfCommand):
@@ -190,7 +190,7 @@ class Runner:
         self.run(self.api.export_pdf_command(svg_fn, output_fn, pdf_version))
 
     def run(self, cmd: InkscapeCommand) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def close(self) -> None:
         pass
