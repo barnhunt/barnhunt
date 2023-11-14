@@ -159,7 +159,6 @@ def dwim_layer_info(tree: svg.ElementTree) -> LayerInfoParser:
         # Old style with overlays and hidden layers identified by
         # matching layer labels against various regexps.
         return parse_obs_layer_info
-    else:
-        # New style with flags in layer labels.
-        # E.g. "[o] Overlay Layer Label", "[h] Hidden Layer"
-        return parse_flagged_layer_info
+    # New style with flags in layer labels.
+    # E.g. "[o] Overlay Layer Label", "[h] Hidden Layer"
+    return parse_flagged_layer_info

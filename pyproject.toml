@@ -192,7 +192,6 @@ ignore = [
     "EM",                       # flake8-errmsg
     "FA",                       # flake8-future-annotations
     "PYI",                      # flake8-pyi
-    "RET",                      # flake8-return
     "TCH",                      # flake8-type-checking
     "TRY",                      # tryceratops (exception handling anti-patterns)
 

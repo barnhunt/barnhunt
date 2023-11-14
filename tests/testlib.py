@@ -28,9 +28,9 @@ def get_by_id(
     elems: list[svg.Element] = tree.xpath("//*[@id=$id]", id=id)
     if len(elems) == 1:
         return elems[0]
-    elif len(elems) > 1:
+    if len(elems) > 1:
         raise ValueError(f"Multiple elements found for id {id!r}")
-    elif raising:
+    if raising:
         raise KeyError(id)
     return None
 
