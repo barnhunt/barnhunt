@@ -30,17 +30,17 @@ jobs:
           #   pyoxidizer-cache: ~/Library/Caches/pyoxidizer
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
     - name: PyOxidizer cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ matrix.pyoxidizer-cache }}
         key: ${{ matrix.os }}-pyoxidizer-${{ hashFiles('pdm.lock', '**/*.bzl') }}
 
-    - uses: actions/setup-python@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.10.9'
         cache: 'pip'
@@ -51,7 +51,7 @@ jobs:
     - run: pdm run pyoxidizer --version
     - run: pdm oxidize --release ${{ matrix.targets }}
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: oxidized
         path: |
@@ -70,10 +70,10 @@ jobs:
       test-svg: .\src\tests\drawing.svg
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         path: src
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: oxidized
     - run: Get-ChildItem -Recurse
@@ -117,7 +117,7 @@ jobs:
     - run: barnhunt uninstall
     - run: barnhunt 2up ".\pdfs\novice.pdf"
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: always()
       with:
         name: oxidized_test

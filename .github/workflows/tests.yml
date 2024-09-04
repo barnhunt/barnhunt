@@ -34,10 +34,10 @@ jobs:
             install-inkscape: true
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -77,10 +77,11 @@ jobs:
         # GITHUB_TOKEN gives us higher GH REST API rate-limits
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
-        name: coverage-data
+        name: coverage-data-${{ matrix.python-version }}-${{ matrix.os }}
         path: .coverage.*
+        include-hidden-files: true
         retention-days: 1       # save money
 
   coverage:
@@ -89,14 +90,15 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip
         pip install coverage[toml]
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
-        name: coverage-data
+        pattern: coverage-data-*
+        merge-multiple: true
     - name: Test coverage
       run: |
         coverage combine
@@ -108,13 +110,13 @@ jobs:
     env:
       python-version: '3.12'
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       id: py
       with:
         python-version: ${{ env.python-version }}
     - name: pre-commit cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cache/pre-commit
@@ -145,13 +147,13 @@ jobs:
       version-type: ${{ steps.classify-version.outputs.version-type }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - run: python -m pip install --upgrade pip
     - run: python -m pip install pdm packaging
     - run: pdm build
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: dist
         path: dist/
