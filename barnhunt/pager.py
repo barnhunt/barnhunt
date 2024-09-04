@@ -1,5 +1,6 @@
 """Support for paging output
 """
+
 import enum
 import sys
 from typing import Dict
@@ -11,8 +12,7 @@ from ._compat import Protocol
 
 
 class Pager(Protocol):
-    def __call__(self, lines: Sequence[str]) -> None:
-        ...
+    def __call__(self, lines: Sequence[str]) -> None: ...
 
 
 def get_pager(group_size: int) -> Pager:

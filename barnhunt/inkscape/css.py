@@ -1,6 +1,7 @@
 """ Helpers for dealing with inline CSS
 
 """
+
 from __future__ import annotations
 
 import logging

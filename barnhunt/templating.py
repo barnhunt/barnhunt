@@ -229,12 +229,10 @@ class RdfCollectionAdapter(RdfIdentifiedNodeAdapter, Sequence[RdfNodeAdapter]):
     """
 
     @overload  # type: ignore[override]
-    def __getitem__(self, n: int) -> RdfNodeAdapter | jinja2.Undefined:
-        ...
+    def __getitem__(self, n: int) -> RdfNodeAdapter | jinja2.Undefined: ...
 
     @overload
-    def __getitem__(self, n: slice) -> Sequence[RdfNodeAdapter]:
-        ...
+    def __getitem__(self, n: slice) -> Sequence[RdfNodeAdapter]: ...
 
     def __getitem__(
         self, n: int | slice

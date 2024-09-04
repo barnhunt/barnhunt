@@ -13,15 +13,13 @@ from barnhunt.inkscape import svg
 @overload
 def get_by_id(
     tree: svg.ElementTree, id: str, raising: Literal[False]
-) -> svg.Element | None:
-    ...
+) -> svg.Element | None: ...
 
 
 @overload
 def get_by_id(
     tree: svg.ElementTree, id: str, raising: Literal[True] = ...
-) -> svg.Element:
-    ...
+) -> svg.Element: ...
 
 
 def get_by_id(

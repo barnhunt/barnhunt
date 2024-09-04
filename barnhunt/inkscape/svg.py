@@ -1,6 +1,7 @@
 """ Helpers to operator on Inkscape SVG files.
 
 """
+
 from __future__ import annotations
 
 import copy
@@ -323,15 +324,13 @@ def _svg_attrib(tree: ElementTree) -> etree._Attrib:
 @overload
 def get_svg_attrib(
     tree: ElementTree, attr: str | bytes | etree.QName, default: str
-) -> str:
-    ...
+) -> str: ...
 
 
 @overload
 def get_svg_attrib(
     tree: ElementTree, attr: str | bytes | etree.QName, default: None = ...
-) -> str | None:
-    ...
+) -> str | None: ...
 
 
 def get_svg_attrib(
@@ -360,13 +359,11 @@ def set_svg_attrib(
 
 
 @overload
-def get_random_seed(tree: ElementTree, default: int) -> int:
-    ...
+def get_random_seed(tree: ElementTree, default: int) -> int: ...
 
 
 @overload
-def get_random_seed(tree: ElementTree, default: None = ...) -> int | None:
-    ...
+def get_random_seed(tree: ElementTree, default: None = ...) -> int | None: ...
 
 
 def get_random_seed(tree: ElementTree, default: int | None = None) -> int | None:

@@ -1,5 +1,6 @@
 """ Code for rendering Inkscape SVG to PDFS
 """
+
 from __future__ import annotations
 
 import re
