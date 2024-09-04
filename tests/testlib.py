@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable
 from typing import overload
+from typing import Sequence
 
 from lxml import etree
 from lxml.builder import ElementMaker
@@ -59,7 +60,7 @@ class SvgMaker:
     def layer(
         label: str,
         id: str | None = None,
-        children: Iterable[svg.Element] | None = None,
+        children: Sequence[svg.Element] | None = None,
         visible: bool = True,
     ) -> svg.LayerElement:
         layer = _e.g(
@@ -93,7 +94,7 @@ class SvgMaker:
     @staticmethod
     def group(
         id: str | None = None,
-        children: Iterable[svg.Element] | None = None,
+        children: Sequence[svg.Element] | None = None,
     ) -> svg.Element:
         g = _e.g()
         if id is not None:

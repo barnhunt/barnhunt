@@ -258,7 +258,7 @@ def copy_etree(
         rv = etree.Element(elem.tag, attrib=elem.attrib, nsmap=nsmap)
         rv.text = elem.text
         rv.tail = elem.tail
-        rv.extend(copy_elem(child) for child in elem if child not in omit_elems)
+        rv.extend([copy_elem(child) for child in elem if child not in omit_elems])
         return rv
 
     root = tree.getroot()
