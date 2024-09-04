@@ -14,14 +14,13 @@ from subprocess import Popen
 from subprocess import run
 from subprocess import STDOUT
 from typing import Callable
+from typing import Final
 from typing import Iterable
+from typing import Protocol
 from typing import Sequence
 from typing import TYPE_CHECKING
 
 from pexpect.popen_spawn import PopenSpawn
-
-from .._compat import Final
-from .._compat import Protocol
 
 if TYPE_CHECKING:
     from _typeshed import Self

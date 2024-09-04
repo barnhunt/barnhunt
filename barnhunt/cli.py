@@ -14,6 +14,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import BinaryIO
 from typing import Callable
+from typing import Final
 from typing import Iterable
 from typing import NoReturn
 from typing import Sequence
@@ -23,7 +24,6 @@ import click
 from atomicwrites import atomic_write
 
 import barnhunt
-from ._compat import Final
 from ._compat import importlib_metadata as metadata
 from .coursemaps import Coursemap
 from .coursemaps import iter_coursemaps

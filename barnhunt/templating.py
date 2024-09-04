@@ -13,6 +13,7 @@ from operator import itemgetter
 from typing import Any
 from typing import BinaryIO
 from typing import Dict
+from typing import Final
 from typing import Iterator
 from typing import Mapping
 from typing import overload
@@ -24,7 +25,6 @@ import rdflib
 from rdflib import DC
 from rdflib import RDF
 
-from ._compat import Final
 from .inkscape import svg
 from .layerinfo import LayerFlags
 from .layerinfo import LayerInfoParser

@@ -6,13 +6,13 @@ from collections.abc import Iterator
 from types import TracebackType
 from typing import AnyStr
 from typing import Generic
+from typing import Literal
 from typing import overload
 from typing import Protocol
 
 from _typeshed import Incomplete
 from _typeshed import Self
 from _typeshed import SupportsWrite
-from typing_extensions import Literal
 from typing_extensions import TypeAlias
 
 from .exceptions import EOF

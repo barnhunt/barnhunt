@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import enum
 import sys
+from typing import Protocol
 from typing import Sequence
 
 import click
-
-from ._compat import Protocol
 
 
 class Pager(Protocol):

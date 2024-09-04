@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from typing import Iterable
+from typing import Literal
 from typing import overload
 from typing import Sequence
 
 from lxml import etree
 from lxml.builder import ElementMaker
 
-from barnhunt._compat import Literal
 from barnhunt.inkscape import svg
 
 
