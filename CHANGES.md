@@ -4,6 +4,13 @@
 
 - Drop support for python 3.7, add support for python 3.12
 
+#### Update some dependency pins
+
+- Update lxml from 4.* to 5.*.
+- Update pikepdf from 6.* to 8.*. (Binary wheels for recent pythons
+  are not available for the older versions.)
+- Update importlib-metadata form 4.0 to 4.*.
+
 #### Style
 
 - Use ruff in place of black, flake8, reorder-python-imports, yesqa, ...
