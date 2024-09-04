@@ -20,7 +20,7 @@ classifiers = [
     "Topic :: Printing",
     "Topic :: Utilities",
 ]
-requires-python = ">= 3.7"
+requires-python = ">= 3.8"
 dependencies = [
     "atomicwrites~=1.4",
     "click~=8.1",

@@ -2,6 +2,8 @@
 
 ### Next Release (unreleased)
 
+- Drop support for python 3.7, add support for python 3.12
+
 #### Style
 
 - Use ruff in place of black, flake8, reorder-python-imports, yesqa, ...
