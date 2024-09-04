@@ -5,9 +5,9 @@ import inspect
 import os
 import re
 import sys
+from ctypes import wintypes
 from pathlib import Path
 from subprocess import CompletedProcess
-from types import ModuleType
 from types import SimpleNamespace
 
 import pytest
@@ -17,16 +17,6 @@ from barnhunt.inkscape.utils import _get_appdata
 from barnhunt.inkscape.utils import get_default_user_data_directory
 from barnhunt.inkscape.utils import get_inkscape_debug_info
 from barnhunt.inkscape.utils import get_user_data_directory
-
-if sys.version_info >= (3, 8):
-    from ctypes import wintypes
-else:
-    wintypes = ModuleType("ctypes.wintypes")
-    wintypes.HWND = ctypes.c_void_p
-    wintypes.HANDLE = ctypes.c_void_p
-    wintypes.DWORD = ctypes.c_ulong
-    wintypes.LPWSTR = ctypes.c_wchar_p
-    wintypes.MAX_PATH = 260
 
 
 def test_get_user_data_directory(mocker: MockerFixture) -> None:
