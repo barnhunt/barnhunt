@@ -48,8 +48,8 @@ write_template = "__version__ = \"{}\"\n"
 
 [tool.pdm.build]
 excludes = [
-    "*~",
-    ".*",
+    "**/*~",
+    "**/.*",
 ]
 source-includes = [
     "README.md",
