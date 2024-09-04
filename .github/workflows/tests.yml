@@ -55,7 +55,7 @@ jobs:
       if: runner.os == 'macOS' && matrix.install-inkscape
       # This step seems to fail sporadically
       continue-on-error: true
-      run: brew install inkscape
+      run: brew install homebrew/cask/inkscape
 
     - name: Install tox
       run: |
