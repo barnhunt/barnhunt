@@ -107,6 +107,9 @@ class TestLayerAdapter:
         assert sublayer != toplevel
         assert sublayer == LayerAdapter(sublayer.elem)
 
+    def test_eq_not_implemented(self, toplevel: LayerAdapter) -> None:
+        assert toplevel != 42
+
     def test_repr(self, sublayer: LayerAdapter) -> None:
         assert repr(sublayer) == "<LayerAdapter id=sublayer>"
 

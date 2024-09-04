@@ -97,9 +97,6 @@ class LayerAdapter:
             and other._parse_layer_info is self._parse_layer_info
         )
 
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} id={self.id}>"
 
