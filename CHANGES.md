@@ -1,19 +1,14 @@
+[#]: <> (This file will be appended to README.md)
+
 ## Changes
 
-### Next Release (unreleased)
+### Unreleased
 
-- Drop support for python 3.7, add support for python 3.12
+See the fragment files in the [changes.d directory][changes.d].
 
-#### Update some dependency pins
+[changes.d]: https://github.com/barnhunt/barnhunt/tree/master/changes.d
 
-- Update lxml from 4.* to 5.*.
-- Update pikepdf from 6.* to 8.*. (Binary wheels for recent pythons
-  are not available for the older versions.)
-- Update importlib-metadata form 4.0 to 4.*.
-
-#### Style
-
-- Use ruff in place of black, flake8, reorder-python-imports, yesqa, ...
+[#]: <> (scriv-insert-here)
 
 ### Release 1.2.1rc3 (2023-08-04)
 
@@ -143,7 +138,7 @@ Support python 3.11.
 
 ### Release 1.2.0rc2 (2022-10-17)
 
-### Extension and Symbol Set Installation
+#### Extension and Symbol Set Installation
 
 - This release add a `barnhunt install` (and `uninstall`) sub-command
   to simplify installation of the

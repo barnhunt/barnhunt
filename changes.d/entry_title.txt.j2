@@ -1,0 +1,5 @@
+{%- if version -%}
+    Release {{ version }} ({{ date.strftime('%Y-%m-%d') }})
+{%- else -%}
+    {{ date.strftime('%Y-%m-%d') }}
+{%- endif %}
