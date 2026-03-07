@@ -50,9 +50,6 @@ dev = [
     "ruff==0.15.5",
     "scriv[toml]~=1.8",
 ]
-pyoxidizer = [
-    "pyoxidizer==0.24.0",
-]
 test = [
     "pytest>=9.0.2",
     "pytest-mock>=3.15.1",
@@ -76,15 +73,10 @@ source-includes = [
     "tox.ini",
     "stubs/**/*.pyi",
     "tests",
-    "pyoxidizer/pyoxidizer.bzl",
-    "pyoxidizer/*.py",
 ]
 
 [tool.pdm.scripts]
 barnhunt.call = "barnhunt.cli:main"
-
-oxidize.call = "pdm_build:oxidize"
-post_oxidize.call = "pdm_build:copy_output"
 
 [tool.coverage.paths]
 paths = [

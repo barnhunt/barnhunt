@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import datetime
 import logging
 import os
 import random
 import re
-import sys
 from collections import defaultdict
 from collections.abc import Callable
 from collections.abc import Iterable
@@ -547,26 +545,4 @@ def _get_system_debug_info() -> list[tuple[str, str]]:
 
 
 def main(args: Sequence[str] | None = None, prog_name: str | None = None) -> NoReturn:
-    try:
-        barnhunt_cli.main(args=args, prog_name=prog_name)
-    finally:
-        if os.environ.get("BARNHUNT_DUMP_LOADED_MODULES"):
-            _dump_loaded_modules()
-
-
-def _dump_loaded_modules() -> None:
-    utcnow = datetime.datetime.utcnow()
-    dump_file = f"barnhunt-modules.{os.getpid()}"
-    with open(dump_file, "w") as fp:
-        print(f"# Modules loaded by barnhunt {barnhunt.__version__}", file=fp)
-        print(f"# {utcnow.isoformat(timespec='seconds')}Z", file=fp)
-        print(f"# Command: {' '.join(sys.argv[1:])}", file=fp)
-        for name in sorted(sys.modules):
-            print(name, file=fp)
-
-    formatter = click.HelpFormatter()
-    formatter.write_text(
-        f"Dumped loaded modules to {dump_file!r} "
-        "(Unset $BARNHUNT_DUMP_LOADED_MODULES to prevent this.)"
-    )
-    print("\n" + formatter.getvalue().rstrip(), file=sys.stderr)
+    barnhunt_cli.main(args=args, prog_name=prog_name)

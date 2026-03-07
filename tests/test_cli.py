@@ -9,7 +9,6 @@ import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture
 
-from barnhunt.cli import _dump_loaded_modules
 from barnhunt.cli import barnhunt_cli
 from barnhunt.cli import default_2up_output_file
 from barnhunt.cli import InkexRequirementType
@@ -162,30 +161,3 @@ def test_debug_info() -> None:
     runner = CliRunner()
     result = runner.invoke(barnhunt_cli, ("debug-info",))
     assert result.exit_code == 0
-
-
-def test_main_dumps_loaded_modules(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("BARNHUNT_DUMP_LOADED_MODULES", "true")
-    monkeypatch.setattr("sys.argv", ["-c", "--version"])
-    with pytest.raises(SystemExit) as exc_info:
-        main()
-    assert exc_info.value.code == 0
-    assert "Dumped loaded modules" in capsys.readouterr().err
-    dumpfiles = [p for p in tmp_path.iterdir() if p.name.startswith("barnhunt-modules")]
-    assert len(dumpfiles) == 1
-    modules = set(dumpfiles[0].read_text("utf-8").splitlines())
-    assert "pikepdf" in modules
-
-
-def test_dump_loaded_modules(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    monkeypatch.chdir(tmp_path)
-    _dump_loaded_modules()
-    captured = capsys.readouterr()
-    assert "Dumped loaded modules" in captured.err
-    dumpfiles = [p for p in tmp_path.iterdir() if p.name.startswith("barnhunt-modules")]
-    assert len(dumpfiles) == 1
