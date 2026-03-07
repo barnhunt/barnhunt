@@ -1,7 +1,3 @@
-[build-system]
-requires = ["pdm-backend", "packaging"]
-build-backend = "pdm.backend"
-
 [project]
 name = "barnhunt"
 description = "Helpers for drawing Barn Hunt course maps using Inkscape"
@@ -57,6 +53,10 @@ test = [
     "pdfminer-six>=20260107",
 ]
 
+[build-system]
+requires = ["pdm-backend", "packaging"]
+build-backend = "pdm.backend"
+
 [tool.pdm.version]
 source = "scm"
 write_to = "barnhunt/_version.py"
@@ -74,9 +74,6 @@ source-includes = [
     "stubs/**/*.pyi",
     "tests",
 ]
-
-[tool.pdm.scripts]
-barnhunt.call = "barnhunt.cli:main"
 
 [tool.coverage.paths]
 paths = [
