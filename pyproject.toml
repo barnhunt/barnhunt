@@ -111,10 +111,6 @@ norecursedirs = [
     "build",
 ]
 addopts = "--strict-markers"
-filterwarnings = [
-    # pexpect (as of 4.8) still supports py27, so uses setDaemon
-    "ignore:setDaemon.*deprecated:DeprecationWarning:pexpect",
-]
 markers = [
     "requiresinternet: marks tests requiring an internet connection",
 ]
