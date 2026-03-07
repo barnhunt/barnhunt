@@ -1,18 +1,11 @@
-# ruff: noqa: FA100 (missing __future__.annotations import)
 import dataclasses
 import json
-import sys
 import zipfile
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
 from typing import Any
 from typing import ClassVar
-from typing import Dict
-from typing import Generic
-from typing import List
-from typing import Optional
-from typing import Tuple
 from typing import TYPE_CHECKING
 from typing import TypeVar
 
@@ -48,33 +41,33 @@ class Metadata_2_1:
     # in git)
     name: str
     version: Version
-    if sys.version_info >= (3, 10):
-        _: dataclasses.KW_ONLY
-    summary: Optional[str] = None
-    description: Optional[str] = None
-    description_content_type: Optional[str] = None
-    keywords: Optional[List[str]] = None
-    license: Optional[str] = None
-    home_page: Optional[str] = None
-    download_url: Optional[str] = None
-    project_urls: Optional[List[Tuple[str, str]]] = None
-    author: Optional[str] = None
-    author_email: Optional[str] = None
-    maintainer: Optional[str] = None
-    maintainer_email: Optional[str] = None
-    classifiers: Optional[List[str]] = None
 
-    platforms: Optional[List[str]] = None
-    supported_platforms: Optional[List[str]] = None
+    _: dataclasses.KW_ONLY
+    summary: str | None = None
+    description: str | None = None
+    description_content_type: str | None = None
+    keywords: list[str] | None = None
+    license: str | None = None
+    home_page: str | None = None
+    download_url: str | None = None
+    project_urls: list[tuple[str, str]] | None = None
+    author: str | None = None
+    author_email: str | None = None
+    maintainer: str | None = None
+    maintainer_email: str | None = None
+    classifiers: list[str] | None = None
+
+    platforms: list[str] | None = None
+    supported_platforms: list[str] | None = None
 
     requires_python: SpecifierSet = field(default_factory=SpecifierSet)
-    requires_dists: Optional[List[Requirement]] = None
-    provides_extras: Optional[List[NormalizedName]] = None
+    requires_dists: list[Requirement] | None = None
+    provides_extras: list[NormalizedName] | None = None
     # dynamic_fields: Optional[List[DynamicField]]
-    requires_externals: Optional[List[str]] = None
+    requires_externals: list[str] | None = None
 
-    provides_dists: Optional[List[str]] = None
-    obsoletes_dists: Optional[List[str]] = None
+    provides_dists: list[str] | None = None
+    obsoletes_dists: list[str] | None = None
 
     @property
     def display_name(self) -> str:
@@ -92,7 +85,7 @@ class Metadata_2_1:
 T = TypeVar("T")
 
 
-class TypeField(marshmallow.fields.Field, Generic[T]):
+class TypeField(marshmallow.fields.Field[T]):
     def _deserialize(self, value: Any, *args: Any, **kwargs: Any) -> T:
         T_ = self.__orig_class__.__args__[0]  # type: ignore[attr-defined]
         if isinstance(value, T_):
@@ -103,7 +96,7 @@ class TypeField(marshmallow.fields.Field, Generic[T]):
             raise marshmallow.ValidationError(str(exc)) from exc
 
 
-class NormalizedNameField(marshmallow.fields.Field, Generic[T]):
+class NormalizedNameField(marshmallow.fields.Field[NormalizedName]):
     def _deserialize(self, value: Any, *args: Any, **kwargs: Any) -> NormalizedName:
         return canonicalize_name(value)
 
@@ -125,7 +118,7 @@ Metadata_2_1_Schema = class_schema(Metadata_2_1, base_schema=SchemaBase)
 Metadata = Metadata_2_1
 
 
-def metadata_from_json(data: Dict[str, Any]) -> Metadata:
+def metadata_from_json(data: dict[str, Any]) -> Metadata:
     schema = Metadata_2_1_Schema()
     metadata: Metadata_2_1 = schema.load(data)
     return metadata

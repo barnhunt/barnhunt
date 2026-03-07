@@ -315,6 +315,7 @@ class EnsureId:
 def _svg_attrib(tree: ElementTree) -> etree._Attrib:
     svg_elem = tree.getroot()
     if svg_elem.tag != SVG_SVG_TAG:
+        assert isinstance(svg_elem.tag, (str, etree.QName))
         raise ValueError(f"Expected XML root to be an <svg> tag, not <{svg_elem.tag}>")
     return svg_elem.attrib
 
