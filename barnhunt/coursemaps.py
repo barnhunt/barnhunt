@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Collection
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import Sequence
 from itertools import count
 from typing import BinaryIO
 from typing import ClassVar
-from typing import Collection
-from typing import Iterable
-from typing import Iterator
 from typing import NamedTuple
-from typing import Sequence
 
 import jinja2
 from lxml import etree

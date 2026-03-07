@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterable
+from collections.abc import Iterator
 from io import BytesIO
 from pathlib import Path
-from typing import Iterable
-from typing import Iterator
 
 import pytest
 from lxml import etree

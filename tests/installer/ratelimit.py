@@ -1,6 +1,6 @@
+from collections.abc import Callable
 from functools import wraps
 from typing import Any
-from typing import Callable
 
 import pytest
 from requests import HTTPError

@@ -3,11 +3,11 @@ from __future__ import annotations
 import os
 import re
 import stat
+from collections.abc import Callable
+from collections.abc import Generator
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
-from typing import Callable
-from typing import Generator
-from typing import Sequence
 
 import jinja2
 import lxml.etree

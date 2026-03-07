@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
+from collections.abc import Sequence
 from typing import Literal
 from typing import overload
-from typing import Sequence
 
 from lxml import etree
 from lxml.builder import ElementMaker

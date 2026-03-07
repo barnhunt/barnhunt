@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import re
 import time
+from collections.abc import Sequence
 from contextlib import ExitStack
 from itertools import cycle
 from itertools import islice
 from pathlib import Path
-from typing import Sequence
 
 import pikepdf
 import pytest

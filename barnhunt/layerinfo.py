@@ -3,11 +3,11 @@ from __future__ import annotations
 import enum
 import logging
 import re
+from collections.abc import Callable
+from collections.abc import Collection
+from collections.abc import Sequence
 from itertools import islice
-from typing import Callable
-from typing import Collection
 from typing import NamedTuple
-from typing import Sequence
 
 from .inkscape import svg
 
