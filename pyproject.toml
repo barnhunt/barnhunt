@@ -59,8 +59,6 @@ build-backend = "pdm.backend"
 
 [tool.pdm.version]
 source = "scm"
-write_to = "barnhunt/_version.py"
-write_template = "__version__ = \"{}\"\n"
 
 [tool.pdm.build]
 excludes = [
