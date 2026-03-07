@@ -30,7 +30,7 @@ dependencies = [
     "marshmallow-dataclass~=8.7",
     "packaging~=26.0",
     "pexpect~=4.9",
-    "pikepdf~=10.3",
+    "pikepdf<9.7",
     "rdflib~=7.6",
     "requests~=2.32",
     "tinycss2~=1.5",
