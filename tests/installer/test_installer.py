@@ -7,9 +7,9 @@ import json
 import os
 import re
 import zipfile
+from collections.abc import Iterable
 from pathlib import Path
 from pathlib import PurePosixPath
-from typing import Iterable
 from urllib.parse import urlunsplit
 
 import pytest
@@ -44,7 +44,7 @@ def test_InkexRequirement_project() -> None:
         ("unknown", "unknown requirement"),
         ("inkex-bh[extra]", "extras not"),
         ("inkex-bh; python_version>'3.6'", "markers not"),
-        ("unparseable requirement", "(?i)parse error|expected end"),
+        ("unparseable requirement", r"(?i)parse error|expected .*\bend"),
     ],
 )
 def test_InkexRequirement_project_raises_value_error(
