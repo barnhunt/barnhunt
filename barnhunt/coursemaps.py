@@ -208,10 +208,7 @@ BASENAME_TMPL = (
 )
 
 DESCRIPTION_TMPL = (
-    "{{ svgfile.name }}"
-    "{% if overlays -%}"
-    '  :{{ overlays|join("/") }}'
-    "{% endif %}"
+    '{{ svgfile.name }}{% if overlays -%}  :{{ overlays|join("/") }}{% endif %}'
 )
 
 

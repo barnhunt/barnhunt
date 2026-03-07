@@ -300,7 +300,7 @@ class EnsureId:
         seen = {elem.get("id") for elem in self.tree.iterfind("//*[@id]")}
 
         def random_id() -> str:
-            return f"bh-{random.randint(1, 10 ** ndigits - 1):0{ndigits}d}"
+            return f"bh-{random.randint(1, 10**ndigits - 1):0{ndigits}d}"
 
         while True:
             mindigits = int(math.log10(max(len(seen), 1))) + 1

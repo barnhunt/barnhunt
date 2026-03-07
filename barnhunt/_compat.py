@@ -11,4 +11,4 @@ if sys.version_info < (3, 10):
 else:
     from typing import TypeGuard
 
-__all__ = ["importlib_metadata", "TypeGuard"]
+__all__ = ["TypeGuard", "importlib_metadata"]

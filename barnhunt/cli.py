@@ -241,8 +241,7 @@ def rats_(number_of_rows: int) -> None:
     Prints rows of five random numbers in the range [1, 5].
     """
     for _ in range(number_of_rows):
-        rats = tuple(random.randint(1, 5) for n in range(5))
-        print("%d %d %d %d %d" % rats)
+        print(" ".join(f"{random.randint(1, 5)}" for n in range(5)))
 
 
 @barnhunt_cli.command()
@@ -288,8 +287,8 @@ def coords(dimensions: tuple[int, int], number_of_rows: int, group_size: int) ->
     """
     x_max, y_max = dimensions
 
-    dim_x = dimensions[0] + 1
-    dim_y = dimensions[1] + 1
+    dim_x = x_max + 1
+    dim_y = y_max + 1
     n_pts = dim_x * dim_y
     number_of_rows = min(number_of_rows, n_pts)
 
@@ -332,7 +331,7 @@ def default_2up_output_file() -> Path | None:
     "--output-file",
     type=click.File("wb", atomic=True),
     default=default_2up_output_file,
-    help="Output file name. " "(Default input filename with '-2up' appended to stem.)",
+    help="Output file name. (Default input filename with '-2up' appended to stem.)",
 )
 def pdf_2up(pdffiles: Iterable[BinaryIO], output_file: BinaryIO) -> None:
     """Format PDF(s) for 2-up printing.
