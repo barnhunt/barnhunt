@@ -7,24 +7,24 @@ import random
 import re
 import sys
 from collections import defaultdict
+from collections.abc import Callable
+from collections.abc import Iterable
+from collections.abc import Sequence
 from contextlib import ExitStack
+from importlib import metadata
 from itertools import count
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import BinaryIO
-from typing import Callable
 from typing import Final
-from typing import Iterable
 from typing import NoReturn
-from typing import Sequence
 from typing import TypeVar
 
 import click
 from atomicwrites import atomic_write
 
 import barnhunt
-from ._compat import importlib_metadata as metadata
 from .coursemaps import Coursemap
 from .coursemaps import iter_coursemaps
 from .inkscape.runner import DEFAULT_INKSCAPE_COMMAND
@@ -217,7 +217,7 @@ def pdfs(
             pages[output_fn].append((coursemap, temp_fn))
 
         for output_fn, render_info in pages.items():
-            coursemaps, temp_fns = zip(*sorted(render_info))
+            coursemaps, temp_fns = zip(*sorted(render_info), strict=False)
             if log.isEnabledFor(logging.INFO):
                 for coursemap in coursemaps:
                     log.info("Reading %s", coursemap.description)

@@ -7,19 +7,19 @@ import dataclasses
 import math
 import random
 from collections import deque
+from collections.abc import Collection
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import Mapping
 from functools import lru_cache
-from typing import Collection
-from typing import Iterable
-from typing import Iterator
-from typing import Mapping
 from typing import NamedTuple
 from typing import NewType
 from typing import overload
 from typing import TYPE_CHECKING
+from typing import TypeGuard
 
 from lxml import etree
 
-from .._compat import TypeGuard
 from .css import InlineCSS
 
 # XML element
