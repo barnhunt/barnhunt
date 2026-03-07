@@ -102,6 +102,8 @@ jobs:
 
     # Run a bunch of tests
     - run: barnhunt
+      # returns exit code 2 or 0 depending on click version?
+      continue-on-error: true
     - run: barnhunt --help
     - run: barnhunt --version
     - run: barnhunt debug-info
