@@ -5,11 +5,11 @@ import os
 import re
 import sys
 import threading
+from collections.abc import Callable
+from collections.abc import Sequence
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 from typing import Any
-from typing import Callable
-from typing import Sequence
 
 import pytest
 

@@ -5,12 +5,12 @@ from __future__ import annotations
 import re
 import shutil
 import time
+from collections.abc import Iterable
+from collections.abc import Sequence
 from itertools import chain
 from itertools import zip_longest
 from pathlib import Path
 from typing import BinaryIO
-from typing import Iterable
-from typing import Sequence
 
 from pikepdf import ObjectStreamMode
 from pikepdf import Pdf
@@ -56,7 +56,7 @@ def two_up(
 
     for pair in zip_longest(in_pages[:n_out], in_pages[n_out:]):
         out_page = pdf.add_blank_page(page_size=(width, height))
-        for in_page, (box, rotation) in zip(pair, locations):
+        for in_page, (box, rotation) in zip(pair, locations, strict=True):
             if in_page is not None:
                 in_page.rotate(rotation, relative=True)
                 # XXX: should we pass push_stack=False to add_overlay?

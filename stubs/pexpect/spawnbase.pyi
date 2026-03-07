@@ -9,11 +9,11 @@ from typing import Generic
 from typing import Literal
 from typing import overload
 from typing import Protocol
+from typing import TypeAlias
 
 from _typeshed import Incomplete
 from _typeshed import Self
 from _typeshed import SupportsWrite
-from typing_extensions import TypeAlias
 
 from .exceptions import EOF
 from .exceptions import TIMEOUT

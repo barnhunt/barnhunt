@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import enum
 import sys
+from collections.abc import Sequence
 from typing import Protocol
-from typing import Sequence
 
 import click
 

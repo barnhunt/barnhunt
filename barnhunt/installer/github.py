@@ -1,9 +1,6 @@
-# ruff: noqa: FA100 (missing __future__.annotations import)
 import datetime
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Iterator
-from typing import List
-from typing import Optional
 from urllib.parse import quote
 
 import marshmallow
@@ -14,7 +11,7 @@ from marshmallow_dataclass import class_schema
 @dataclass
 class ReleaseAsset:
     name: str
-    label: Optional[str]
+    label: str | None
     state: str  # enum: "uploaded", "open"
     download_count: int
     content_type: str
@@ -29,15 +26,15 @@ class ReleaseAsset:
 
 @dataclass
 class Release:
-    name: Optional[str]
-    body: Optional[str]
+    name: str | None
+    body: str | None
     tag_name: str
     html_url: str
     draft: bool
     prerelease: bool
     created_at: datetime.datetime
-    published_at: Optional[datetime.datetime]
-    assets: List[ReleaseAsset]
+    published_at: datetime.datetime | None
+    assets: list[ReleaseAsset]
 
     class Meta:
         unknown = marshmallow.EXCLUDE
@@ -49,9 +46,9 @@ ReleaseSchema = class_schema(Release)
 def iter_releases(
     owner: str,
     repo: str,
-    per_page: Optional[int] = None,
+    per_page: int | None = None,
     *,
-    github_token: Optional[str] = None,
+    github_token: str | None = None,
 ) -> Iterator[Release]:
     """Fetch releases for a GitHub repository.
 

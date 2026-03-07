@@ -1,8 +1,8 @@
 import os
+from collections.abc import Callable
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
-from typing import Callable
-from typing import Iterator
 
 import click
 import pytest

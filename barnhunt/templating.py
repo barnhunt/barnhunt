@@ -6,18 +6,17 @@ import os
 import random
 import re
 import uuid
+from collections.abc import Iterator
+from collections.abc import Mapping
+from collections.abc import Sequence
 from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import partial
 from operator import itemgetter
 from typing import Any
 from typing import BinaryIO
-from typing import Dict
 from typing import Final
-from typing import Iterator
-from typing import Mapping
 from typing import overload
-from typing import Sequence
 
 import jinja2
 import lxml.etree
@@ -30,7 +29,7 @@ from .layerinfo import LayerFlags
 from .layerinfo import LayerInfoParser
 from .layerinfo import parse_flagged_layer_info
 
-TemplateContext = Dict[str, Any]
+TemplateContext = dict[str, Any]
 
 
 log = logging.getLogger()

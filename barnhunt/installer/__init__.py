@@ -4,14 +4,14 @@ import io
 import logging
 import shutil
 import zipfile
+from collections.abc import Iterator
+from collections.abc import Mapping
 from contextlib import contextmanager
 from contextlib import ExitStack
 from operator import attrgetter
 from pathlib import Path
 from tempfile import TemporaryFile
 from typing import IO
-from typing import Iterator
-from typing import Mapping
 from typing import NamedTuple
 from typing import NewType
 from typing import TYPE_CHECKING
