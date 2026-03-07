@@ -41,7 +41,7 @@ fixable.)
 As this package is published to
 [PyPI](https://pypi.org/project/barnhunt/) it may be installed into a
 [_virtualenv_][venv] using [`pip`][pip]. It is suggested that you use
-[`pipx`][pipx] to combine those two steps.
+[`pipx`][pipx] or [`uv tool install`][uv-tool] to combine those two steps.
 
 A basic outline of how to proceed:
 
@@ -95,5 +95,5 @@ This package was written by Jeff Dairiki, BHAJ-221A, <dairiki@dairiki.org>.
 (Python venv module documentation)
 [pipx]: https://pypa.github.io/pipx/ (The pipx home page)
 [pip]: https://pip.pypa.io/en/stable/ (Documentation for pip)
-[pikepdf]: https://pikepdf.readthedocs.io/en/latest/installation.html
-(The Installation section of the pikepdf documentation)
+[pikepdf]: https://pikepdf.readthedocs.io/en/latest/installation.html (The Installation section of the pikepdf documentation)
+[uv-tool]: https://docs.astral.sh/uv/guides/tools/ (UV Documentation — Using Tools)
