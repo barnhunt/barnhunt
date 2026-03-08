@@ -297,7 +297,8 @@ class EnsureId:
         return id_
 
     def _iter_unique_ids(self) -> Iterator[str]:
-        seen = {elem.get("id") for elem in self.tree.iterfind("//*[@id]")}
+        get_ids = _compile_xpath("//@id")
+        seen = set(get_ids(self.tree))
 
         def random_id() -> str:
             return f"bh-{random.randint(1, 10**ndigits - 1):0{ndigits}d}"
