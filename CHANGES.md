@@ -10,6 +10,38 @@ See the fragment files in the [changes.d directory][changes.d].
 
 [#]: <> (scriv-insert-here)
 
+<a id='1.3.0rc1'></a>
+### Release 1.3.0rc1 (2026-03-07)
+
+#### Removed
+
+- Drop support for Python 3.7 – 3.9
+
+- Removed all support of [pyoxidizer] builds. `Pyoxidizer` has been unsupported for some time (see [indygreg/PyOxidizer#741]).
+  (Besides, I have no evidence that anyone was using the `pyoxidizer` builds anyway. If anyone is running `barnhunt` on Windows
+  and has trouble installing it, let [me](mailto:dairiki@dairiki.org) know.)
+
+  [Ankitects/anki#3081] has some perhaps useful notes on how to move past PyOxidizer.
+
+[pyoxidizer]: https://github.com/indygreg/PyOxidizer
+[indygreg/PyOxidizer#741]: https://github.com/indygreg/PyOxidizer/issues/741
+[ankitects/anki#3081]: https://github.com/ankitects/anki/issues/3081
+
+#### Added
+
+- Support Python 3.12 – 3.14
+
+#### Changed
+
+- Updated dependencies to latest versions
+
+- Modernized `pyproject.toml` (e.g. `[project.entry-points.console_scripts]`
+  → `[project.scripts]`)
+
+#### Fixed
+
+- Fixed equality comparisons for `LayerAdapter`
+
 ### Release 1.2.1rc3 (2023-08-04)
 
 #### Bugs Fixed
