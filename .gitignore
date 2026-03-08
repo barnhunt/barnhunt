@@ -1,5 +1,7 @@
 *~
 __pycache__/
-/.coverage
 /.tox/
 /.pdm-python
+/.coverage
+/coverage.xml
+/htmlcov/

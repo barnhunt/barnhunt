@@ -150,10 +150,9 @@ jobs:
     - uses: actions/checkout@v6
       with:
         fetch-depth: 0
-    - uses: pdm-project/setup-pdm@v4
-    - run: python -m pip install packaging
+    - uses: astral-sh/setup-uv@v7
 
-    - run: pdm build
+    - run: uv build
 
     - uses: actions/upload-artifact@v6
       with:
@@ -164,9 +163,9 @@ jobs:
     - name: Classify Version
       id: classify-version
       run: |
-        pdm show --version | python -c '
-        import sys, packaging.version
-        version = packaging.version.parse(sys.stdin.read())
+        uv tool run --with packaging,setuptools-scm python -c '
+        import sys, packaging.version, setuptools_scm
+        version = packaging.version.parse(setuptools_scm.get_version())
         if version.local:
             version_type = "local"
         elif version.is_devrelease:

@@ -39,6 +39,7 @@ barnhunt = "barnhunt.cli:main"
 dev = [
     "scriv[toml]~=1.8",
     "ruff==0.15.5",
+    "hatch",
     {include-group = "mypy"},
     {include-group = "pytest"},
 ]
@@ -57,24 +58,26 @@ mypy = [
 ]
 
 [build-system]
-requires = ["pdm-backend", "packaging"]
-build-backend = "pdm.backend"
+requires = ["hatchling", "hatch-vcs", "hatch-fancy-pypi-readme"]
+build-backend = "hatchling.build"
 
-[tool.pdm.version]
-source = "scm"
+[tool.hatch.version]
+source = "vcs"
 
-[tool.pdm.build]
-excludes = [
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = "text/markdown"
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "README.md"
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "CHANGES.md"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
     "**/*~",
     "**/.*",
+    "TODO.md",
 ]
-source-includes = [
-    "README.md",
-    "CHANGES.md",
-    "tox.ini",
-    "stubs/**/*.pyi",
-    "tests",
-]
+
 
 [tool.coverage.paths]
 paths = [
@@ -207,5 +210,5 @@ fragment_directory = "changes.d"
 new_fragment_template = "file: new_fragment.md.j2"
 output_file = "CHANGES.md"
 md_header_level = "3"
-version = "command: pdm show --version"
+version = "command: hatch version"
 entry_title_template = "file: entry_title.txt.j2"
