@@ -71,16 +71,26 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "coverage", extra = ["toml"] },
     { name = "mypy" },
+    { name = "pdfminer-six" },
     { name = "pdm-backend" },
-    { name = "pydeps" },
+    { name = "pytest" },
+    { name = "pytest-mock" },
     { name = "ruff" },
     { name = "scriv", extra = ["toml"] },
     { name = "types-atomicwrites" },
     { name = "types-lxml" },
     { name = "types-requests" },
 ]
-test = [
+mypy = [
+    { name = "mypy" },
+    { name = "pdm-backend" },
+    { name = "types-atomicwrites" },
+    { name = "types-lxml" },
+    { name = "types-requests" },
+]
+pytest = [
     { name = "coverage", extra = ["toml"] },
     { name = "pdfminer-six" },
     { name = "pytest" },
@@ -105,16 +115,26 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.13.4" },
     { name = "mypy", specifier = "==1.19.1" },
+    { name = "pdfminer-six", specifier = ">=20260107" },
     { name = "pdm-backend", specifier = "~=2.4" },
-    { name = "pydeps", specifier = "~=3.0" },
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest-mock", specifier = ">=3.15.1" },
     { name = "ruff", specifier = "==0.15.5" },
     { name = "scriv", extras = ["toml"], specifier = "~=1.8" },
     { name = "types-atomicwrites" },
     { name = "types-lxml" },
     { name = "types-requests" },
 ]
-test = [
+mypy = [
+    { name = "mypy", specifier = "==1.19.1" },
+    { name = "pdm-backend", specifier = "~=2.4" },
+    { name = "types-atomicwrites" },
+    { name = "types-lxml" },
+    { name = "types-requests" },
+]
+pytest = [
     { name = "coverage", extras = ["toml"], specifier = ">=7.13.4" },
     { name = "pdfminer-six", specifier = ">=20260107" },
     { name = "pytest", specifier = ">=9.0.2" },
@@ -1222,18 +1242,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pydeps"
-version = "3.0.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "stdlib-list" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d1/3e/750b00bc373fe0ed1981be89f432bb58ff45ae137d486d5d1667b5f89e76/pydeps-3.0.2.tar.gz", hash = "sha256:9e73575ddd6b5614cb2463a4ee9392817cc51002a2e46184d4fb1ffef8d15832", size = 53202, upload-time = "2026-01-06T16:52:03.1Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0e/c5/e3c81d05e4ab54fab5ba613c28ec91b2baee26671c5645293b1b020c13f4/pydeps-3.0.2-py3-none-any.whl", hash = "sha256:890515899ffdb017255ba035704cfc711966469ad3aa3574c5b0b13f9f676e32", size = 47765, upload-time = "2026-01-06T16:52:01.794Z" },
-]
-
-[[package]]
 name = "pygments"
 version = "2.19.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1363,15 +1371,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/7b/ae/2d9c981590ed9999a0d91755b47fc74f74de286b0f5cee14c9269041e6c4/soupsieve-2.8.3.tar.gz", hash = "sha256:3267f1eeea4251fb42728b6dfb746edc9acaffc4a45b27e19450b676586e8349", size = 118627, upload-time = "2026-01-20T04:27:02.457Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/46/2c/1462b1d0a634697ae9e55b3cecdcb64788e8b7d63f54d923fcd0bb140aed/soupsieve-2.8.3-py3-none-any.whl", hash = "sha256:ed64f2ba4eebeab06cc4962affce381647455978ffc1e36bb79a545b91f45a95", size = 37016, upload-time = "2026-01-20T04:27:01.012Z" },
-]
-
-[[package]]
-name = "stdlib-list"
-version = "0.12.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/8c/25/f1540879c8815387980e56f973e54605bd924612399ace31487f7444171c/stdlib_list-0.12.0.tar.gz", hash = "sha256:517824f27ee89e591d8ae7c1dd9ff34f672eae50ee886ea31bb8816d77535675", size = 60923, upload-time = "2025-10-24T19:21:22.849Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/3b/3d/2970b27a11ae17fb2d353e7a179763a2fe6f37d6d2a9f4d40104a2f132e9/stdlib_list-0.12.0-py3-none-any.whl", hash = "sha256:df2d11e97f53812a1756fb5510393a11e3b389ebd9239dc831c7f349957f62f2", size = 87615, upload-time = "2025-10-24T19:21:20.619Z" },
 ]
 
 [[package]]
