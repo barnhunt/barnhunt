@@ -68,11 +68,13 @@ def iter_releases(
     if per_page is not None:
         url += f"?per_page={per_page:d}"
 
-    while url is not None:
+    while True:
         response = session.get(url)
         response.raise_for_status()
         assert response.status_code == 200
         yield from releases_schema.load(response.json())
 
-        next = response.links.get("next")
-        url = next["url"] if next else None
+        if next := response.links.get("next"):
+            url = next["url"]
+        else:
+            break
