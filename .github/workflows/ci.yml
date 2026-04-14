@@ -45,7 +45,10 @@ jobs:
       contents: write           # to create GH release
     runs-on: ubuntu-latest
     steps:
-      - uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda #@v3.0.0
-        with:
-          generate_release_notes: true
-          prerelease: ${{ needs.tests.outputs.version-type != 'release' }}
+      - name: Create Release
+        # shellcheck disable=SC2086
+        run: gh release create "${TAG}" --generate-notes ${PRE:+--prerelease}
+        env:
+          TAG: ${{ github.ref_name }}
+          PRE: ${{ case( needs.tests.outputs.version-type != 'release', 'yes', '' ) }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
