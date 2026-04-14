@@ -26,14 +26,14 @@ jobs:
       name: pypi
       url: https://pypi.org/p/barnhunt
     permissions:
-      id-token: write
+      id-token: write           # needed to publish to PyPI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # @v8.0.1
         with:
           name: dist
           path: dist
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # @release/v1.14.0
         with:
           skip-existing: true
 
@@ -45,7 +45,7 @@ jobs:
       contents: write           # to create GH release
     runs-on: ubuntu-latest
     steps:
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda #@v3.0.0
         with:
           generate_release_notes: true
           prerelease: ${{ needs.tests.outputs.version-type != 'release' }}
