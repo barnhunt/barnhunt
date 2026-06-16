@@ -344,7 +344,7 @@ def pdf_2up(pdffiles: Iterable[BinaryIO], output_file: BinaryIO) -> None:
     two_up(pdffiles, output_file)
 
 
-class InkexRequirementType(click.ParamType):
+class InkexRequirementType(click.ParamType[InkexRequirement]):
     name = "requirement"
 
     def __init__(self, allow_specifiers: bool = True):

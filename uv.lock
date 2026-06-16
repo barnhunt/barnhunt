@@ -217,7 +217,7 @@ pytest = [
 [package.metadata]
 requires-dist = [
     { name = "atomicwrites", specifier = "~=1.4" },
-    { name = "click", specifier = "~=8.3" },
+    { name = "click", specifier = "~=8.4" },
     { name = "jinja2", specifier = "~=3.1" },
     { name = "lxml", specifier = "~=6.0" },
     { name = "marshmallow", specifier = "~=4.2" },
