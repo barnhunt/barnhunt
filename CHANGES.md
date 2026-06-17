@@ -10,6 +10,22 @@ See the fragment files in the [changes.d directory][changes.d].
 
 [#]: <> (scriv-insert-here)
 
+<a id='changelog-1.3.0'></a>
+### Release 1.3.0 (2026-06-17)
+
+#### Changed
+
+- [build] Disuse `pdm-backend` in favor of `hatchling`.
+
+- Pin click >= 8.4.
+
+#### Security
+
+- Use [zizmor] and [actionlint] to lint workflow
+
+[zizmor]: https://github.com/zizmorcore/zizmor
+[actionlint]: https://github.com/rhysd/actionlint
+
 <a id='1.3.0rc1'></a>
 ### Release 1.3.0rc1 (2026-03-07)
 
