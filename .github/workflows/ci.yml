@@ -45,6 +45,10 @@ jobs:
       contents: write           # to create GH release
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # @v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - name: Create Release
         # shellcheck disable=SC2086
         run: gh release create "${TAG}" --generate-notes ${PRE:+--prerelease}
