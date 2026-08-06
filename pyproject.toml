@@ -57,6 +57,9 @@ mypy = [
     "types-requests",
 ]
 
+[tool.uv]
+exclude-newer = "7d"
+
 [build-system]
 requires = ["hatchling", "hatch-vcs", "hatch-fancy-pypi-readme"]
 build-backend = "hatchling.build"
