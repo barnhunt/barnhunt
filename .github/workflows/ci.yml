@@ -16,7 +16,7 @@ jobs:
 
   tests:
     name: Run Tests and Build Python Dist
-    uses: ./.github/workflows/tests.yml
+    uses: $/.github/workflows/tests.yml
 
   pypi-publish:
     name: Upload to PyPI

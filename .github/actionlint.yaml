@@ -1,0 +1,6 @@
+paths:
+  .github/workflows/**/*.{yaml,yml}:
+    ignore:
+      # FIXME: unneeded once actionlint > 1.7.12 is release.
+      # See https://github.com/rhysd/actionlint/issues/711
+      - reusable workflow call "\$/.+" at "uses" is not following the format
