@@ -39,7 +39,7 @@ barnhunt = "barnhunt.cli:main"
 dev = [
     "scriv[toml]~=1.8",
     "ruff==0.15.5",
-    "hatch",
+    "hatchling",
     {include-group = "mypy"},
     {include-group = "pytest"},
 ]
