@@ -129,7 +129,7 @@ jobs:
         path: |
           ~/.cache/pre-commit
           ~/.cache/pip
-        key: py-${{ env.python-version }}-${{ hashFiles('.pre-commit-config.yaml', 'pdm.lock') }}
+        key: py-${{ env.python-version }}-${{ hashFiles('.pre-commit-config.yaml', 'uv.lock') }}
 
     - name: Install python deps
       run: |
