@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 from collections.abc import Iterator
 from dataclasses import dataclass
 from urllib.parse import quote
@@ -17,8 +17,8 @@ class ReleaseAsset:
     content_type: str
     size: int
     browser_download_url: str
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created_at: dt.datetime
+    updated_at: dt.datetime
 
     class Meta:
         unknown = marshmallow.EXCLUDE
@@ -32,8 +32,8 @@ class Release:
     html_url: str
     draft: bool
     prerelease: bool
-    created_at: datetime.datetime
-    published_at: datetime.datetime | None
+    created_at: dt.datetime
+    published_at: dt.datetime | None
     assets: list[ReleaseAsset]
 
     class Meta:

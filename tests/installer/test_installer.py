@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 import io
 import itertools
 import json
@@ -140,12 +140,12 @@ def test_find_installed_raises(dir_exists: bool, tmp_path: Path) -> None:
     assert find_installed(distdir, canonicalize_name("inkex-bh")) == {}
 
 
-datetime_now = datetime.datetime.now(datetime.timezone.utc)
+datetime_now = dt.datetime.now(dt.timezone.utc)
 
 
 def make_asset(
     browser_download_url: str = "https://example.org/download",
-    updated_at: datetime.datetime = datetime_now,
+    updated_at: dt.datetime = datetime_now,
     content_type: str = "application/zip",
 ) -> github.ReleaseAsset:
     return github.ReleaseAsset(
@@ -183,7 +183,7 @@ def test_find_distributions(mocker: MockerFixture) -> None:
         make_release(
             "v1.2",
             [
-                make_asset("old", datetime_now - datetime.timedelta(20)),
+                make_asset("old", datetime_now - dt.timedelta(20)),
                 make_asset("new"),
             ],
         ),
