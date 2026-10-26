@@ -136,16 +136,13 @@ jobs:
     - name: Lint
       run: uv tool run tox -e lint
 
-    # - name: Mypy
-    #   if: always()
-    #   run: uv tool run tox -e mypy
+    - name: Mypy
+      if: always()
+      run: uv run --no-dev --group=mypy mypy barnhunt tests
 
     - name: Pre-Commit
       if: always()
-      run: |
-        ls -la
-        cat .venv || true
-        uv tool run pre-commit run --all-files
+      run: uv tool run pre-commit run --all-files
 
   build:
     name: Build python package

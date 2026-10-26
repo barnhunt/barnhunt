@@ -55,6 +55,7 @@ mypy = [
     "types-atomicwrites",
     "types-lxml",
     "types-requests",
+    {include-group = "pytest"},
 ]
 
 [tool.uv]

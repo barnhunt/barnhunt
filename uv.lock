@@ -95,8 +95,12 @@ dev = [
     { name = "types-requests" },
 ]
 mypy = [
+    { name = "coverage", extra = ["toml"] },
     { name = "mypy" },
+    { name = "pdfminer-six" },
     { name = "pdm-backend" },
+    { name = "pytest" },
+    { name = "pytest-mock" },
     { name = "types-atomicwrites" },
     { name = "types-lxml" },
     { name = "types-requests" },
@@ -140,8 +144,12 @@ dev = [
     { name = "types-requests" },
 ]
 mypy = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.13.4" },
     { name = "mypy", specifier = "==1.19.1" },
+    { name = "pdfminer-six", specifier = ">=20260107" },
     { name = "pdm-backend", specifier = "~=2.4" },
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest-mock", specifier = ">=3.15.1" },
     { name = "types-atomicwrites" },
     { name = "types-lxml" },
     { name = "types-requests" },
