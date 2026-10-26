@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: © 2019 Geoffrey T. Dairiki <dairiki@dairiki.org>
+# SPDX-License-Identifier: GPL-3.0-only
 """Code for rendering Inkscape SVG to PDFS"""
 
 from __future__ import annotations

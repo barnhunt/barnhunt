@@ -207,6 +207,11 @@ known-local-folder = ["barnhunt"]
 [tool.ruff.lint.flake8-unused-arguments]
 ignore-variadic-names = true
 
+[tool.ruff.lint.flake8-copyright]
+# A regular expression that the copyright notice must match
+notice-rgx = '^# SPDX-FileCopyrightText: © \d{4} (.*)\n# SPDX-License-Identifier: [A-Za-z0-9.-]+'
+min-file-size = 1
+
 [tool.scriv]
 format = "md"
 fragment_directory = "changes.d"

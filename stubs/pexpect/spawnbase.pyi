@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: © 2022 Geoffrey T. Dairiki <dairiki@dairiki.org>
+# SPDX-License-Identifier: GPL-3.0-only
 import re
 from collections.abc import Awaitable
 from collections.abc import Callable

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: © 2017 Geoffrey T. Dairiki <dairiki@dairiki.org>
+# SPDX-License-Identifier: GPL-3.0-only
 """Helpers to operator on Inkscape SVG files."""
 
 from __future__ import annotations

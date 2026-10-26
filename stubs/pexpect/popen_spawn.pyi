@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: © 2022 Geoffrey T. Dairiki <dairiki@dairiki.org>
+# SPDX-License-Identifier: GPL-3.0-only
 from collections.abc import Callable
 from collections.abc import Iterable
 from subprocess import _CMD

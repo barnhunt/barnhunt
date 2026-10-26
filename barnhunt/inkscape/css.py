@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: © 2017 Geoffrey T. Dairiki <dairiki@dairiki.org>
+# SPDX-License-Identifier: GPL-3.0-only
 """Helpers for dealing with inline CSS"""
 
 from __future__ import annotations
