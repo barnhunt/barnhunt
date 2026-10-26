@@ -145,7 +145,10 @@ jobs:
 
     - name: Pre-Commit
       if: always()
-      run: pre-commit run --all-files
+      run: |
+        ls -la
+        cat .venv || true
+        pre-commit run --all-files
 
   build:
     name: Build python package
