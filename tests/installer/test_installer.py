@@ -142,7 +142,7 @@ def test_find_installed_raises(dir_exists: bool, tmp_path: Path) -> None:
     assert find_installed(distdir, canonicalize_name("inkex-bh")) == {}
 
 
-datetime_now = dt.datetime.now(dt.timezone.utc)
+datetime_now = dt.datetime.now(dt.UTC)
 
 
 def make_asset(
